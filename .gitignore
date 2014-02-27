@@ -15,5 +15,5 @@
 # Other
 *.*~
 build/
-*.kdev
+*.kdev*
 *.orig
