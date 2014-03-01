@@ -1,16 +1,82 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(plane_segmentation)
 
-find_package(catkin REQUIRED)
-
-catkin_package()
+find_package(catkin REQUIRED 
+	roscpp 
+	message_generation 
+	geometry_msgs 
+	std_msgs 
+	shape_msgs
+	sensor_msgs
+	visualization_msgs
+	tf
+	)
 
 find_package(PCL 1.2 REQUIRED)
 
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+add_message_files(
+	FILES
+	Plane.msg
+	PlaneDetectionResult.msg
+	)
 
-add_executable(random_sample_consensus random_sample_consensus.cpp)
+add_service_files(
+	FILES
+	PlaneDetection.srv
+	)
 
-target_link_libraries(random_sample_consensus ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+generate_messages(
+	DEPENDENCIES
+	geometry_msgs
+	std_msgs
+	shape_msgs
+	sensor_msgs
+	visualization_msgs
+	)
+
+catkin_package(
+	)
+
+include_directories(include
+	${catkin_INCLUDE_DIRS}
+	${PCL_INCLUDE_DIRS}
+	)
+
+link_directories(
+	${PCL_LIBRARY_DIRS}
+	)
+
+add_definitions(
+	${PCL_DEFINITIONS}
+	)
+
+
+add_executable(random_sample_consensus 
+	src/random_sample_consensus.cpp
+	)
+
+target_link_libraries(random_sample_consensus 
+	${catkin_LIBRARIES} 
+	${PCL_LIBRARIES}
+	)
+
+
+
+add_library(PlaneMarker
+	src/MarkerGenerator.cpp
+	)
+
+add_executable(plane_segmentation_node 
+	src/plane_segmentation_node.cpp
+	)
+
+add_dependencies(plane_segmentation_node 
+	plane_segmentation_gencpp
+	PlaneMarker
+	)
+
+target_link_libraries(plane_segmentation_node 
+	PlaneMarker
+	${catkin_LIBRARIES} 
+	${PCL_LIBRARIES}
+	)
