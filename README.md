@@ -7,8 +7,8 @@ This project is about:
 - put footprints on proper planes to make a footstep plan for robot locomotion
 
 
-Example of plane detection with mesh markers to for a generic shape
--------------------------------------------------------------------
+Example of plane detection with mesh markers
+--------------------------------------------
 
 Term1:
 
