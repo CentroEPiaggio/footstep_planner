@@ -12,8 +12,27 @@ Example of plane detection with mesh markers
 
 Term1:
 
-`roslaunch plane_segmentation plane_detection.launch.xml`
+`roslaunch plane_segmentation plane_detection.launch`
 
 Term2:
 
 `rosservice call /plane_detection_srv`
+
+
+Example of planar points based on the curvature estimation
+----------------------------------------------------------
+
+Term1:
+
+`roslaunch plane_segmentation curvature_filter.launch`
+
+Term2:
+
+`rosservice call /filter_by_curvature`
+
+Parameters:
+
+- the grid size in meters for downsampling
+- the search radius in meters for the normal estimation
+- the curvature threshold for extract the planar areas in the downsampled cloud
+- the minimum cluster size for euclidean clustering

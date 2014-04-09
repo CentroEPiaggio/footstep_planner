@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 2.8.3)
 project(plane_segmentation)
+cmake_minimum_required(VERSION 2.8.3)
 
 find_package(catkin REQUIRED 
 	roscpp 
@@ -77,6 +77,16 @@ add_dependencies(plane_segmentation_node
 
 target_link_libraries(plane_segmentation_node 
 	PlaneMarker
+	${catkin_LIBRARIES} 
+	${PCL_LIBRARIES}
+	)
+
+
+add_executable(curvature_filter_node 
+	src/curvature_filter_node.cpp
+	)
+
+target_link_libraries(curvature_filter_node
 	${catkin_LIBRARIES} 
 	${PCL_LIBRARIES}
 	)
