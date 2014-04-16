@@ -37,7 +37,7 @@ Parameters:
 - the curvature threshold for extract the planar areas in the downsampled cloud
 - the minimum cluster size for euclidean clustering
 
-Example of footstep placing (for now just polygon extraction from clusters)
+Example of footstep placing (for now just polygons extraction from clusters)
 ----------------------------------------------------------
 
 Term1:
