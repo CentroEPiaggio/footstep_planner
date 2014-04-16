@@ -12,6 +12,8 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/filter.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/surface/convex_hull.h>
+#include <visualization_msgs/Marker.h>
 
 // class object for the ROS node
 namespace plane_segmentation {
@@ -29,12 +31,15 @@ class CurvatureFilter
     ros::Publisher pub_colored_cloud_;
     ros::Publisher pub_filtered_cloud_;
     ros::Publisher pub_cluster_cloud_;
+    ros::Publisher pub_polygons_marker;
 
     //! Subscribers
     ros::Subscriber sub_input_cloud_;
 
     //! Services
     ros::ServiceServer srv_filter_cloud_;
+    
+    ros::ServiceServer srv_footstep_place;
 
     // downsample
     double voxel_size_;
@@ -47,12 +52,16 @@ class CurvatureFilter
 
     // euclidean cluster min size (related to the area, since we are filtering only planar regions on a grid)
     int min_cluster_size_;
-
+    
+    std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> > clusters;
+    
   public:
     //------------------ Callbacks -------------------
     // Callback for filtering the cloud
     // void filterByCurvature(const sensor_msgs::PointCloud2 & input);
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    
+    bool footstep_place(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
 
     //! Subscribes to and advertises topics
     CurvatureFilter(ros::NodeHandle nh) : nh_(nh), priv_nh_("~")
@@ -61,10 +70,12 @@ class CurvatureFilter
 		  pub_colored_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>(nh_.resolveName("colored_cloud"), 100);
       pub_filtered_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>(nh_.resolveName("filtered_cloud"), 100);
       pub_cluster_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>(nh_.resolveName("cluster_cloud"), 3000);
-
+      pub_polygons_marker = nh_.advertise<visualization_msgs::Marker>("/polygons_marker",1,this);
+      
      	//sub_input_cloud_ = nh_.subscribe(nh_.resolveName("input_cloud"), 100, &CurvatureFilter::filterByCurvature, this);
 
       srv_filter_cloud_ = nh_.advertiseService(nh_.resolveName("filter_by_curvature"), &CurvatureFilter::filterByCurvature, this);
+      srv_footstep_place = nh_.advertiseService(nh_.resolveName("footstep_place"), &CurvatureFilter::footstep_place, this);
 
       priv_nh_.param<double>("voxel_size", voxel_size_, 0.02);
       priv_nh_.param<double>("normal_radius", normal_radius_, 0.05);
@@ -238,6 +249,9 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
 
     pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_cluster;
     cloud_cluster = *cloud_cluster_ptr;
+    
+    clusters.push_back(cloud_cluster);
+
     sensor_msgs::PointCloud2 cluster_cloud_msg;
     pcl::toROSMsg(cloud_cluster, cluster_cloud_msg);
     cluster_cloud_msg.header = cloud_msg.header;
@@ -255,6 +269,90 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
   //return;
   return true;
 }
+
+
+bool CurvatureFilter::footstep_place(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+{
+    if(clusters.size()==0)
+    {
+	std::cout<<"No clusters to process, you should call the [/filter_by_curvature] service first"<<std::endl;
+	return false;
+    }
+    
+      
+    for (unsigned int i=0; i< clusters.size(); i++)
+    {
+	std::cout<<std::endl;
+	
+	std::cout<<"Size of cluster "<<i<<": "<<clusters.at(i).size()<<std::endl;
+	
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+	for (unsigned int j=0;j<clusters.at(i).size();j++)
+	{
+	      pcl::PointXYZ point;
+	      point.x=clusters.at(i).at(j).x;
+	      point.y=clusters.at(i).at(j).y;
+	      point.z=clusters.at(i).at(j).z;
+	      pCloud->push_back(point);
+	}
+	
+	pcl::ConvexHull<pcl::PointXYZ> cHull;
+	cHull.setDimension(3);
+	cHull.setInputCloud(pCloud);
+	
+	pcl::PointCloud<pcl::PointXYZ> cHull_points;
+	std::vector< pcl::Vertices > polygon;
+	cHull.reconstruct (cHull_points,polygon);
+	
+	std::cout<<"Evaluating convex hull . . . area : "<<cHull.getTotalArea()<<" , volume : "<<cHull.getTotalVolume()<<std::endl;
+	std::cout<<"Convex hull pcl size: "<<cHull_points.size()<<std::endl;
+	std::cout<<"Polygon's number of vertices: "<<polygon.size()<<std::endl;
+	
+	visualization_msgs::Marker marker;
+	
+	marker.header.frame_id="/camera_link";
+	marker.ns="polygons";
+	marker.id=i;
+	marker.type=visualization_msgs::Marker::LINE_STRIP;
+	
+	marker.scale.x=0.1;
+	
+	marker.color.r=1;
+	marker.color.g=0;
+	marker.color.b=0;
+	marker.color.a=1;
+	
+	
+	for (unsigned int j=0;j<polygon.size();j++) //ogni punto del poligono
+	{
+		pcl::Vertices vertices = polygon.at(j);
+		
+		geometry_msgs::Point point;
+		
+		for(unsigned int k=0;k<vertices.vertices.size();k++) //x y z
+		{
+			//std::cout<<vertices.vertices.at(k)<<' ';
+		}
+		
+		//std::cout<<std::endl;
+		
+		point.x = vertices.vertices.at(0);
+		point.y = vertices.vertices.at(1);
+		point.z = vertices.vertices.at(2);
+		
+		marker.points.push_back(point);
+	}
+		
+	pub_polygons_marker.publish(marker);
+	
+	std::cout<<"Polygon's marker published"<<std::endl;
+	break;
+    }
+    
+    return true;
+}
+
 
 } // namespace plane_segmentation
 
