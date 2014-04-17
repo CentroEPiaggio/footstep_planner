@@ -88,6 +88,8 @@ class CurvatureFilter
     //! Empty stub
     ~CurvatureFilter() {}
 
+    std::map< int , std::vector<uint8_t> > color_map;
+    
 };
 
 //void CurvatureFilter::filterByCurvature(const sensor_msgs::PointCloud2 & input)
@@ -165,6 +167,9 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
   uint8_t r, g, b;
   int32_t rgb; 
 
+  std::vector<uint8_t> color_vec;
+  color_vec.push_back(0);color_vec.push_back(0);color_vec.push_back(0);
+  
   pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_with_low_curvature;
   pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_with_low_curvature_ptr (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
   // filter and colour the cloud according to the curvature
@@ -251,7 +256,11 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
     cloud_cluster = *cloud_cluster_ptr;
     
     clusters.push_back(cloud_cluster);
-
+    color_vec.at(0)=r;
+    color_vec.at(1)=g;
+    color_vec.at(2)=b;
+    color_map[j]=color_vec;
+    
     sensor_msgs::PointCloud2 cluster_cloud_msg;
     pcl::toROSMsg(cloud_cluster, cluster_cloud_msg);
     cluster_cloud_msg.header = cloud_msg.header;
@@ -307,50 +316,82 @@ bool CurvatureFilter::footstep_place(std_srvs::Empty::Request& request, std_srvs
 	
 	std::cout<<"Evaluating convex hull . . . area : "<<cHull.getTotalArea()<<" , volume : "<<cHull.getTotalVolume()<<std::endl;
 	std::cout<<"Convex hull pcl size: "<<cHull_points.size()<<std::endl;
-	std::cout<<"Polygon's number of vertices: "<<polygon.size()<<std::endl;
+	std::cout<<"Convex hull's number of facets: "<<polygon.size()<<std::endl;
 	
 	visualization_msgs::Marker marker;
 	
 	marker.header.frame_id="/camera_link";
 	marker.ns="polygons";
 	marker.id=i;
-	marker.type=visualization_msgs::Marker::LINE_STRIP;
+// 	marker.type=visualization_msgs::Marker::LINE_STRIP;
+	marker.type=visualization_msgs::Marker::TRIANGLE_LIST;
 	
-	marker.scale.x=0.1;
+	marker.scale.x=1;
+	marker.scale.y=1;
+	marker.scale.z=1;
 	
-	marker.color.r=1;
-	marker.color.g=0;
-	marker.color.b=0;
 	marker.color.a=1;
 	
+	geometry_msgs::Point point;
 	
+	std_msgs::ColorRGBA color;
+	
+	color.a=0.25;
+// 	color.r=color_map.at(i).at(0);
+// 	color.g=color_map.at(i).at(1);
+// 	color.b=color_map.at(i).at(2);
+
 	for (unsigned int j=0;j<polygon.size();j++) //ogni punto del poligono
 	{
+// 		marker.id=i*polygon.size()+j;
+		
 		pcl::Vertices vertices = polygon.at(j);
 		
-		geometry_msgs::Point point;
+		color.r=255*((double)rand()/(double)RAND_MAX);
+		color.g=255*((double)rand()/(double)RAND_MAX);
+		color.b=255*((double)rand()/(double)RAND_MAX);
 		
-// 		for(unsigned int k=0;k<vertices.vertices.size();k++) //x y z
-// 		{
-// 			std::cout<<vertices.vertices.at(k)<<' ';
-// 		}
-// 		
-// 		std::cout<<std::endl;
+		//std::cout<<vertices<<std::endl;
 		
-		point.x = vertices.vertices.at(0);
-		point.y = vertices.vertices.at(1);
-		point.z = vertices.vertices.at(2);
+		point.x = cHull_points.at(vertices.vertices.at(0)).x;
+		point.y = cHull_points.at(vertices.vertices.at(0)).y;
+		point.z = cHull_points.at(vertices.vertices.at(0)).z;
 		
 		marker.points.push_back(point);
+		marker.colors.push_back(color);
+		
+		point.x = cHull_points.at(vertices.vertices.at(1)).x;
+		point.y = cHull_points.at(vertices.vertices.at(1)).y;
+		point.z = cHull_points.at(vertices.vertices.at(1)).z;
+		
+		marker.points.push_back(point);
+		marker.colors.push_back(color);
+		
+		point.x = cHull_points.at(vertices.vertices.at(2)).x;
+		point.y = cHull_points.at(vertices.vertices.at(2)).y;
+		point.z = cHull_points.at(vertices.vertices.at(2)).z;
+		
+		marker.points.push_back(point);
+		marker.colors.push_back(color);
+		
+// 		//to close the facet
+// 		point.x = cHull_points.at(vertices.vertices.at(0)).x;
+// 		point.y = cHull_points.at(vertices.vertices.at(0)).y;
+// 		point.z = cHull_points.at(vertices.vertices.at(0)).z;
+// 		
+// 		marker.points.push_back(point);
+		
+		
 	}
 		
 	pub_polygons_marker.publish(marker);
 	
-	std::cout<<"Polygon's marker published"<<std::endl;
-	break;
+	std::cout<<"Convex hull's marker published"<<std::endl;
     }
     
     return true;
+    
+    std::cout<<"Placing feet in planes..."<<std::endl;
 }
 
 
