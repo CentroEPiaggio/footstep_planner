@@ -36,3 +36,18 @@ Parameters:
 - the search radius in meters for the normal estimation
 - the curvature threshold for extract the planar areas in the downsampled cloud
 - the minimum cluster size for euclidean clustering
+
+Example of footstep placing (for now just polygons extraction from clusters)
+----------------------------------------------------------
+
+Term1:
+
+`roslaunch plane_segmentation curvature_filter.launch`
+
+Term2:
+
+`rosservice call /filter_by_curvature`
+
+Term2:
+
+`rosservice call /footstep_place`
