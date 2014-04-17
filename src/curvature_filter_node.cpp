@@ -314,6 +314,8 @@ bool CurvatureFilter::footstep_place(std_srvs::Empty::Request& request, std_srvs
 	std::vector< pcl::Vertices > polygon;
 	cHull.reconstruct (cHull_points,polygon);
 	
+	cHull.setComputeAreaVolume(true);
+	
 	std::cout<<"Evaluating convex hull . . . area : "<<cHull.getTotalArea()<<" , volume : "<<cHull.getTotalVolume()<<std::endl;
 	std::cout<<"Convex hull pcl size: "<<cHull_points.size()<<std::endl;
 	std::cout<<"Convex hull's number of facets: "<<polygon.size()<<std::endl;
