@@ -15,6 +15,7 @@
 #include <pcl/surface/convex_hull.h>
 #include <visualization_msgs/Marker.h>
 
+#include <eigen3/Eigen/Eigen>
 // class object for the ROS node
 namespace plane_segmentation {
 
@@ -389,8 +390,41 @@ bool CurvatureFilter::footstep_place(std_srvs::Empty::Request& request, std_srvs
 	pub_polygons_marker.publish(marker);
 	
 	std::cout<<"Convex hull's marker published"<<std::endl;
+	
+	Eigen::Matrix<double,4,1> centroid;
+	
+	if(pcl::compute3DCentroid(cHull_points, centroid ))
+	{
+		std::cout<<"Computing convex hull's centroid . . . "<<std::endl;
+		marker.ns="centroids";
+		marker.id=polygon.size()+i;
+		marker.type=visualization_msgs::Marker::SPHERE;
+		
+		marker.scale.x=0.05;
+		marker.scale.y=0.05;
+		marker.scale.z=0.05;
+		
+		marker.color.a=1;
+		marker.color.r=1;
+		marker.color.g=0;
+		marker.color.b=0;
+		
+		marker.pose.position.x=centroid[0];
+		marker.pose.position.y=centroid[1];
+		marker.pose.position.z=centroid[2];
+		
+		marker.pose.orientation.w=1;
+		marker.pose.orientation.x=0;
+		marker.pose.orientation.y=0;
+		marker.pose.orientation.z=0;
+		
+		pub_polygons_marker.publish(marker);
+	}
+	else std::cout<<"Error computing convex hull's centroid!"<<std::endl;
     }
     
+    
+        
     return true;
     
     std::cout<<"Placing feet in planes..."<<std::endl;
