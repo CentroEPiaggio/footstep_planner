@@ -330,12 +330,12 @@ bool CurvatureFilter::footstep_place(std_srvs::Empty::Request& request, std_srvs
 		
 		geometry_msgs::Point point;
 		
-		for(unsigned int k=0;k<vertices.vertices.size();k++) //x y z
-		{
-			//std::cout<<vertices.vertices.at(k)<<' ';
-		}
-		
-		//std::cout<<std::endl;
+// 		for(unsigned int k=0;k<vertices.vertices.size();k++) //x y z
+// 		{
+// 			std::cout<<vertices.vertices.at(k)<<' ';
+// 		}
+// 		
+// 		std::cout<<std::endl;
 		
 		point.x = vertices.vertices.at(0);
 		point.y = vertices.vertices.at(1);
