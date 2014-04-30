@@ -40,7 +40,7 @@ class CurvatureFilter
     //! Services
     ros::ServiceServer srv_filter_cloud_;
     
-    ros::ServiceServer srv_footstep_place;
+    ros::ServiceServer srv_convex_hull;
 
     // downsample
     double voxel_size_;
@@ -62,7 +62,7 @@ class CurvatureFilter
     // void filterByCurvature(const sensor_msgs::PointCloud2 & input);
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     
-    bool footstep_place(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    bool convex_hull(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
 
     //! Subscribes to and advertises topics
     CurvatureFilter(ros::NodeHandle nh) : nh_(nh), priv_nh_("~")
@@ -76,7 +76,7 @@ class CurvatureFilter
      	//sub_input_cloud_ = nh_.subscribe(nh_.resolveName("input_cloud"), 100, &CurvatureFilter::filterByCurvature, this);
 
       srv_filter_cloud_ = nh_.advertiseService(nh_.resolveName("filter_by_curvature"), &CurvatureFilter::filterByCurvature, this);
-      srv_footstep_place = nh_.advertiseService(nh_.resolveName("footstep_place"), &CurvatureFilter::footstep_place, this);
+      srv_convex_hull = nh_.advertiseService(nh_.resolveName("convex_hull"), &CurvatureFilter::convex_hull, this);
 
       priv_nh_.param<double>("voxel_size", voxel_size_, 0.02);
       priv_nh_.param<double>("normal_radius", normal_radius_, 0.05);
@@ -281,7 +281,7 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
 }
 
 
-bool CurvatureFilter::footstep_place(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+bool CurvatureFilter::convex_hull(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
     if(clusters.size()==0)
     {
@@ -318,7 +318,7 @@ bool CurvatureFilter::footstep_place(std_srvs::Empty::Request& request, std_srvs
 	cHull.setComputeAreaVolume(true);
 	
 	std::cout<<"Evaluating convex hull . . . area : "<<cHull.getTotalArea()<<" , volume : "<<cHull.getTotalVolume()<<std::endl;
-	std::cout<<"Convex hull pcl size: "<<cHull_points.size()<<std::endl;
+	std::cout<<"Convex hull pcl number of points: "<<cHull_points.size()<<std::endl;
 	std::cout<<"Convex hull's number of facets: "<<polygon.size()<<std::endl;
 	
 	visualization_msgs::Marker marker;
@@ -397,7 +397,7 @@ bool CurvatureFilter::footstep_place(std_srvs::Empty::Request& request, std_srvs
 	{
 		std::cout<<"Computing convex hull's centroid . . . "<<std::endl;
 		marker.ns="centroids";
-		marker.id=polygon.size()+i;
+		marker.id=i;
 		marker.type=visualization_msgs::Marker::SPHERE;
 		
 		marker.scale.x=0.05;
