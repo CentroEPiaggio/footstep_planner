@@ -12,7 +12,7 @@ find_package(catkin REQUIRED
 	tf
 	)
 
-find_package(PCL 1.2 REQUIRED)
+find_package(PCL 1.7 REQUIRED)
 
 add_message_files(
 	FILES
