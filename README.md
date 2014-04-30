@@ -68,6 +68,6 @@ Term2:
 
 Term2:
 
-`rosservice call /border_estimation`
+`rosservice call /border_extraction`
 
 The last service extracts borders from clusters
