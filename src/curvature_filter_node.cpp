@@ -19,6 +19,7 @@
 #include <pcl/features/range_image_border_extractor.h>
 #include <pcl/features/boundary.h>
 
+#include "psimpl.h"
 #include <eigen3/Eigen/Eigen>
 // class object for the ROS node
 namespace plane_segmentation {
@@ -38,6 +39,7 @@ class CurvatureFilter
     ros::Publisher pub_cluster_cloud_;
     ros::Publisher pub_polygons_marker;
     ros::Publisher pub_border_marker;
+    ros::Publisher pub_border_poly_marker;
     
     //! Subscribers
     ros::Subscriber sub_input_cloud_;
@@ -73,6 +75,8 @@ class CurvatureFilter
 
     bool border_extraction(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     
+    bool douglas_peucker_3d(pcl::PointCloud<pcl::PointXYZ>& input, pcl::PointCloud<pcl::PointXYZ>& output, double tolerance=10);
+    
     //! Subscribes to and advertises topics
     CurvatureFilter(ros::NodeHandle nh) : nh_(nh), priv_nh_("~")
     {
@@ -82,6 +86,8 @@ class CurvatureFilter
       pub_cluster_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>(nh_.resolveName("cluster_cloud"), 3000);
       pub_polygons_marker = nh_.advertise<visualization_msgs::Marker>("/polygons_marker",1,this);
       pub_border_marker = nh_.advertise<visualization_msgs::Marker>("/border_marker",1,this);
+      pub_border_poly_marker = nh_.advertise<visualization_msgs::Marker>("/border_poly_marker",1,this);
+
      	//sub_input_cloud_ = nh_.subscribe(nh_.resolveName("input_cloud"), 100, &CurvatureFilter::filterByCurvature, this);
 
       srv_filter_cloud_ = nh_.advertiseService(nh_.resolveName("filter_by_curvature"), &CurvatureFilter::filterByCurvature, this);
@@ -437,6 +443,45 @@ bool CurvatureFilter::convex_hull(std_srvs::Empty::Request& request, std_srvs::E
 }
 
 
+bool CurvatureFilter::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input, pcl::PointCloud< pcl::PointXYZ >& output,double tolerance)
+{
+    if(!input.size()) return false;
+        
+    std::deque <double> pcl_vector;
+    
+    for(unsigned int i=0;i<input.size();i++) {pcl_vector.push_back(input.at(i).x);pcl_vector.push_back(input.at(i).y);pcl_vector.push_back(input.at(i).z);};
+    
+    double* result = new double[pcl_vector.size()];
+  
+    
+    psimpl::simplify_douglas_peucker <3> (pcl_vector.begin (), pcl_vector.end (), tolerance, result);
+        
+    pcl::PointXYZ point;
+    
+    unsigned int j=0;
+    for(unsigned int i=0;i<pcl_vector.size();i++)
+    {
+	  if(j==0)
+	  {
+		point.x = result[i];
+		j++;
+	  }
+	  if(j==1)
+	  {
+		point.y = result[i];
+		j++;
+	  }
+	  if(j==2)
+	  {
+		point.z = result[i];
+		j=0;
+		output.push_back(point);
+	  }
+    }
+    
+    return true;
+}
+
 bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
     if(clusters.size()==0)
@@ -497,18 +542,20 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
 	}
 	
         normEst.setInputCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(cloud)); 
-        normEst.setRadiusSearch(5); 
+        normEst.setRadiusSearch(0.1); 
         normEst.compute(*normals); 
 
         boundEst.setInputCloud(cloud); 
         boundEst.setInputNormals(normals); 
-        boundEst.setRadiusSearch(5); 
+        boundEst.setRadiusSearch(0.1); 
         boundEst.setAngleThreshold(M_PI/4); 
         boundEst.setSearchMethod(pcl::search::KdTree<pcl::PointXYZ>::Ptr (new pcl::search::KdTree<pcl::PointXYZ>)); 
 	
 	std::cout<<"- Estimating border from cluster . . ."<<std::endl;
 	
         boundEst.compute(boundaries); 
+	
+	pcl::PointCloud<pcl::PointXYZ> border;
 
         for(int b = 0; b < cloud->points.size(); b++) 
         { 
@@ -522,6 +569,8 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
 			point.y = cloud->at(b).y;
 			point.z = cloud->at(b).z;
 			
+			border.push_back(cloud->at(b));
+			
 			marker.colors.push_back(color);
 			marker.points.push_back(point);
 		}
@@ -529,9 +578,49 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
         
 	marker.id=i;
 	
-	std::cout<<"- Border number of points: "<<marker.points.size()<<std::endl;
+	std::cout<<"- Border number of points: "<<border.size()<<std::endl;
 	
 	pub_border_marker.publish(marker);
+	
+	pcl::PointCloud<pcl::PointXYZ> border_polygon;
+	
+	std::cout<<"- Computing polygon approximating the border . . ."<<std::endl;
+	
+	if(!douglas_peucker_3d(border,border_polygon)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
+	
+	std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
+	
+	visualization_msgs::Marker marker2;
+    
+	marker2.header.frame_id="/camera_link";
+	marker2.ns="border_poly";
+	marker2.type=visualization_msgs::Marker::SPHERE_LIST;
+	
+	marker2.pose.position.x=0;
+	marker2.pose.position.y=0;
+	marker2.pose.position.z=0;
+	marker2.pose.orientation.w=1;
+	marker2.pose.orientation.x=0;
+	marker2.pose.orientation.y=0;
+	marker2.pose.orientation.z=0;
+	
+	marker2.scale.x=0.01;
+	marker2.scale.y=0.01;
+	marker2.scale.z=0.01;
+	marker2.color.a=1;
+	
+	for(int po = 0; po < border_polygon.points.size(); po++) 
+        { 
+                point.x = border_polygon.at(po).x;
+		point.y = border_polygon.at(po).y;
+		point.z = border_polygon.at(po).z;
+		
+		marker2.colors.push_back(color);
+		marker2.points.push_back(point);
+        }
+        
+        
+        pub_border_poly_marker.publish(marker2);
     }
     
     return true;
