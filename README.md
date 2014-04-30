@@ -37,7 +37,7 @@ Parameters:
 - the curvature threshold for extract the planar areas in the downsampled cloud
 - the minimum cluster size for euclidean clustering
 
-Example of footstep placing
+Example of convex hull estimation
 ----------------------------------------------------------
 
 Term1:
@@ -53,3 +53,21 @@ Term2:
 `rosservice call /convex_hull`
 
 The last service extracts the convex hulls from clusters, and compute the centroids
+
+
+Example of borders estimation
+----------------------------------------------------------
+
+Term1:
+
+`roslaunch plane_segmentation curvature_filter.launch`
+
+Term2:
+
+`rosservice call /filter_by_curvature`
+
+Term2:
+
+`rosservice call /border_estimation`
+
+The last service extracts borders from clusters
