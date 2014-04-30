@@ -50,6 +50,6 @@ Term2:
 
 Term2:
 
-`rosservice call /footstep_place`
+`rosservice call /convex_hull`
 
-The last service for now just extracts the convex hulls from clusters, and compute the centroids
+The last service extracts the convex hulls from clusters, and compute the centroids
