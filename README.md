@@ -37,7 +37,7 @@ Parameters:
 - the curvature threshold for extract the planar areas in the downsampled cloud
 - the minimum cluster size for euclidean clustering
 
-Example of footstep placing (for now just polygons extraction from clusters)
+Example of footstep placing
 ----------------------------------------------------------
 
 Term1:
@@ -51,3 +51,5 @@ Term2:
 Term2:
 
 `rosservice call /footstep_place`
+
+The last service for now just extracts the convex hulls from clusters, and compute the centroids
