@@ -452,9 +452,11 @@ bool CurvatureFilter::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input
     for(unsigned int i=0;i<input.size();i++) {pcl_vector.push_back(input.at(i).x);pcl_vector.push_back(input.at(i).y);pcl_vector.push_back(input.at(i).z);};
     
     double* result = new double[pcl_vector.size()];
+    
+    for(unsigned int h=0;h<pcl_vector.size();h++) result[h]=0.0;
   
     
-    double* iter = psimpl::simplify_douglas_peucker <3> (pcl_vector.begin (), pcl_vector.end (), tolerance, result);
+    double* iter = psimpl::simplify_douglas_peucker <3> (pcl_vector.begin(), pcl_vector.end(), tolerance, result);
         
     pcl::PointXYZ point;
     
@@ -464,7 +466,7 @@ bool CurvatureFilter::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input
     
     for(i=0;i<pcl_vector.size();i++)
     {
-          //if(&result[i] == iter) break;
+          if(&result[i] == iter) break;
 	  
 	  if(!control && j==0)
 	  {
@@ -620,7 +622,7 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
 	
 	std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
 	
-	if(!douglas_peucker_3d(border,border_polygon)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
+	if(!douglas_peucker_3d(border,border_polygon,0.1)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
 	
 	std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
 	
