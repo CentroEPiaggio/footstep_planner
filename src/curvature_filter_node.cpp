@@ -445,9 +445,11 @@ bool CurvatureFilter::convex_hull(std_srvs::Empty::Request& request, std_srvs::E
 
 bool CurvatureFilter::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input, pcl::PointCloud< pcl::PointXYZ >& output,double tolerance)
 {
+    //TODO: ordinare input per douglas_peucker_3d (std::sort)
+  
     if(!input.size()) return false;
         
-    std::deque <double> pcl_vector;
+    std::vector <double> pcl_vector;
     
     for(unsigned int i=0;i<input.size();i++) {pcl_vector.push_back(input.at(i).x);pcl_vector.push_back(input.at(i).y);pcl_vector.push_back(input.at(i).z);};
     
@@ -457,7 +459,8 @@ bool CurvatureFilter::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input
   
     
     double* iter = psimpl::simplify_douglas_peucker <3> (pcl_vector.begin(), pcl_vector.end(), tolerance, result);
-        
+    //double* iter = psimpl::simplify_douglas_peucker_n<3>(pcl_vector.begin(), pcl_vector.end(), 50, result);
+    
     pcl::PointXYZ point;
     
     unsigned int j=0;
