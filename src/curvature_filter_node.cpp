@@ -454,30 +454,44 @@ bool CurvatureFilter::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input
     double* result = new double[pcl_vector.size()];
   
     
-    psimpl::simplify_douglas_peucker <3> (pcl_vector.begin (), pcl_vector.end (), tolerance, result);
+    double* iter = psimpl::simplify_douglas_peucker <3> (pcl_vector.begin (), pcl_vector.end (), tolerance, result);
         
     pcl::PointXYZ point;
     
     unsigned int j=0;
-    for(unsigned int i=0;i<pcl_vector.size();i++)
+    bool control=false;
+    unsigned int i;
+    
+    for(i=0;i<pcl_vector.size();i++)
     {
-	  if(j==0)
+          //if(&result[i] == iter) break;
+	  
+	  if(!control && j==0)
 	  {
 		point.x = result[i];
 		j++;
+		control=true;
 	  }
-	  if(j==1)
+	  
+	  if(!control && j==1)
 	  {
 		point.y = result[i];
 		j++;
+		control=true;
 	  }
-	  if(j==2)
+	  
+	  if(!control && j==2)
 	  {
 		point.z = result[i];
 		j=0;
 		output.push_back(point);
 	  }
+	  
+	  control=false;
     }
+    
+    std::cout<<"- INFO: i = "<<i<<std::endl;
+    if(j!=0) {std::cout<<"- !! Error in output dimension (no 3d) !!"<<std::endl;}
     
     return true;
 }
@@ -491,6 +505,7 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
     }
     
     geometry_msgs::Point point;
+    
     visualization_msgs::Marker marker;
     
     marker.header.frame_id="/camera_link";
@@ -509,6 +524,25 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
     marker.scale.y=0.01;
     marker.scale.z=0.01;
     marker.color.a=1;
+    
+    visualization_msgs::Marker marker2;
+
+    marker2.header.frame_id="/camera_link";
+    marker2.ns="border_poly";
+    marker2.type=visualization_msgs::Marker::SPHERE_LIST;
+    
+    marker2.pose.position.x=0;
+    marker2.pose.position.y=0;
+    marker2.pose.position.z=0;
+    marker2.pose.orientation.w=1;
+    marker2.pose.orientation.x=0;
+    marker2.pose.orientation.y=0;
+    marker2.pose.orientation.z=0;
+    
+    marker2.scale.x=0.02;
+    marker2.scale.y=0.02;
+    marker2.scale.z=0.02;
+    marker2.color.a=1;
       
     for (unsigned int i=0; i< clusters.size(); i++)
     {
@@ -584,30 +618,11 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
 	
 	pcl::PointCloud<pcl::PointXYZ> border_polygon;
 	
-	std::cout<<"- Computing polygon approximating the border . . ."<<std::endl;
+	std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
 	
 	if(!douglas_peucker_3d(border,border_polygon)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
 	
 	std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
-	
-	visualization_msgs::Marker marker2;
-    
-	marker2.header.frame_id="/camera_link";
-	marker2.ns="border_poly";
-	marker2.type=visualization_msgs::Marker::SPHERE_LIST;
-	
-	marker2.pose.position.x=0;
-	marker2.pose.position.y=0;
-	marker2.pose.position.z=0;
-	marker2.pose.orientation.w=1;
-	marker2.pose.orientation.x=0;
-	marker2.pose.orientation.y=0;
-	marker2.pose.orientation.z=0;
-	
-	marker2.scale.x=0.01;
-	marker2.scale.y=0.01;
-	marker2.scale.z=0.01;
-	marker2.color.a=1;
 	
 	for(int po = 0; po < border_polygon.points.size(); po++) 
         { 
@@ -619,6 +634,7 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
 		marker2.points.push_back(point);
         }
         
+        marker2.id=i;
         
         pub_border_poly_marker.publish(marker2);
     }
