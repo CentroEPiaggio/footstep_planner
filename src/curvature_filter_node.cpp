@@ -443,7 +443,7 @@ bool CurvatureFilter::convex_hull(std_srvs::Empty::Request& request, std_srvs::E
 }
 
 
-bool sort_2d(pcl::PointXYZ a, pcl::PointXYZ b)
+bool compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
 {
     pcl::PointXYZ center;
     center.z=0.0;
@@ -474,11 +474,21 @@ bool sort_2d(pcl::PointXYZ a, pcl::PointXYZ b)
     return d1 > d2;
 }
 
+bool neg_compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
+{
+    return !(compare_2d(a,b));
+}
+
+bool atan_compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
+{
+    return atan2(a.y,a.x) < atan2(b.y,b.x);
+}
+
 bool CurvatureFilter::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input, pcl::PointCloud< pcl::PointXYZ >& output,double tolerance)
 {  
     if(!input.size()) return false;
     
-    std::sort(input.begin(),input.end(),sort_2d); //sorting input for douglas_peucker_3d procedure
+    std::sort(input.begin(),input.end(),atan_compare_2d); //sorting input for douglas_peucker_3d procedure
 
     
     std::vector <double> pcl_vector;
@@ -566,6 +576,7 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
     marker2.header.frame_id="/camera_link";
     marker2.ns="border_poly";
     marker2.type=visualization_msgs::Marker::SPHERE_LIST;
+    //marker2.type=visualization_msgs::Marker::LINE_STRIP;
     
     marker2.pose.position.x=0;
     marker2.pose.position.y=0;
@@ -656,7 +667,7 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
 	
 	std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
 	
-	if(!douglas_peucker_3d(border,border_polygon,0.2)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
+	if(!douglas_peucker_3d(border,border_polygon,0.05)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
 	
 	std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
 	
