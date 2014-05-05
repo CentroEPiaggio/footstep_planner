@@ -443,23 +443,54 @@ bool CurvatureFilter::convex_hull(std_srvs::Empty::Request& request, std_srvs::E
 }
 
 
-bool CurvatureFilter::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input, pcl::PointCloud< pcl::PointXYZ >& output,double tolerance)
+bool sort_2d(pcl::PointXYZ a, pcl::PointXYZ b)
 {
-    //TODO: ordinare input per douglas_peucker_3d (std::sort)
-  
+    pcl::PointXYZ center;
+    center.z=0.0;
+    center.x = (a.x + b.x)/2.0; 
+    center.y = (a.y + b.y)/2.0; 
+    
+    if (a.x - center.x >= 0 && b.x - center.x < 0)
+        return true;
+    if (a.x - center.x < 0 && b.x - center.x >= 0)
+        return false;
+    if (a.x - center.x == 0 && b.x - center.x == 0) {
+        if (a.y - center.y >= 0 || b.y - center.y >= 0)
+            return a.y > b.y;
+        return b.y > a.y;
+    }
+
+    // compute the cross product of vectors (center -> a) x (center -> b)
+    int det = (a.x - center.x) * (b.y - center.y) - (b.x - center.x) * (a.y - center.y);
+    if (det < 0)
+        return true;
+    if (det > 0)
+        return false;
+
+    // points a and b are on the same line from the center
+    // check which point is closer to the center
+    int d1 = (a.x - center.x) * (a.x - center.x) + (a.y - center.y) * (a.y - center.y);
+    int d2 = (b.x - center.x) * (b.x - center.x) + (b.y - center.y) * (b.y - center.y);
+    return d1 > d2;
+}
+
+bool CurvatureFilter::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input, pcl::PointCloud< pcl::PointXYZ >& output,double tolerance)
+{  
     if(!input.size()) return false;
-        
+    
+    std::sort(input.begin(),input.end(),sort_2d); //sorting input for douglas_peucker_3d procedure
+
+    
     std::vector <double> pcl_vector;
     
     for(unsigned int i=0;i<input.size();i++) {pcl_vector.push_back(input.at(i).x);pcl_vector.push_back(input.at(i).y);pcl_vector.push_back(input.at(i).z);};
     
     double* result = new double[pcl_vector.size()];
     
-    for(unsigned int h=0;h<pcl_vector.size();h++) result[h]=0.0;
-  
+    for(unsigned int h=0;h<pcl_vector.size();h++) result[h]=0.0;    
     
     double* iter = psimpl::simplify_douglas_peucker <3> (pcl_vector.begin(), pcl_vector.end(), tolerance, result);
-    //double* iter = psimpl::simplify_douglas_peucker_n<3>(pcl_vector.begin(), pcl_vector.end(), 50, result);
+    //double* iter = psimpl::simplify_douglas_peucker_n<3>(pcl_vector.begin(), pcl_vector.end(), 50, result); //variant
     
     pcl::PointXYZ point;
     
@@ -625,7 +656,7 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
 	
 	std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
 	
-	if(!douglas_peucker_3d(border,border_polygon,0.1)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
+	if(!douglas_peucker_3d(border,border_polygon,0.2)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
 	
 	std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
 	
