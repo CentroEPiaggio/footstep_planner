@@ -40,6 +40,7 @@ class CurvatureFilter
     ros::Publisher pub_polygons_marker;
     ros::Publisher pub_border_marker;
     ros::Publisher pub_border_poly_marker;
+    ros::Publisher pub_footstep;
     
     //! Subscribers
     ros::Subscriber sub_input_cloud_;
@@ -50,6 +51,8 @@ class CurvatureFilter
     ros::ServiceServer srv_convex_hull;
 
     ros::ServiceServer srv_border_extraction;
+    
+    ros::ServiceServer srv_footstep_placer;
     
     // downsample
     double voxel_size_;
@@ -65,6 +68,8 @@ class CurvatureFilter
     
     std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> > clusters;
     
+    std::vector< pcl::PointCloud<pcl::PointXYZ> > polygons;
+    
   public:
     //------------------ Callbacks -------------------
     // Callback for filtering the cloud
@@ -77,6 +82,8 @@ class CurvatureFilter
     
     bool douglas_peucker_3d(pcl::PointCloud<pcl::PointXYZ>& input, pcl::PointCloud<pcl::PointXYZ>& output, double tolerance=10);
     
+    bool footstep_placer(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    
     //! Subscribes to and advertises topics
     CurvatureFilter(ros::NodeHandle nh) : nh_(nh), priv_nh_("~")
     {
@@ -87,12 +94,14 @@ class CurvatureFilter
       pub_polygons_marker = nh_.advertise<visualization_msgs::Marker>("/polygons_marker",1,this);
       pub_border_marker = nh_.advertise<visualization_msgs::Marker>("/border_marker",1,this);
       pub_border_poly_marker = nh_.advertise<visualization_msgs::Marker>("/border_poly_marker",1,this);
+      pub_footstep = nh_.advertise<visualization_msgs::Marker>("/footstep_marker",1,this);
 
      	//sub_input_cloud_ = nh_.subscribe(nh_.resolveName("input_cloud"), 100, &CurvatureFilter::filterByCurvature, this);
 
       srv_filter_cloud_ = nh_.advertiseService(nh_.resolveName("filter_by_curvature"), &CurvatureFilter::filterByCurvature, this);
       srv_convex_hull = nh_.advertiseService(nh_.resolveName("convex_hull"), &CurvatureFilter::convex_hull, this);
       srv_border_extraction = nh_.advertiseService(nh_.resolveName("border_extraction"), &CurvatureFilter::border_extraction, this);
+      srv_footstep_placer = nh_.advertiseService(nh_.resolveName("footstep_placer"),&CurvatureFilter::footstep_placer, this);
       
       priv_nh_.param<double>("voxel_size", voxel_size_, 0.02);
       priv_nh_.param<double>("normal_radius", normal_radius_, 0.05);
@@ -671,6 +680,8 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
 	
 	std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
 	
+	polygons.push_back(border_polygon);
+	
 	for(int po = 0; po < border_polygon.points.size(); po++) 
         { 
                 point.x = border_polygon.at(po).x;
@@ -689,6 +700,55 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
     return true;
 }
 
+
+bool CurvatureFilter::footstep_placer(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+{
+        if(polygons.size()==0) {std::cout<<"No polygons to process, you should call the [/filter_by_curvature] and [/border_extraction] services first"<<std::endl; return false;}
+	std::cout<<"> Number of polygons: "<<polygons.size()<<std::endl;
+	
+	visualization_msgs::Marker marker;
+	marker.type = visualization_msgs::Marker::CUBE;
+	marker.header.frame_id="/camera_link";
+	marker.scale.x=0.1;
+	marker.scale.y=0.05;
+	marker.scale.z=0.02;
+	marker.ns = "feet";
+	marker.color.a=1;
+	marker.color.b=0;
+	bool left=true;
+	
+	for(unsigned int i=0;i<polygons.size();i++)
+	{
+		 std::cout<<"> Polygon number of points: "<<polygons.at(i).size()<<std::endl;
+		
+		
+		//for now we place the foot in the centroid of the polygon (safe if convex)
+		
+		Eigen::Matrix<double,4,1> centroid;
+		
+		if(pcl::compute3DCentroid(polygons.at(i), centroid ))
+		{
+			if(left){ marker.color.r=1; marker.color.g=0; left=false;}
+			else { marker.color.r=0; marker.color.g=1; left=true;}
+			
+			marker.pose.position.x=centroid[0];
+			marker.pose.position.y=centroid[1];
+			marker.pose.position.z=centroid[2];
+			
+			marker.pose.orientation.w=1; //TODO: orientation (x,y) as the plane where is placed!
+			marker.pose.orientation.x=0;
+			marker.pose.orientation.y=0;
+			marker.pose.orientation.z=0;
+			
+			marker.id = i;
+			
+			std::cout<<"> Foot Placed in the centroid of the polygon"<<std::endl;
+			
+			pub_footstep.publish(marker);
+			
+		} else std::cout<<"!! Error in computing the centroid !!"<<std::endl;
+	}
+}
 
 
 } // namespace plane_segmentation
