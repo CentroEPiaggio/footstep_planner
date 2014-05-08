@@ -70,4 +70,26 @@ Term2:
 
 `rosservice call /border_extraction`
 
-The last service extracts borders from clusters
+The last service extracts borders from clusters and generate related polygons
+
+
+Example of footstep placing
+----------------------------------------------------------
+
+Term1:
+
+`roslaunch plane_segmentation curvature_filter.launch`
+
+Term2:
+
+`rosservice call /filter_by_curvature`
+
+Term2:
+
+`rosservice call /border_extraction`
+
+Term2:
+
+`rosservice call /footstep_placer`
+
+The last service for now just place the feet in the centroid of the polygons (safe if polygons are convex)
