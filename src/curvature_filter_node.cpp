@@ -14,13 +14,16 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/filter.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/segmentation/conditional_euclidean_clustering.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/range_image/range_image.h>
 #include <pcl/features/range_image_border_extractor.h>
 #include <pcl/features/boundary.h>
+#include <pcl/io/io.h>
 
 #include "psimpl.h"
 #include <eigen3/Eigen/Eigen>
+
 // class object for the ROS node
 namespace plane_segmentation {
 
@@ -66,6 +69,9 @@ class CurvatureFilter
     // euclidean cluster min size (related to the area, since we are filtering only planar regions on a grid)
     int min_cluster_size_;
     
+    // euclidean cluster tolerance
+    double cluster_tolerance_;
+
     std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> > clusters;
     
     std::vector< pcl::PointCloud<pcl::PointXYZ> > polygons;
@@ -74,6 +80,7 @@ class CurvatureFilter
     //------------------ Callbacks -------------------
     // Callback for filtering the cloud
     // void filterByCurvature(const sensor_msgs::PointCloud2 & input);
+
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     
     bool convex_hull(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
@@ -87,8 +94,8 @@ class CurvatureFilter
     //! Subscribes to and advertises topics
     CurvatureFilter(ros::NodeHandle nh) : nh_(nh), priv_nh_("~")
     {
-   		// init publishers and subscribers
-		  pub_colored_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>(nh_.resolveName("colored_cloud"), 100);
+      // init publishers and subscribers
+      pub_colored_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>(nh_.resolveName("colored_cloud"), 100);
       pub_filtered_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>(nh_.resolveName("filtered_cloud"), 100);
       pub_cluster_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>(nh_.resolveName("cluster_cloud"), 3000);
       pub_polygons_marker = nh_.advertise<visualization_msgs::Marker>("/polygons_marker",1,this);
@@ -96,7 +103,7 @@ class CurvatureFilter
       pub_border_poly_marker = nh_.advertise<visualization_msgs::Marker>("/border_poly_marker",1,this);
       pub_footstep = nh_.advertise<visualization_msgs::Marker>("/footstep_marker",1,this);
 
-     	//sub_input_cloud_ = nh_.subscribe(nh_.resolveName("input_cloud"), 100, &CurvatureFilter::filterByCurvature, this);
+      //sub_input_cloud_ = nh_.subscribe(nh_.resolveName("input_cloud"), 100, &CurvatureFilter::filterByCurvature, this);
 
       srv_filter_cloud_ = nh_.advertiseService(nh_.resolveName("filter_by_curvature"), &CurvatureFilter::filterByCurvature, this);
       srv_convex_hull = nh_.advertiseService(nh_.resolveName("convex_hull"), &CurvatureFilter::convex_hull, this);
@@ -107,6 +114,7 @@ class CurvatureFilter
       priv_nh_.param<double>("normal_radius", normal_radius_, 0.05);
       priv_nh_.param<double>("curvature_threshold", curvature_threshold_, 0.01);
       priv_nh_.param<int>("min_cluster_size", min_cluster_size_, 100);
+      priv_nh_.param<double>("cluster_tolerance", cluster_tolerance_, 100);
       
 
     }
@@ -117,6 +125,20 @@ class CurvatureFilter
     std::map< int , std::vector<uint8_t> > color_map;
     
 };
+
+// custom condition for euclidean clustering
+// for instance check the difference of the normals in clusters
+bool enforceCurvature (const pcl::PointXYZRGBNormal& point_a, const pcl::PointXYZRGBNormal& point_b, float squared_distance)
+{
+  Eigen::Map<const Eigen::Vector3f> point_a_normal = point_a.normal, point_b_normal = point_b.normal;
+
+  // TODO: avoid this magic number here!
+  if (fabs (point_a_normal.dot (point_b_normal)) > 0.9995)
+  {
+    return (true);
+  }
+  return (false);
+}
 
 //void CurvatureFilter::filterByCurvature(const sensor_msgs::PointCloud2 & input)
 bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
@@ -144,14 +166,14 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
   std::vector<int> nans;
   pcl::removeNaNFromPointCloud(*input_cloud_ptr, *cloud_ptr, nans);
 
-	pcl::VoxelGrid<pcl::PointXYZRGB> grid;
+  pcl::VoxelGrid<pcl::PointXYZRGB> grid;
   grid.setLeafSize (voxel_size_, voxel_size_, voxel_size_);
-	grid.setFilterFieldName ("z");
-	grid.setDownsampleAllData (false);
-	grid.setInputCloud (cloud_ptr);
+  grid.setFilterFieldName ("z");
+  grid.setDownsampleAllData (false);
+  grid.setInputCloud (cloud_ptr);
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_downsampled_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
-	grid.filter (*cloud_downsampled_ptr);
+  grid.filter (*cloud_downsampled_ptr);
 
   pcl::PointCloud<pcl::PointXYZRGB> cloud;
   cloud = *cloud_downsampled_ptr;
@@ -171,6 +193,10 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
   pcl::concatenateFields( *cloud_downsampled_ptr, *cloud_normals_ptr, *cloud_with_normals_ptr );
   pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_with_normals;
   cloud_with_normals = *cloud_with_normals_ptr;
+
+  // // write file to check normals
+  // pcl::io::savePCDFileBinaryCompressed("scene_with_normals.pcd", cloud_with_normals);
+  // // write file to check normals
 
 
   int N = (int) cloud_with_normals.points.size();
@@ -201,7 +227,7 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
   // filter and colour the cloud according to the curvature
   for (int i = 0; i < N; i++)
   {
-  	c = cloud_with_normals.points[i].curvature;
+    c = cloud_with_normals.points[i].curvature;
     //ROS_INFO("Curvature %f", c);
     if (c > curvature_threshold_)
     {
@@ -221,6 +247,8 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
 
       // keep this ones in a separate cloud
       cloud_with_low_curvature_ptr->points.push_back(cloud_with_normals.points[i]);
+
+      //std::cout << " cloud_with_normals.points[i].curvature: " <<  cloud_with_normals.points[i].curvature << std::endl;
     }
   }
 
@@ -237,17 +265,20 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
   pub_filtered_cloud_.publish(another_cloud_msg);
 
 
-  // perform euclidean clustering on the cloud with planar areas only
+  // perform conditional euclidean clustering on the cloud with planar areas only
   // we need another tree because this cloud is different
   pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr another_tree (new pcl::search::KdTree<pcl::PointXYZRGBNormal>);
   std::vector<pcl::PointIndices> cluster_indices;
-  pcl::EuclideanClusterExtraction<pcl::PointXYZRGBNormal> ec;
-  ec.setClusterTolerance (0.02); // 2cm
-  ec.setMinClusterSize (min_cluster_size_); // related to the area since we are in a planar grid
-  ec.setMaxClusterSize (2500000);
-  ec.setSearchMethod (another_tree);
+  //pcl::EuclideanClusterExtraction<pcl::PointXYZRGBNormal> ec;
+  pcl::ConditionalEuclideanClustering<pcl::PointXYZRGBNormal> ec;
+  ec.setClusterTolerance (cluster_tolerance_);
+  ec.setMinClusterSize (min_cluster_size_);
+  ec.setMaxClusterSize (10000000); // a point cloud only has around 300000 so we are safe here
+  //ec.setSearchMethod (another_tree);
   ec.setInputCloud (cloud_with_low_curvature_ptr);
-  ec.extract (cluster_indices);
+  ec.setConditionFunction(plane_segmentation::enforceCurvature);
+  // ec.extract (cluster_indices);
+  ec.segment (cluster_indices);
 
   ROS_INFO( "Found %lu clusters", cluster_indices.size() );
 
@@ -290,9 +321,14 @@ bool CurvatureFilter::filterByCurvature(std_srvs::Empty::Request& request, std_s
     sensor_msgs::PointCloud2 cluster_cloud_msg;
     pcl::toROSMsg(cloud_cluster, cluster_cloud_msg);
     cluster_cloud_msg.header = cloud_msg.header;
+    cluster_cloud_msg.header.seq = j++;
     pub_cluster_cloud_.publish(cluster_cloud_msg);
 
     ROS_INFO( "Cluster %i: %lu points" , j, cloud_cluster.points.size() );
+
+    ros::Duration half_sec(0.5);
+    half_sec.sleep();
+
 
     j++;
   }
@@ -310,142 +346,142 @@ bool CurvatureFilter::convex_hull(std_srvs::Empty::Request& request, std_srvs::E
 {
     if(clusters.size()==0)
     {
-	std::cout<<"No clusters to process, you should call the [/filter_by_curvature] service first"<<std::endl;
-	return false;
+  std::cout<<"No clusters to process, you should call the [/filter_by_curvature] service first"<<std::endl;
+  return false;
     }
     
       
     for (unsigned int i=0; i< clusters.size(); i++)
     {
-	std::cout<<std::endl;
-	
-	std::cout<<"Size of cluster "<<i<<": "<<clusters.at(i).size()<<std::endl;
-	
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud(new pcl::PointCloud<pcl::PointXYZ>);
+  std::cout<<std::endl;
+  
+  std::cout<<"Size of cluster "<<i<<": "<<clusters.at(i).size()<<std::endl;
+  
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pCloud(new pcl::PointCloud<pcl::PointXYZ>);
 
-	for (unsigned int j=0;j<clusters.at(i).size();j++)
-	{
-	      pcl::PointXYZ point;
-	      point.x=clusters.at(i).at(j).x;
-	      point.y=clusters.at(i).at(j).y;
-	      point.z=clusters.at(i).at(j).z;
-	      pCloud->push_back(point);
-	}
-	
-	pcl::ConvexHull<pcl::PointXYZ> cHull;
-	cHull.setDimension(3);
-	cHull.setInputCloud(pCloud);
-	
-	pcl::PointCloud<pcl::PointXYZ> cHull_points;
-	std::vector< pcl::Vertices > polygon;
-	cHull.reconstruct (cHull_points,polygon);
-	
-	cHull.setComputeAreaVolume(true);
-	
-	std::cout<<"Evaluating convex hull . . . area : "<<cHull.getTotalArea()<<" , volume : "<<cHull.getTotalVolume()<<std::endl;
-	std::cout<<"Convex hull pcl number of points: "<<cHull_points.size()<<std::endl;
-	std::cout<<"Convex hull's number of facets: "<<polygon.size()<<std::endl;
-	
-	visualization_msgs::Marker marker;
-	
-	marker.header.frame_id="/camera_link";
-	marker.ns="polygons";
-	marker.id=i;
-// 	marker.type=visualization_msgs::Marker::LINE_STRIP;
-	marker.type=visualization_msgs::Marker::TRIANGLE_LIST;
-	
-	marker.scale.x=1;
-	marker.scale.y=1;
-	marker.scale.z=1;
-	
-	marker.color.a=1;
-	
-	geometry_msgs::Point point;
-	
-	std_msgs::ColorRGBA color;
-	
-	color.a=0.25;
-// 	color.r=color_map.at(i).at(0);
-// 	color.g=color_map.at(i).at(1);
-// 	color.b=color_map.at(i).at(2);
+  for (unsigned int j=0;j<clusters.at(i).size();j++)
+  {
+        pcl::PointXYZ point;
+        point.x=clusters.at(i).at(j).x;
+        point.y=clusters.at(i).at(j).y;
+        point.z=clusters.at(i).at(j).z;
+        pCloud->push_back(point);
+  }
+  
+  pcl::ConvexHull<pcl::PointXYZ> cHull;
+  cHull.setDimension(3);
+  cHull.setInputCloud(pCloud);
+  
+  pcl::PointCloud<pcl::PointXYZ> cHull_points;
+  std::vector< pcl::Vertices > polygon;
+  cHull.reconstruct (cHull_points,polygon);
+  
+  cHull.setComputeAreaVolume(true);
+  
+  std::cout<<"Evaluating convex hull . . . area : "<<cHull.getTotalArea()<<" , volume : "<<cHull.getTotalVolume()<<std::endl;
+  std::cout<<"Convex hull pcl number of points: "<<cHull_points.size()<<std::endl;
+  std::cout<<"Convex hull's number of facets: "<<polygon.size()<<std::endl;
+  
+  visualization_msgs::Marker marker;
+  
+  marker.header.frame_id="/camera_link";
+  marker.ns="polygons";
+  marker.id=i;
+//  marker.type=visualization_msgs::Marker::LINE_STRIP;
+  marker.type=visualization_msgs::Marker::TRIANGLE_LIST;
+  
+  marker.scale.x=1;
+  marker.scale.y=1;
+  marker.scale.z=1;
+  
+  marker.color.a=1;
+  
+  geometry_msgs::Point point;
+  
+  std_msgs::ColorRGBA color;
+  
+  color.a=0.25;
+//  color.r=color_map.at(i).at(0);
+//  color.g=color_map.at(i).at(1);
+//  color.b=color_map.at(i).at(2);
 
-	for (unsigned int j=0;j<polygon.size();j++) //ogni punto del poligono
-	{
-// 		marker.id=i*polygon.size()+j;
-		
-		pcl::Vertices vertices = polygon.at(j);
-		
-		color.r=255*((double)rand()/(double)RAND_MAX);
-		color.g=255*((double)rand()/(double)RAND_MAX);
-		color.b=255*((double)rand()/(double)RAND_MAX);
-		
-		//std::cout<<vertices<<std::endl;
-		
-		point.x = cHull_points.at(vertices.vertices.at(0)).x;
-		point.y = cHull_points.at(vertices.vertices.at(0)).y;
-		point.z = cHull_points.at(vertices.vertices.at(0)).z;
-		
-		marker.points.push_back(point);
-		marker.colors.push_back(color);
-		
-		point.x = cHull_points.at(vertices.vertices.at(1)).x;
-		point.y = cHull_points.at(vertices.vertices.at(1)).y;
-		point.z = cHull_points.at(vertices.vertices.at(1)).z;
-		
-		marker.points.push_back(point);
-		marker.colors.push_back(color);
-		
-		point.x = cHull_points.at(vertices.vertices.at(2)).x;
-		point.y = cHull_points.at(vertices.vertices.at(2)).y;
-		point.z = cHull_points.at(vertices.vertices.at(2)).z;
-		
-		marker.points.push_back(point);
-		marker.colors.push_back(color);
-		
-// 		//to close the facet
-// 		point.x = cHull_points.at(vertices.vertices.at(0)).x;
-// 		point.y = cHull_points.at(vertices.vertices.at(0)).y;
-// 		point.z = cHull_points.at(vertices.vertices.at(0)).z;
-// 		
-// 		marker.points.push_back(point);
-		
-		
-	}
-		
-	pub_polygons_marker.publish(marker);
-	
-	std::cout<<"Convex hull's marker published"<<std::endl;
-	
-	Eigen::Matrix<double,4,1> centroid;
-	
-	if(pcl::compute3DCentroid(cHull_points, centroid ))
-	{
-		std::cout<<"Computing convex hull's centroid . . . "<<std::endl;
-		marker.ns="centroids";
-		marker.id=i;
-		marker.type=visualization_msgs::Marker::SPHERE;
-		
-		marker.scale.x=0.05;
-		marker.scale.y=0.05;
-		marker.scale.z=0.05;
-		
-		marker.color.a=1;
-		marker.color.r=1;
-		marker.color.g=0;
-		marker.color.b=0;
-		
-		marker.pose.position.x=centroid[0];
-		marker.pose.position.y=centroid[1];
-		marker.pose.position.z=centroid[2];
-		
-		marker.pose.orientation.w=1;
-		marker.pose.orientation.x=0;
-		marker.pose.orientation.y=0;
-		marker.pose.orientation.z=0;
-		
-		pub_polygons_marker.publish(marker);
-	}
-	else std::cout<<"Error computing convex hull's centroid!"<<std::endl;
+  for (unsigned int j=0;j<polygon.size();j++) //ogni punto del poligono
+  {
+//    marker.id=i*polygon.size()+j;
+    
+    pcl::Vertices vertices = polygon.at(j);
+    
+    color.r=255*((double)rand()/(double)RAND_MAX);
+    color.g=255*((double)rand()/(double)RAND_MAX);
+    color.b=255*((double)rand()/(double)RAND_MAX);
+    
+    //std::cout<<vertices<<std::endl;
+    
+    point.x = cHull_points.at(vertices.vertices.at(0)).x;
+    point.y = cHull_points.at(vertices.vertices.at(0)).y;
+    point.z = cHull_points.at(vertices.vertices.at(0)).z;
+    
+    marker.points.push_back(point);
+    marker.colors.push_back(color);
+    
+    point.x = cHull_points.at(vertices.vertices.at(1)).x;
+    point.y = cHull_points.at(vertices.vertices.at(1)).y;
+    point.z = cHull_points.at(vertices.vertices.at(1)).z;
+    
+    marker.points.push_back(point);
+    marker.colors.push_back(color);
+    
+    point.x = cHull_points.at(vertices.vertices.at(2)).x;
+    point.y = cHull_points.at(vertices.vertices.at(2)).y;
+    point.z = cHull_points.at(vertices.vertices.at(2)).z;
+    
+    marker.points.push_back(point);
+    marker.colors.push_back(color);
+    
+//    //to close the facet
+//    point.x = cHull_points.at(vertices.vertices.at(0)).x;
+//    point.y = cHull_points.at(vertices.vertices.at(0)).y;
+//    point.z = cHull_points.at(vertices.vertices.at(0)).z;
+//    
+//    marker.points.push_back(point);
+    
+    
+  }
+    
+  pub_polygons_marker.publish(marker);
+  
+  std::cout<<"Convex hull's marker published"<<std::endl;
+  
+  Eigen::Matrix<double,4,1> centroid;
+  
+  if(pcl::compute3DCentroid(cHull_points, centroid ))
+  {
+    std::cout<<"Computing convex hull's centroid . . . "<<std::endl;
+    marker.ns="centroids";
+    marker.id=i;
+    marker.type=visualization_msgs::Marker::SPHERE;
+    
+    marker.scale.x=0.05;
+    marker.scale.y=0.05;
+    marker.scale.z=0.05;
+    
+    marker.color.a=1;
+    marker.color.r=1;
+    marker.color.g=0;
+    marker.color.b=0;
+    
+    marker.pose.position.x=centroid[0];
+    marker.pose.position.y=centroid[1];
+    marker.pose.position.z=centroid[2];
+    
+    marker.pose.orientation.w=1;
+    marker.pose.orientation.x=0;
+    marker.pose.orientation.y=0;
+    marker.pose.orientation.z=0;
+    
+    pub_polygons_marker.publish(marker);
+  }
+  else std::cout<<"Error computing convex hull's centroid!"<<std::endl;
     }
     
     return true;
@@ -520,29 +556,29 @@ bool CurvatureFilter::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input
     for(i=0;i<pcl_vector.size();i++)
     {
           if(&result[i] == iter) break;
-	  
-	  if(!control && j==0)
-	  {
-		point.x = result[i];
-		j++;
-		control=true;
-	  }
-	  
-	  if(!control && j==1)
-	  {
-		point.y = result[i];
-		j++;
-		control=true;
-	  }
-	  
-	  if(!control && j==2)
-	  {
-		point.z = result[i];
-		j=0;
-		output.push_back(point);
-	  }
-	  
-	  control=false;
+    
+    if(!control && j==0)
+    {
+    point.x = result[i];
+    j++;
+    control=true;
+    }
+    
+    if(!control && j==1)
+    {
+    point.y = result[i];
+    j++;
+    control=true;
+    }
+    
+    if(!control && j==2)
+    {
+    point.z = result[i];
+    j=0;
+    output.push_back(point);
+    }
+    
+    control=false;
     }
     
     std::cout<<"- INFO: i = "<<i<<std::endl;
@@ -555,8 +591,8 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
 {
     if(clusters.size()==0)
     {
-	std::cout<<"No clusters to process, you should call the [/filter_by_curvature] service first"<<std::endl;
-	return false;
+  std::cout<<"No clusters to process, you should call the [/filter_by_curvature] service first"<<std::endl;
+  return false;
     }
     
     geometry_msgs::Point point;
@@ -602,35 +638,35 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
       
     for (unsigned int i=0; i< clusters.size(); i++)
     {
-	std::cout<<std::endl;
-	
-	std::cout<<"- Size of cluster "<<i<<": "<<clusters.at(i).size()<<std::endl;
-	
+  std::cout<<std::endl;
+  
+  std::cout<<"- Size of cluster "<<i<<": "<<clusters.at(i).size()<<std::endl;
+  
         pcl::PointCloud<pcl::Boundary> boundaries; 
         pcl::BoundaryEstimation<pcl::PointXYZ, pcl::Normal, pcl::Boundary> boundEst; 
         pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normEst; 
         pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>); 
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>); 
-	
-	pcl::PointXYZ pcl_point;
-	std_msgs::ColorRGBA color;
-	color.r=clusters.at(i).at(0).r;
-	color.g=clusters.at(i).at(0).g;
-	color.b=clusters.at(i).at(0).b;
-		
-	
-	color.a=0.25;
-	
-	for(unsigned int pc=0; pc<clusters.at(i).size();pc++)
-	{
-	        pcl_point.x = clusters.at(i).at(pc).x;
-	        pcl_point.y = clusters.at(i).at(pc).y;
-		pcl_point.z = clusters.at(i).at(pc).z;
-				
-		cloud->points.push_back(pcl_point);
-	}
-	
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>); 
+  
+  pcl::PointXYZ pcl_point;
+  std_msgs::ColorRGBA color;
+  color.r=clusters.at(i).at(0).r;
+  color.g=clusters.at(i).at(0).g;
+  color.b=clusters.at(i).at(0).b;
+    
+  
+  color.a=0.25;
+  
+  for(unsigned int pc=0; pc<clusters.at(i).size();pc++)
+  {
+          pcl_point.x = clusters.at(i).at(pc).x;
+          pcl_point.y = clusters.at(i).at(pc).y;
+    pcl_point.z = clusters.at(i).at(pc).z;
+        
+    cloud->points.push_back(pcl_point);
+  }
+  
         normEst.setInputCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(cloud)); 
         normEst.setRadiusSearch(0.1); 
         normEst.compute(*normals); 
@@ -640,12 +676,12 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
         boundEst.setRadiusSearch(0.1); 
         boundEst.setAngleThreshold(M_PI/4); 
         boundEst.setSearchMethod(pcl::search::KdTree<pcl::PointXYZ>::Ptr (new pcl::search::KdTree<pcl::PointXYZ>)); 
-	
-	std::cout<<"- Estimating border from cluster . . ."<<std::endl;
-	
+  
+  std::cout<<"- Estimating border from cluster . . ."<<std::endl;
+  
         boundEst.compute(boundaries); 
-	
-	pcl::PointCloud<pcl::PointXYZ> border;
+  
+  pcl::PointCloud<pcl::PointXYZ> border;
 
         for(int b = 0; b < cloud->points.size(); b++) 
         { 
@@ -654,42 +690,42 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
                         //not in the boundary
                 } 
                 else
-	        {  
-			point.x = cloud->at(b).x;
-			point.y = cloud->at(b).y;
-			point.z = cloud->at(b).z;
-			
-			border.push_back(cloud->at(b));
-			
-			marker.colors.push_back(color);
-			marker.points.push_back(point);
-		}
+          {  
+      point.x = cloud->at(b).x;
+      point.y = cloud->at(b).y;
+      point.z = cloud->at(b).z;
+      
+      border.push_back(cloud->at(b));
+      
+      marker.colors.push_back(color);
+      marker.points.push_back(point);
+    }
         } 
         
-	marker.id=i;
-	
-	std::cout<<"- Border number of points: "<<border.size()<<std::endl;
-	
-	pub_border_marker.publish(marker);
-	
-	pcl::PointCloud<pcl::PointXYZ> border_polygon;
-	
-	std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
-	
-	if(!douglas_peucker_3d(border,border_polygon,0.05)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
-	
-	std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
-	
-	polygons.push_back(border_polygon);
-	
-	for(int po = 0; po < border_polygon.points.size(); po++) 
+  marker.id=i;
+  
+  std::cout<<"- Border number of points: "<<border.size()<<std::endl;
+  
+  pub_border_marker.publish(marker);
+  
+  pcl::PointCloud<pcl::PointXYZ> border_polygon;
+  
+  std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
+  
+  if(!douglas_peucker_3d(border,border_polygon,0.05)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
+  
+  std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
+  
+  polygons.push_back(border_polygon);
+  
+  for(int po = 0; po < border_polygon.points.size(); po++) 
         { 
                 point.x = border_polygon.at(po).x;
-		point.y = border_polygon.at(po).y;
-		point.z = border_polygon.at(po).z;
-		
-		marker2.colors.push_back(color);
-		marker2.points.push_back(point);
+    point.y = border_polygon.at(po).y;
+    point.z = border_polygon.at(po).z;
+    
+    marker2.colors.push_back(color);
+    marker2.points.push_back(point);
         }
         
         marker2.id=i;
@@ -704,50 +740,50 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
 bool CurvatureFilter::footstep_placer(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
         if(polygons.size()==0) {std::cout<<"No polygons to process, you should call the [/filter_by_curvature] and [/border_extraction] services first"<<std::endl; return false;}
-	std::cout<<"> Number of polygons: "<<polygons.size()<<std::endl;
-	
-	visualization_msgs::Marker marker;
-	marker.type = visualization_msgs::Marker::CUBE;
-	marker.header.frame_id="/camera_link";
-	marker.scale.x=0.1;
-	marker.scale.y=0.05;
-	marker.scale.z=0.02;
-	marker.ns = "feet";
-	marker.color.a=1;
-	marker.color.b=0;
-	bool left=true;
-	
-	for(unsigned int i=0;i<polygons.size();i++)
-	{
-		 std::cout<<"> Polygon number of points: "<<polygons.at(i).size()<<std::endl;
-		
-		
-		//for now we place the foot in the centroid of the polygon (safe if convex)
-		
-		Eigen::Matrix<double,4,1> centroid;
-		
-		if(pcl::compute3DCentroid(polygons.at(i), centroid ))
-		{
-			if(left){ marker.color.r=1; marker.color.g=0; left=false;}
-			else { marker.color.r=0; marker.color.g=1; left=true;}
-			
-			marker.pose.position.x=centroid[0];
-			marker.pose.position.y=centroid[1];
-			marker.pose.position.z=centroid[2];
-			
-			marker.pose.orientation.w=1; //TODO: orientation (x,y) as the plane where is placed!
-			marker.pose.orientation.x=0;
-			marker.pose.orientation.y=0;
-			marker.pose.orientation.z=0;
-			
-			marker.id = i;
-			
-			std::cout<<"> Foot Placed in the centroid of the polygon"<<std::endl;
-			
-			pub_footstep.publish(marker);
-			
-		} else std::cout<<"!! Error in computing the centroid !!"<<std::endl;
-	}
+  std::cout<<"> Number of polygons: "<<polygons.size()<<std::endl;
+  
+  visualization_msgs::Marker marker;
+  marker.type = visualization_msgs::Marker::CUBE;
+  marker.header.frame_id="/camera_link";
+  marker.scale.x=0.1;
+  marker.scale.y=0.05;
+  marker.scale.z=0.02;
+  marker.ns = "feet";
+  marker.color.a=1;
+  marker.color.b=0;
+  bool left=true;
+  
+  for(unsigned int i=0;i<polygons.size();i++)
+  {
+     std::cout<<"> Polygon number of points: "<<polygons.at(i).size()<<std::endl;
+    
+    
+    //for now we place the foot in the centroid of the polygon (safe if convex)
+    
+    Eigen::Matrix<double,4,1> centroid;
+    
+    if(pcl::compute3DCentroid(polygons.at(i), centroid ))
+    {
+      if(left){ marker.color.r=1; marker.color.g=0; left=false;}
+      else { marker.color.r=0; marker.color.g=1; left=true;}
+      
+      marker.pose.position.x=centroid[0];
+      marker.pose.position.y=centroid[1];
+      marker.pose.position.z=centroid[2];
+      
+      marker.pose.orientation.w=1; //TODO: orientation (x,y) as the plane where is placed!
+      marker.pose.orientation.x=0;
+      marker.pose.orientation.y=0;
+      marker.pose.orientation.z=0;
+      
+      marker.id = i;
+      
+      std::cout<<"> Foot Placed in the centroid of the polygon"<<std::endl;
+      
+      pub_footstep.publish(marker);
+      
+    } else std::cout<<"!! Error in computing the centroid !!"<<std::endl;
+  }
 }
 
 
@@ -756,10 +792,10 @@ bool CurvatureFilter::footstep_placer(std_srvs::Empty::Request& request, std_srv
 
 int main(int argc, char **argv) 
 {
-	ros::init(argc, argv, "object_modelling_node");
-	ros::NodeHandle nh;
+  ros::init(argc, argv, "object_modelling_node");
+  ros::NodeHandle nh;
 
-	plane_segmentation::CurvatureFilter node(nh);
+  plane_segmentation::CurvatureFilter node(nh);
   
 
   ros::Rate freq ( 1 );
@@ -769,6 +805,6 @@ int main(int argc, char **argv)
     ros::spinOnce();
     freq.sleep();
   }
-	
-	return 0;
+  
+  return 0;
 }
