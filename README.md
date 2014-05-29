@@ -6,8 +6,12 @@ This project is about:
 - finding planes in the point cloud (with constraints on normals etc.)
 - put footprints on proper planes to make a footstep plan for robot locomotion
 
+For all examples you need to load a test scene. The YOURTESTSCENE.pcd file must be in the folder `resources`. Then launch in a terminal:
 
-Example of plane detection with mesh markers
+`roslaunch plane_segmentation fake_primesense.launch filename:=YOURTESTSCENE.pcd`
+
+
+1. Example of plane detection with mesh markers
 --------------------------------------------
 
 Term1:
@@ -19,7 +23,7 @@ Term2:
 `rosservice call /plane_detection_srv`
 
 
-Example of planar points based on the curvature estimation
+2. Example of planar points based on the curvature estimation
 ----------------------------------------------------------
 
 Term1:
@@ -36,8 +40,9 @@ Parameters:
 - the search radius in meters for the normal estimation
 - the curvature threshold for extract the planar areas in the downsampled cloud
 - the minimum cluster size for euclidean clustering
+- the cluster tolerance to accept points within a cluster in euclidean measure
 
-Example of convex hull estimation
+3. Example of convex hull estimation
 ----------------------------------------------------------
 
 Term1:
@@ -55,7 +60,7 @@ Term2:
 The last service extracts the convex hulls from clusters, and compute the centroids
 
 
-Example of borders estimation
+4. Example of borders estimation
 ----------------------------------------------------------
 
 Term1:
@@ -73,7 +78,7 @@ Term2:
 The last service extracts borders from clusters and generate related polygons
 
 
-Example of footstep placing
+5. Example of footstep placing
 ----------------------------------------------------------
 
 Term1:

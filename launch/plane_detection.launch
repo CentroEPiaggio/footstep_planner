@@ -1,8 +1,4 @@
 <launch>
-	<!-- fake a primesense point cloud from a pcd file for testing placed somewhere in the world -->	
-	<remap from="cloud_pcd" to="/camera/depth_registered/points"/>
-	<node pkg="pcl_ros" name="fake_primesense" type="pcd_to_pointcloud" respawn="true" output="screen" args="$(find plane_segmentation)/resources/scene.pcd 0.1 _frame_id:=/camera_link"/>
-	<node pkg="tf" type="static_transform_publisher" name="kinect_base_link5" args="0 0 0 0 0 0 1  /camera_link /world 100"/>
 
 	<!-- the plane detector -->
 	<node pkg="plane_segmentation" name="plane_detector" type="plane_segmentation_node" respawn="true" output="screen">
@@ -22,8 +18,5 @@
 		<param name="x_filter_max" value="2.0" />
 
 	</node>
-
-	<!-- load a customized rviz -->
-	<node name="$(anon rviz)" launch-prefix="" pkg="rviz" type="rviz" respawn="false" args="-d $(find plane_segmentation)/launch/rviz.rviz" output="screen"/>
 
 </launch>
