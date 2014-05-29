@@ -717,14 +717,14 @@ bool CurvatureFilter::footstep_placer(std_srvs::Empty::Request& request, std_srv
 	marker.color.b=0;
 	bool left=true;
 	
+	Eigen::Matrix<double,4,1> centroid;
+	
 	for(unsigned int i=0;i<polygons.size();i++)
 	{
 		 std::cout<<"> Polygon number of points: "<<polygons.at(i).size()<<std::endl;
 		
 		
 		//for now we place the foot in the centroid of the polygon (safe if convex)
-		
-		Eigen::Matrix<double,4,1> centroid;
 		
 		if(pcl::compute3DCentroid(polygons.at(i), centroid ))
 		{
@@ -748,6 +748,8 @@ bool CurvatureFilter::footstep_placer(std_srvs::Empty::Request& request, std_srv
 			
 		} else std::cout<<"!! Error in computing the centroid !!"<<std::endl;
 	}
+	
+	return true;
 }
 
 
