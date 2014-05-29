@@ -91,6 +91,10 @@ class CurvatureFilter
     
     bool footstep_placer(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     
+    bool centroid_is_reachable(Eigen::Matrix<double,4,1> centroid);
+    
+    std::vector< pcl::PointCloud<pcl::PointXYZ> > compute_polygon_grid(pcl::PointCloud<pcl::PointXYZ> polygon);
+    
     //! Subscribes to and advertises topics
     CurvatureFilter(ros::NodeHandle nh) : nh_(nh), priv_nh_("~")
     {
@@ -101,7 +105,7 @@ class CurvatureFilter
       pub_polygons_marker = nh_.advertise<visualization_msgs::Marker>("/polygons_marker",1,this);
       pub_border_marker = nh_.advertise<visualization_msgs::Marker>("/border_marker",1,this);
       pub_border_poly_marker = nh_.advertise<visualization_msgs::Marker>("/border_poly_marker",1,this);
-      pub_footstep = nh_.advertise<visualization_msgs::Marker>("/footstep_marker",1,this);
+      pub_footstep = nh_.advertise<visualization_msgs::Marker>("/footstep_marker",100,this);
 
       //sub_input_cloud_ = nh_.subscribe(nh_.resolveName("input_cloud"), 100, &CurvatureFilter::filterByCurvature, this);
 
@@ -736,53 +740,76 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
     return true;
 }
 
+bool CurvatureFilter::centroid_is_reachable(Eigen::Matrix<double,4,1> centroid)
+{
+  return true;
+}
+
+std::vector< pcl::PointCloud<pcl::PointXYZ> > CurvatureFilter::compute_polygon_grid(pcl::PointCloud<pcl::PointXYZ> polygon)
+{
+  std::vector< pcl::PointCloud<pcl::PointXYZ> > polygon_grid;
+  
+  polygon_grid.push_back(polygon);
+  
+  return polygon_grid;
+}
 
 bool CurvatureFilter::footstep_placer(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
-        if(polygons.size()==0) {std::cout<<"No polygons to process, you should call the [/filter_by_curvature] and [/border_extraction] services first"<<std::endl; return false;}
+  if(polygons.size()==0) {std::cout<<"No polygons to process, you should call the [/filter_by_curvature] and [/border_extraction] services first"<<std::endl; return false;}
   std::cout<<"> Number of polygons: "<<polygons.size()<<std::endl;
   
   visualization_msgs::Marker marker;
-  marker.type = visualization_msgs::Marker::CUBE;
   marker.header.frame_id="/camera_link";
+  marker.ns = "feet";
+  marker.type = visualization_msgs::Marker::CUBE;
   marker.scale.x=0.1;
   marker.scale.y=0.05;
   marker.scale.z=0.02;
-  marker.ns = "feet";
+  
   marker.color.a=1;
   marker.color.b=0;
+
   bool left=true;
   
-	Eigen::Matrix<double,4,1> centroid;
-	
-  for(unsigned int i=0;i<polygons.size();i++)
+  Eigen::Matrix<double,4,1> centroid;
+
+  for(unsigned int j=0;j<polygons.size();j++)
   {
-     std::cout<<"> Polygon number of points: "<<polygons.at(i).size()<<std::endl;
+    std::cout<<"> Polygon number of points: "<<polygons.at(j).size()<<std::endl;
     
+    std::vector< pcl::PointCloud<pcl::PointXYZ> > polygon_grid =  compute_polygon_grid(polygons.at(j)); //divide the polygon in smaller ones
     
-    //for now we place the foot in the centroid of the polygon (safe if convex)
-    
-    if(pcl::compute3DCentroid(polygons.at(i), centroid ))
+    for(unsigned int i=0;i<polygon_grid.size();i++)
     {
-      if(left){ marker.color.r=1; marker.color.g=0; left=false;}
-      else { marker.color.r=0; marker.color.g=1; left=true;}
-      
-      marker.pose.position.x=centroid[0];
-      marker.pose.position.y=centroid[1];
-      marker.pose.position.z=centroid[2];
-      
-      marker.pose.orientation.w=1; //TODO: orientation (x,y) as the plane where is placed!
-      marker.pose.orientation.x=0;
-      marker.pose.orientation.y=0;
-      marker.pose.orientation.z=0;
-      
-      marker.id = i;
-      
-      std::cout<<"> Foot Placed in the centroid of the polygon"<<std::endl;
-      
-      pub_footstep.publish(marker);
-      
-    } else std::cout<<"!! Error in computing the centroid !!"<<std::endl;
+      //for now we place the foot in the centroid of the polygon (safe if convex)
+      if(pcl::compute3DCentroid(polygon_grid.at(i), centroid ))
+      {
+	
+	if(centroid_is_reachable(centroid)) //check if the centroid id inside the reachable area
+	{
+	  if(left){ marker.color.r=1; marker.color.g=0; left=false;}
+	  else { marker.color.r=0; marker.color.g=1; left=true;}
+	  
+	  marker.pose.position.x=centroid[0];
+	  marker.pose.position.y=centroid[1];
+	  marker.pose.position.z=centroid[2];
+	    
+	  marker.pose.orientation.w=1; //TODO: orientation (x,y) as the plane where is placed!
+	  marker.pose.orientation.x=0;
+	  marker.pose.orientation.y=0;
+	  marker.pose.orientation.z=0;
+	  
+	  marker.id = i;
+	    
+	  std::cout<<"> Foot Placed in the centroid of the polygon"<<std::endl;
+	    
+	  pub_footstep.publish(marker);
+	  ros::Duration half_sec(0.1);
+          half_sec.sleep();
+	}
+      } else std::cout<<"!! Error in computing the centroid !!"<<std::endl;
+    }
   }
 	
 	return true;
