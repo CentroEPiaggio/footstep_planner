@@ -84,6 +84,7 @@ target_link_libraries(plane_segmentation_node
 
 add_executable(curvature_filter_node 
 	src/curvature_filter_node.cpp
+	src/footstep_planning.cpp
 	)
 
 target_link_libraries(curvature_filter_node
