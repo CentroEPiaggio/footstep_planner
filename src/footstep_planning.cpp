@@ -73,10 +73,10 @@ bool CurvatureFilter::footstep_placer(std_srvs::Empty::Request& request, std_srv
 	    marker.pose.position.y=centroid[1];
 	    marker.pose.position.z=centroid[2];
 	      
-	    marker.pose.orientation.w=1; //TODO: orientation (x,y) as the plane where is placed!
+	    marker.pose.orientation.w=0.707; //TODO: orientation (x,y) as the plane where is placed, (z) as we want
 	    marker.pose.orientation.x=0;
 	    marker.pose.orientation.y=0;
-	    marker.pose.orientation.z=0;
+	    marker.pose.orientation.z=0.707;
 	    
 	    marker.id = j*100+i; //to have a unique id
 	      
