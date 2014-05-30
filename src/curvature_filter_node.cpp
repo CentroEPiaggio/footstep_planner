@@ -800,7 +800,7 @@ bool CurvatureFilter::footstep_placer(std_srvs::Empty::Request& request, std_srv
 	  marker.pose.orientation.y=0;
 	  marker.pose.orientation.z=0;
 	  
-	  marker.id = i;
+	  marker.id = j*100+i;
 	    
 	  std::cout<<"> Foot Placed in the centroid of the polygon"<<std::endl;
 	    
