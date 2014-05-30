@@ -8,5 +8,6 @@
 		<param name="curvature_threshold" value="0.05" />
 		<param name="min_cluster_size" value="50" /> <!-- with 0.01 in voxel size, 50 seems reasonable to place a foot -->
 		<param name="cluster_tolerance" value="0.05" />
+		<param name="feasible_area" value="2.5" />
 	</node>
 </launch>
