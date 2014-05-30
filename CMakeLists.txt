@@ -1,93 +1,134 @@
-project(plane_segmentation)
 cmake_minimum_required(VERSION 2.8.3)
+project(plane_segmentation)
 
-find_package(catkin REQUIRED 
-	roscpp 
-	message_generation 
-	geometry_msgs 
-	std_msgs 
-	shape_msgs
-	sensor_msgs
-	visualization_msgs
-	tf
-	)
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+ roscpp 
+        message_generation 
+        geometry_msgs 
+        std_msgs 
+        shape_msgs
+        sensor_msgs
+        visualization_msgs
+        tf
+)
 
+## System dependencies are found with CMake's conventions
+find_package(Boost REQUIRED COMPONENTS system)
+find_package(YARP REQUIRED)
+find_package(ICUB REQUIRED)
+find_package(Eigen REQUIRED)
 find_package(PCL 1.7 REQUIRED)
+find_package(drc_shared REQUIRED)
+
+
 
 add_message_files(
-	FILES
-	Plane.msg
-	PlaneDetectionResult.msg
-	)
+        FILES
+        Plane.msg
+        PlaneDetectionResult.msg
+        )
 
 add_service_files(
-	FILES
-	PlaneDetection.srv
-	)
+        FILES
+        PlaneDetection.srv
+        )
 
 generate_messages(
-	DEPENDENCIES
-	geometry_msgs
-	std_msgs
-	shape_msgs
-	sensor_msgs
-	visualization_msgs
-	)
+        DEPENDENCIES
+        geometry_msgs
+        std_msgs
+        shape_msgs
+        sensor_msgs
+        visualization_msgs
+        )
+
 
 catkin_package(
-	)
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS roscpp rospy roslib urdf srdfdom
+  DEPENDS system_lib
+)
 
+###########
+## Build ##
+###########
+
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+include_directories(include ${YARP_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS})
 include_directories(include
-	${catkin_INCLUDE_DIRS}
-	${PCL_INCLUDE_DIRS}
-	)
+        ${catkin_INCLUDE_DIRS}
+        ${PCL_INCLUDE_DIRS}
+        )
 
 link_directories(
-	${PCL_LIBRARY_DIRS}
-	)
+        ${PCL_LIBRARY_DIRS}
+        )
 
 add_definitions(
-	${PCL_DEFINITIONS}
-	)
+        ${PCL_DEFINITIONS}
+        )
 
 
 add_executable(random_sample_consensus 
-	src/random_sample_consensus.cpp
-	)
+        src/random_sample_consensus.cpp
+        )
 
 target_link_libraries(random_sample_consensus 
-	${catkin_LIBRARIES} 
-	${PCL_LIBRARIES}
-	)
-
-
+        ${catkin_LIBRARIES} 
+        ${PCL_LIBRARIES}
+        )
 
 add_library(PlaneMarker
-	src/MarkerGenerator.cpp
-	)
+        src/MarkerGenerator.cpp
+        )
 
 add_executable(plane_segmentation_node 
-	src/plane_segmentation_node.cpp
-	)
+        src/plane_segmentation_node.cpp
+        )
 
 add_dependencies(plane_segmentation_node 
-	plane_segmentation_gencpp
-	PlaneMarker
-	)
+        plane_segmentation_gencpp
+        PlaneMarker
+        )
 
 target_link_libraries(plane_segmentation_node 
-	PlaneMarker
-	${catkin_LIBRARIES} 
-	${PCL_LIBRARIES}
-	)
-
+        PlaneMarker
+        ${catkin_LIBRARIES} 
+        ${PCL_LIBRARIES}
+        )
 
 add_executable(curvature_filter_node 
-	src/curvature_filter_node.cpp
-	src/footstep_planning.cpp
-	)
+        src/curvature_filter_node.cpp
+        src/footstep_planning.cpp
+        )
 
 target_link_libraries(curvature_filter_node
-	${catkin_LIBRARIES} 
-	${PCL_LIBRARIES}
-	)
+        ${catkin_LIBRARIES} 
+        ${PCL_LIBRARIES}
+        )
+
+
+## Specify libraries to link a library or executable target against
+# target_link_libraries(yarp_ros_interface ${YARP_LIBRARIES} icubmod ${ICUB_LIBRARIES} ${catkin_LIBRARIES})
+# target_link_libraries(yarp_ros_joint_state_publisher_node yarp_ros_interface ${YARP_LIBRARIES} icubmod                        ${ICUB_LIBRARIES} ${catkin_LIBRARIES})
+
+#############
+## Install ##
+#############
+
+
+## Mark executables and/or libraries for installation
+install(TARGETS curvature_filter_node
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
+
