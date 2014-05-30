@@ -72,6 +72,9 @@ class CurvatureFilter
     
     // euclidean cluster tolerance
     double cluster_tolerance_;
+    
+    // robot area for the footstep planner
+    double feasible_area_;
 
     std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> > clusters;
     
@@ -100,6 +103,10 @@ class CurvatureFilter
     
     std::vector< pcl::PointCloud<pcl::PointXYZ> > compute_polygon_grid(pcl::PointCloud<pcl::PointXYZ> polygon);
     
+    bool polygon_in_feasbile_area(pcl::PointCloud<pcl::PointXYZ> polygon);
+    
+    double dist_from_robot(pcl::PointXYZ point);
+    
     std::vector <geometry_msgs::Pose> footsteps;
     
     //! Subscribes to and advertises topics
@@ -127,7 +134,7 @@ class CurvatureFilter
       priv_nh_.param<int>("min_cluster_size", min_cluster_size_, 100);
       priv_nh_.param<double>("cluster_tolerance", cluster_tolerance_, 100);
       
-
+      priv_nh_.param<double>("feasible_area", feasible_area_, 2.5);
     }
 
     //! Empty stub
