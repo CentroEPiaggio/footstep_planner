@@ -1,0 +1,5 @@
+<launch>
+        <remap from="cloud_pcd" to="/camera/depth_registered/points"/>
+	<node pkg="pcl_ros" name="fake_primesense" type="pcd_to_pointcloud" respawn="true" output="screen" args="$(find plane_segmentation)/resources/scene.pcd 0.1 _frame_id:=/camera_link"/>
+	<node pkg="tf" type="static_transform_publisher" name="kinect_base_link5" args="0 0 0 0 0 0 1 /base_link /camera_link 100"/>
+</launch>
