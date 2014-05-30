@@ -514,99 +514,99 @@ bool CurvatureFilter::border_extraction(std_srvs::Empty::Request& request, std_s
       
     for (unsigned int i=0; i< clusters.size(); i++)
     {
-  std::cout<<std::endl;
-  
-  std::cout<<"- Size of cluster "<<i<<": "<<clusters.at(i).size()<<std::endl;
-  
-        pcl::PointCloud<pcl::Boundary> boundaries; 
-        pcl::BoundaryEstimation<pcl::PointXYZ, pcl::Normal, pcl::Boundary> boundEst; 
-        pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normEst; 
-        pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>); 
-
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>); 
-  
-  pcl::PointXYZ pcl_point;
-  std_msgs::ColorRGBA color;
-  color.r=clusters.at(i).at(0).r;
-  color.g=clusters.at(i).at(0).g;
-  color.b=clusters.at(i).at(0).b;
-    
-  
-  color.a=0.25;
-  
-  for(unsigned int pc=0; pc<clusters.at(i).size();pc++)
-  {
-          pcl_point.x = clusters.at(i).at(pc).x;
-          pcl_point.y = clusters.at(i).at(pc).y;
-    pcl_point.z = clusters.at(i).at(pc).z;
-        
-    cloud->points.push_back(pcl_point);
-  }
-  
-        normEst.setInputCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(cloud)); 
-        normEst.setRadiusSearch(0.1); 
-        normEst.compute(*normals); 
-
-        boundEst.setInputCloud(cloud); 
-        boundEst.setInputNormals(normals); 
-        boundEst.setRadiusSearch(0.1); 
-        boundEst.setAngleThreshold(M_PI/4); 
-        boundEst.setSearchMethod(pcl::search::KdTree<pcl::PointXYZ>::Ptr (new pcl::search::KdTree<pcl::PointXYZ>)); 
-  
-  std::cout<<"- Estimating border from cluster . . ."<<std::endl;
-  
-        boundEst.compute(boundaries); 
-  
-  pcl::PointCloud<pcl::PointXYZ> border;
-
-        for(int b = 0; b < cloud->points.size(); b++) 
-        { 
-                if(boundaries[b].boundary_point < 1) 
-                { 
-                        //not in the boundary
-                } 
-                else
-          {  
-      point.x = cloud->at(b).x;
-      point.y = cloud->at(b).y;
-      point.z = cloud->at(b).z;
+	std::cout<<std::endl;
+	
+	std::cout<<"- Size of cluster "<<i<<": "<<clusters.at(i).size()<<std::endl;
       
-      border.push_back(cloud->at(b));
+	pcl::PointCloud<pcl::Boundary> boundaries; 
+	pcl::BoundaryEstimation<pcl::PointXYZ, pcl::Normal, pcl::Boundary> boundEst; 
+	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normEst; 
+	pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>); 
+
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>); 
+	
+	pcl::PointXYZ pcl_point;
+	std_msgs::ColorRGBA color;
+	color.r=clusters.at(i).at(0).r;
+	color.g=clusters.at(i).at(0).g;
+	color.b=clusters.at(i).at(0).b;
+	  
+	
+	color.a=0.25;
       
-      marker.colors.push_back(color);
-      marker.points.push_back(point);
-    }
-        } 
-        
-  marker.id=i;
-  
-  std::cout<<"- Border number of points: "<<border.size()<<std::endl;
-  
-  pub_border_marker.publish(marker);
-  
-  pcl::PointCloud<pcl::PointXYZ> border_polygon;
-  
-  std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
-  
-  if(!douglas_peucker_3d(border,border_polygon,0.05)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
-  
-  std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
-  
-  polygons.push_back(border_polygon);
-  
-  for(int po = 0; po < border_polygon.points.size(); po++) 
-        { 
-                point.x = border_polygon.at(po).x;
-    point.y = border_polygon.at(po).y;
-    point.z = border_polygon.at(po).z;
+	for(unsigned int pc=0; pc<clusters.at(i).size();pc++)
+	{
+	    pcl_point.x = clusters.at(i).at(pc).x;
+	    pcl_point.y = clusters.at(i).at(pc).y;
+	    pcl_point.z = clusters.at(i).at(pc).z;
+		
+	    cloud->points.push_back(pcl_point);
+	}
+      
+	normEst.setInputCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(cloud)); 
+	normEst.setRadiusSearch(0.1); 
+	normEst.compute(*normals); 
+
+	boundEst.setInputCloud(cloud); 
+	boundEst.setInputNormals(normals); 
+	boundEst.setRadiusSearch(0.1); 
+	boundEst.setAngleThreshold(M_PI/4); 
+	boundEst.setSearchMethod(pcl::search::KdTree<pcl::PointXYZ>::Ptr (new pcl::search::KdTree<pcl::PointXYZ>)); 
+      
+	std::cout<<"- Estimating border from cluster . . ."<<std::endl;
+      
+	boundEst.compute(boundaries); 
+      
+	pcl::PointCloud<pcl::PointXYZ> border;
+
+	for(int b = 0; b < cloud->points.size(); b++) 
+	{ 
+	    if(boundaries[b].boundary_point < 1) 
+	    { 
+		    //not in the boundary
+	    } 
+	    else
+	    {  
+		point.x = cloud->at(b).x;
+		point.y = cloud->at(b).y;
+		point.z = cloud->at(b).z;
+		
+		border.push_back(cloud->at(b));
+		
+		marker.colors.push_back(color);
+		marker.points.push_back(point);
+	    }
+	} 
+	    
+	marker.id=i;
+	
+	std::cout<<"- Border number of points: "<<border.size()<<std::endl;
+	
+	pub_border_marker.publish(marker);
+	
+	pcl::PointCloud<pcl::PointXYZ> border_polygon;
+	
+	std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
+	
+	if(!douglas_peucker_3d(border,border_polygon,0.05)){ std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; return false;}
+	
+	std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
+	
+	polygons.push_back(border_polygon);
+	
+	for(int po = 0; po < border_polygon.points.size(); po++) 
+	{ 
+	    point.x = border_polygon.at(po).x;
+	    point.y = border_polygon.at(po).y;
+	    point.z = border_polygon.at(po).z;
     
-    marker2.colors.push_back(color);
-    marker2.points.push_back(point);
-        }
-        
-        marker2.id=i;
-        
-        pub_border_poly_marker.publish(marker2);
+	    marker2.colors.push_back(color);
+	    marker2.points.push_back(point);
+	}
+	
+	marker2.id=i;
+	
+	pub_border_poly_marker.publish(marker2);
     }
     
     return true;

@@ -4,6 +4,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <std_srvs/Empty.h>
 #include <visualization_msgs/Marker.h>
+#include <geometry_msgs/Pose.h>
 
 
 // PCL headers
@@ -95,7 +96,11 @@ class CurvatureFilter
     
     bool step_is_stable(Eigen::Matrix< double, 4, 1 > centroid);
     
+    bool plane_is_compatible(Eigen::Matrix< double, 4, 1 > centroid);
+    
     std::vector< pcl::PointCloud<pcl::PointXYZ> > compute_polygon_grid(pcl::PointCloud<pcl::PointXYZ> polygon);
+    
+    std::vector <geometry_msgs::Pose> footsteps;
     
     //! Subscribes to and advertises topics
     CurvatureFilter(ros::NodeHandle nh) : nh_(nh), priv_nh_("~")
