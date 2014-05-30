@@ -5,7 +5,7 @@
 #include <std_srvs/Empty.h>
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Pose.h>
-
+#include <ros/publisher.h>
 
 // PCL headers
 #include <pcl/point_cloud.h>
@@ -23,7 +23,9 @@
 #include <pcl/io/io.h>
 
 #include "psimpl.h"
+#include </home/mirko/projects/walkman/build/install/include/drc_shared/idynutils.h>
 #include <eigen3/Eigen/Eigen>
+#include <drc_shared/idynutils.h>
 
 // class object for the ROS node
 namespace plane_segmentation {
@@ -80,6 +82,10 @@ class CurvatureFilter
     
     std::vector< pcl::PointCloud<pcl::PointXYZ> > polygons;
     
+    Eigen::Matrix<double,6,1> left_foot, right_foot;
+    
+    iDynUtils coman_model;
+    
   public:
     //------------------ Callbacks -------------------
     // Callback for filtering the cloud
@@ -135,6 +141,7 @@ class CurvatureFilter
       priv_nh_.param<double>("cluster_tolerance", cluster_tolerance_, 100);
       
       priv_nh_.param<double>("feasible_area", feasible_area_, 2.5);
+      //TODO Mirko set foot initial position
     }
 
     //! Empty stub

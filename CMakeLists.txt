@@ -21,8 +21,9 @@ find_package(YARP REQUIRED)
 find_package(ICUB REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(PCL 1.7 REQUIRED)
+find_package(iDynTree REQUIRED)
 find_package(drc_shared REQUIRED)
-
+find_package(kdl_codyco REQUIRED)
 
 
 add_message_files(
@@ -58,7 +59,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include ${YARP_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS})
+include_directories(include ${YARP_INCLUDE_DIRS} ${IDYN3_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS} ${drc_shared_INCLUDE_DIRS})
 include_directories(include
         ${catkin_INCLUDE_DIRS}
         ${PCL_INCLUDE_DIRS}
@@ -109,6 +110,8 @@ add_executable(curvature_filter_node
 target_link_libraries(curvature_filter_node
         ${catkin_LIBRARIES} 
         ${PCL_LIBRARIES}
+        ${drc_shared_LIBRARIES}
+         ${iDynTree_LIBRARIES}
         )
 
 

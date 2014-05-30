@@ -1,4 +1,19 @@
 #include "curvature_filter_node.h"
+#include </home/mirko/projects/walkman/build/install/include/drc_shared/idynutils.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/filter.h>
+#include <pcl/segmentation/extract_clusters.h>
+#include <pcl/segmentation/conditional_euclidean_clustering.h>
+#include <pcl/surface/convex_hull.h>
+#include <pcl/range_image/range_image.h>
+#include <pcl/features/range_image_border_extractor.h>
+#include <pcl/features/boundary.h>
+#include <pcl/io/io.h>
+#include <iostream>
 
 using namespace plane_segmentation;
 
@@ -10,6 +25,15 @@ bool CurvatureFilter::step_is_stable(Eigen::Matrix< double, 4, 1 > centroid)
 
 bool CurvatureFilter::centroid_is_reachable(Eigen::Matrix<double,4,1> centroid)
 {
+   KDL::Tree coman= coman_model.coman_iDyn3.getKDLTree();
+   KDL::Chain left_leg,right_leg;
+   coman.getChain("l_sole","Waist",left_leg);
+   coman.getChain("Waist","r_sole",right_leg);
+   std::cout<<"left number of segments:"<<left_leg.getNrOfSegments()<<" ";
+   std::cout<<"right number of segments:"<<right_leg.getNrOfSegments()<<" ";
+   
+   left_leg.addChain(right_leg);
+   std::cout<<"total number of segments:"<<left_leg.getNrOfSegments()<<std::endl;
   return true;
 }
 
