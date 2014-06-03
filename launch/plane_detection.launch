@@ -1,7 +1,7 @@
 <launch>
 
 	<!-- the plane detector -->
-	<node pkg="plane_segmentation" name="plane_detector" type="plane_segmentation_node" respawn="true" output="screen">
+	<node pkg="footstep_planner" name="plane_detector" type="plane_segmentation_node" respawn="true" output="screen">
 		<!--topic remapping-->
 		<remap from="cloud_in" to="/camera/depth_registered/points" />
 		<param name="inlier_threshold" value="500" />

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(plane_segmentation)
+project(footstep_planner)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -134,4 +134,7 @@ install(TARGETS curvature_filter_node
 
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
+  
+install(DIRECTORY resources/
+DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/resources)
 

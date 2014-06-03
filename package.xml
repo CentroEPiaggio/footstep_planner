@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>plane_segmentation</name>
+  <name>footstep_planner</name>
   <version>0.0.0</version>
-  <description>The plane_segmentation package</description>
+  <description>The footstep_planner package</description>
 
   <maintainer email="ale@todo.todo">ale</maintainer>
 
