@@ -1,6 +1,6 @@
 <launch>	
 	<!-- the plane detector -->
-	<node pkg="footstep_planner" name="curvature_filter" type="curvature_filter_node" respawn="true" output="screen" cwd="node">
+	<node pkg="footstep_planner" name="foot_planner" type="foot_planner" respawn="false" output="screen" cwd="node">
 		<!--topic remapping-->
 		<!-- <remap from="input_cloud" to="/camera/depth_registered/points" /> -->
 		<param name="voxel_size" value="0.01" />

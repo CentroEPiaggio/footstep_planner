@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(footstep_planner)
 
+set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 ")
+
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -73,41 +76,16 @@ add_definitions(
         ${PCL_DEFINITIONS}
         )
 
-
-add_executable(random_sample_consensus 
-        src/random_sample_consensus.cpp
+add_executable(foot_planner 
+        src/ros_server.cpp
+        src/footstep_planner.cpp
+        src/kinematics_utilities.cpp
+        src/curvaturefilter.cpp
+        src/borderextraction.cpp
+        src/main.cpp
         )
 
-target_link_libraries(random_sample_consensus 
-        ${catkin_LIBRARIES} 
-        ${PCL_LIBRARIES}
-        )
-
-add_library(PlaneMarker
-        src/MarkerGenerator.cpp
-        )
-
-add_executable(plane_segmentation_node 
-        src/plane_segmentation_node.cpp
-        )
-
-add_dependencies(plane_segmentation_node 
-        plane_segmentation_gencpp
-        PlaneMarker
-        )
-
-target_link_libraries(plane_segmentation_node 
-        PlaneMarker
-        ${catkin_LIBRARIES} 
-        ${PCL_LIBRARIES}
-        )
-
-add_executable(curvature_filter_node 
-        src/curvature_filter_node.cpp
-        src/footstep_planning.cpp
-        )
-
-target_link_libraries(curvature_filter_node
+target_link_libraries(foot_planner
         ${catkin_LIBRARIES} 
         ${PCL_LIBRARIES}
         ${drc_shared_LIBRARIES}
@@ -125,7 +103,7 @@ target_link_libraries(curvature_filter_node
 
 
 ## Mark executables and/or libraries for installation
-install(TARGETS curvature_filter_node
+install(TARGETS foot_planner
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
