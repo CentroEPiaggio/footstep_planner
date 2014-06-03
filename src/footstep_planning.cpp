@@ -1,19 +1,4 @@
 #include "curvature_filter_node.h"
-#include </home/mirko/projects/walkman/build/install/include/drc_shared/idynutils.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/features/normal_3d_omp.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/filter.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/segmentation/conditional_euclidean_clustering.h>
-#include <pcl/surface/convex_hull.h>
-#include <pcl/range_image/range_image.h>
-#include <pcl/features/range_image_border_extractor.h>
-#include <pcl/features/boundary.h>
-#include <pcl/io/io.h>
-#include <iostream>
 
 using namespace plane_segmentation;
 

@@ -23,7 +23,6 @@
 #include <pcl/io/io.h>
 
 #include "psimpl.h"
-#include </home/mirko/projects/walkman/build/install/include/drc_shared/idynutils.h>
 #include <eigen3/Eigen/Eigen>
 #include <drc_shared/idynutils.h>
 
