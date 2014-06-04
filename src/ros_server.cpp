@@ -90,7 +90,12 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
         r = 255*((double)rand()/(double)RAND_MAX);
         g = 255*((double)rand()/(double)RAND_MAX);
         b = 255*((double)rand()/(double)RAND_MAX);
-        rgb = (r << 16) | (g << 8) | b; 
+//         rgb = (r << 16) | (g << 8) | b; 
+	
+	color.a=marker2.color.a;
+	color.r=r;
+	color.g=g;
+	color.b=b;
                 
         for(int po = 0; po < border_polygon.points.size(); po++) 
         { 
@@ -107,6 +112,7 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
         pub_border_poly_marker.publish(marker2);
     }
     
+    return true;
 }
 
 bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
@@ -116,7 +122,7 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
         return false;
         
     }
-    std::cout<<"> Number of polygons: "<<polygons.size()<<std::endl;
+    std::cout<<std::endl<<"> Number of polygons: "<<polygons.size()<<std::endl;
     
     visualization_msgs::Marker marker;
     marker.header.frame_id="/camera_link";
@@ -184,7 +190,7 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
     {
         sensor_msgs::PointCloud2 cluster_cloud_msg;
         pcl::toROSMsg(cluster, cluster_cloud_msg);
-//         cluster_cloud_msg.header = cloud_msg.header;
+        cluster_cloud_msg.header = input->header;
         cluster_cloud_msg.header.seq = j++;
         pub_cluster_cloud_.publish(cluster_cloud_msg);
         
@@ -193,6 +199,8 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
         ros::Duration half_sec(0.5);
         half_sec.sleep();
     }
+    
+    return true;
 }
 
 
