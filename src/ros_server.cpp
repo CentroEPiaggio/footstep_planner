@@ -1,5 +1,6 @@
 #include "ros_server.h"
-
+#include <kdl_conversions/kdl_msg.h>
+#include <tf_conversions/tf_kdl.h>
 using namespace planner;
 
 extern volatile bool quit;
@@ -122,6 +123,18 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
         
     }
     std::cout<<std::endl<<"> Number of polygons: "<<polygons.size()<<std::endl;
+    tf::StampedTransform transform;
+    try{
+        listener.lookupTransform("/camera_link", "/world",
+        ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex){
+        ROS_ERROR("%s",ex.what());
+    }
+    KDL::Frame temp;
+    tf::transformTFToKDL(transform,temp);
+    //std::cout<<"from cloud to world:"<<temp<<std::endl;
+    footstep_planner.setWorldTransform(temp);
     
     visualization_msgs::Marker marker;
     marker.header.frame_id="/camera_link";

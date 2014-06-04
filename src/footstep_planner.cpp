@@ -11,8 +11,19 @@
 #include <pcl/features/range_image_border_extractor.h>
 #include <pcl/features/boundary.h>
 #include <iostream>
-
+#include <tf/transform_broadcaster.h>
+#include <tf_conversions/tf_kdl.h>
 using namespace planner;
+
+footstepPlanner::footstepPlanner()
+{
+    left_joints.resize(kinematics.left_leg.getNrOfJoints());
+    right_joints.resize(kinematics.right_leg.getNrOfJoints());
+    leg_joints.resize(kinematics.RL_legs.getNrOfJoints());
+    SetToZero(left_joints);
+    SetToZero(right_joints);
+    SetToZero(leg_joints);
+}
 
 void footstepPlanner::setParams(double feasible_area_)
 {
@@ -31,7 +42,9 @@ bool footstepPlanner::centroid_is_reachable(KDL::Frame centroid)
     SetToZero(jnt_pos_in);
     KDL::JntArray jnt_pos_out;
     jnt_pos_out.resize(kinematics.q_min.rows());
-    int ik_valid = kinematics.iksolver->CartToJnt(jnt_pos_in, centroid, jnt_pos_out);
+    auto temp=(fromCloudToWorld*current_foot).Inverse()*centroid;
+    int ik_valid = current_ik_solver->CartToJnt(jnt_pos_in, temp, jnt_pos_out);
+    std::cout<<"centroide in foot"<<temp<<std::endl;
     if (ik_valid>0)
     {
         return true;
@@ -40,8 +53,31 @@ bool footstepPlanner::centroid_is_reachable(KDL::Frame centroid)
   return false;
 }
 
+void footstepPlanner::setWorldTransform(KDL::Frame transform)
+{
+    this->fromCloudToWorld=transform;
+}
+
 std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud<pcl::PointXYZ>> > polygons,bool left)
 {
+    if (left)
+    {
+        kinematics.fkLsolver->JntToCart(left_joints,current_foot);
+        current_ik_solver=kinematics.ikLRsolver;
+    }
+    else
+    {
+        kinematics.fkRsolver->JntToCart(right_joints,current_foot);
+        current_ik_solver=kinematics.ikRLsolver;
+    }
+//     std::cout<<"from waist to current foot:"<<current_foot<<std::endl;
+//     
+//     std::cout<<"from camera to foot"<<current_foot*fromCloudToWorld<<std::endl;
+//     
+    static tf::TransformBroadcaster br;
+    tf::Transform transform;
+    tf::transformKDLToTF(fromCloudToWorld*current_foot,transform);
+    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "camera_link", "current_foot"));
     
     Eigen::Matrix<double,4,1> centroid;
     std::map<int,Eigen::Matrix<double,4,1>> centroids;
@@ -62,14 +98,14 @@ std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(st
             //for now we place the foot in the centroid of the polygon (safe if convex)
             if(pcl::compute3DCentroid(polygon_grid.at(i), centroid ))
             {                
-                for (int angle=30;angle<360;angle=angle+1000) //TODO: fix this
+                for (int angle=0;angle<360;angle=angle+1000) //TODO: fix this
                 {                
                     KDL::Frame temp;
                     temp.p[0]=centroid[0];
                     temp.p[1]=centroid[1];
                     temp.p[2]=centroid[2];
                     temp.M=KDL::Rotation::RPY(0,0,angle);
-                   
+                    std::cout<<"centroid in camera link"<<temp<<std::endl;
                     if(centroid_is_reachable(temp)) //check if the centroid id inside the reachable area
                     {
                         if(step_is_stable(temp))//check if the centroid can be used to perform a stable step

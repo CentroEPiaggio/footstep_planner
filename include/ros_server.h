@@ -6,6 +6,7 @@
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Pose.h>
 #include <ros/publisher.h>
+#include <tf/transform_listener.h>
 
 // PCL headers
 #include <pcl/point_cloud.h>
@@ -47,7 +48,8 @@ public:
     
     //! Subscribers
     ros::Subscriber sub_input_cloud_;
-
+    tf::TransformListener listener;
+    
     //! Services
     ros::ServiceServer srv_filter_cloud_;
     ros::ServiceServer srv_border_extraction;

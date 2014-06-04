@@ -14,16 +14,24 @@ class kinematics_utilities
 {
 public:
     kinematics_utilities();
-    Eigen::Matrix<double,6,1> left_foot, right_foot;
+//    Eigen::Matrix<double,6,1> left_foot, right_foot;
+    
+    KDL::Frame left_foot,right_foot,world;
     
     iDynUtils coman_model;
     KDL::Tree coman;
-    KDL::Chain left_leg,right_leg,legs;
+    KDL::Chain left_leg,right_leg,LR_legs,RL_legs;
     KDL::ChainFkSolverPos_recursive* fkLsolver;
     KDL::ChainFkSolverPos_recursive* fkRsolver;
-    KDL::ChainFkSolverPos_recursive* fksolver;
-    KDL::ChainIkSolverPos_NR_JL* iksolver;
-    KDL::ChainIkSolverVel_pinv* ikvelsolver;
+    KDL::ChainFkSolverPos_recursive* fkRLsolver;
+    KDL::ChainFkSolverPos_recursive* fkLRsolver;
+    
+    KDL::ChainIkSolverPos_NR_JL* ikRLsolver;
+    KDL::ChainIkSolverPos_NR_JL* ikLRsolver;
+    
+    KDL::ChainIkSolverVel_pinv* ikRLvelsolver;
+    KDL::ChainIkSolverVel_pinv* ikLRvelsolver;
+    
     int num_joints;
     
     

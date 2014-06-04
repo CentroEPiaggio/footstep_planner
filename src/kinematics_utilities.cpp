@@ -10,16 +10,24 @@
 kinematics_utilities::kinematics_utilities()
 {
     coman= coman_model.coman_iDyn3.getKDLTree();
-    coman.getChain("l_sole","Waist",left_leg);
-    coman.getChain("l_sole","Waist",legs);
+    coman.getChain("Waist","l_sole",left_leg);
     coman.getChain("Waist","r_sole",right_leg);
+    coman.getChain("l_sole","Waist",LR_legs);
+    LR_legs.addChain(right_leg);
+    coman.getChain("r_sole","Waist",RL_legs);
+    RL_legs.addChain(left_leg);
     fkLsolver = new KDL::ChainFkSolverPos_recursive(left_leg);
     fkRsolver = new KDL::ChainFkSolverPos_recursive(right_leg);
-    legs.addChain(right_leg);
-    fksolver = new KDL::ChainFkSolverPos_recursive(legs);
-    ikvelsolver = new KDL::ChainIkSolverVel_pinv(legs);
+    fkLRsolver = new KDL::ChainFkSolverPos_recursive(LR_legs);
+    fkRLsolver = new KDL::ChainFkSolverPos_recursive(RL_legs);
+    
+    ikLRvelsolver = new KDL::ChainIkSolverVel_pinv(LR_legs);
+    ikRLvelsolver = new KDL::ChainIkSolverVel_pinv(RL_legs);
+    
     //readJoints(coman_model.coman_model);
-    iksolver= new KDL::ChainIkSolverPos_NR_JL(legs,q_min,q_max,*fksolver,*ikvelsolver);
+    ikLRsolver= new KDL::ChainIkSolverPos_NR_JL(LR_legs,q_min,q_max,*fkLRsolver,*ikLRvelsolver);
+    ikRLsolver= new KDL::ChainIkSolverPos_NR_JL(RL_legs,q_min,q_max,*fkRLsolver,*ikRLvelsolver);
+    
 }
 
 
