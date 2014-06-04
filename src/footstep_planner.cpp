@@ -40,14 +40,14 @@ bool footstepPlanner::centroid_is_reachable(KDL::Frame centroid)
   return false;
 }
 
-std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(std::vector< pcl::PointCloud<pcl::PointXYZ> > polygons,bool left)
+std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud<pcl::PointXYZ>> > polygons,bool left)
 {
     
     Eigen::Matrix<double,4,1> centroid;
     std::map<int,Eigen::Matrix<double,4,1>> centroids;
     for(unsigned int j=0;j<polygons.size();j++)
     {
-        std::cout<<"> Polygon number of points: "<<polygons.at(j).size()<<std::endl;
+        std::cout<<"> Polygon number of points: "<<polygons.at(j)->size()<<std::endl;
         
         if(!polygon_in_feasibile_area(polygons.at(j)))
         {
@@ -56,22 +56,20 @@ std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(st
         }
         
         std::vector< pcl::PointCloud<pcl::PointXYZ> > polygon_grid =  compute_polygon_grid(polygons.at(j)); //divide the polygon in smaller ones
-        
-        
+       
         for(unsigned int i=0;i<polygon_grid.size();i++)
         {
             //for now we place the foot in the centroid of the polygon (safe if convex)
             if(pcl::compute3DCentroid(polygon_grid.at(i), centroid ))
-            {
-                
+            {                
                 for (int angle=30;angle<360;angle=angle+1000) //TODO: fix this
                 {                
                     KDL::Frame temp;
                     temp.p[0]=centroid[0];
                     temp.p[1]=centroid[1];
                     temp.p[2]=centroid[2];
-                    temp.M=KDL::Rotation::RPY(centroid[3],centroid[4],angle);
-                    
+                    temp.M=KDL::Rotation::RPY(0,0,angle);
+                   
                     if(centroid_is_reachable(temp)) //check if the centroid id inside the reachable area
                     {
                         if(step_is_stable(temp))//check if the centroid can be used to perform a stable step
@@ -91,15 +89,15 @@ std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(st
             else std::cout<<"!! ERR: Error in computing the centroid !!"<<std::endl;
         }
     }
-    
+    return centroids;
 }
 
 
-std::vector< pcl::PointCloud<pcl::PointXYZ> > footstepPlanner::compute_polygon_grid(pcl::PointCloud<pcl::PointXYZ> polygon)
+std::vector< pcl::PointCloud<pcl::PointXYZ> > footstepPlanner::compute_polygon_grid( std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> polygon)
 {
   std::vector< pcl::PointCloud<pcl::PointXYZ> > polygon_grid;
   
-  polygon_grid.push_back(polygon);
+  polygon_grid.push_back(*polygon);
   
   return polygon_grid;
 }
@@ -115,11 +113,11 @@ double footstepPlanner::dist_from_robot(pcl::PointXYZ point)
   return sqrt(x_diff*x_diff + y_diff*y_diff + z_diff*z_diff);
 }
 
-bool footstepPlanner::polygon_in_feasibile_area(pcl::PointCloud<pcl::PointXYZ> polygon)
+bool footstepPlanner::polygon_in_feasibile_area(std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> polygon)
 {
-  for (unsigned int i=0;i<polygon.size();i++)
+  for (unsigned int i=0;i<polygon->size();i++)
   {
-      if(dist_from_robot(polygon.at(i)) < feasible_area_) return true;
+      if(dist_from_robot(polygon->at(i)) < feasible_area_) return true;
   }
   
   return false;

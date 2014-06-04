@@ -21,13 +21,13 @@ public:
     
     bool plane_is_compatible(Eigen::Matrix< double, 4, 1 > centroid);
     
-    std::vector< pcl::PointCloud<pcl::PointXYZ> > compute_polygon_grid(pcl::PointCloud<pcl::PointXYZ> polygon);
+    std::vector< pcl::PointCloud<pcl::PointXYZ> > compute_polygon_grid(std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > polygon);
     
-    bool polygon_in_feasibile_area(pcl::PointCloud<pcl::PointXYZ> polygon);
+    bool polygon_in_feasibile_area(std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > polygon);
     
     double dist_from_robot(pcl::PointXYZ point);
     
-    std::map< int, Eigen::Matrix< double, 4, 1 > > getFeasibleCentroids(std::vector< pcl::PointCloud< pcl::PointXYZ > > polygons, bool left);
+    std::map< int, Eigen::Matrix< double, 4, 1 > > getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > > polygons, bool left);
     void setParams(double feasible_area_);
     
     

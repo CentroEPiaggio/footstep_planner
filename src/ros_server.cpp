@@ -97,11 +97,11 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
 	color.g=g;
 	color.b=b;
                 
-        for(int po = 0; po < border_polygon.points.size(); po++) 
+        for(int po = 0; po < border_polygon->points.size(); po++) 
         { 
-            point.x = border_polygon.at(po).x;
-            point.y = border_polygon.at(po).y;
-            point.z = border_polygon.at(po).z;
+            point.x = border_polygon->at(po).x;
+            point.y = border_polygon->at(po).y;
+            point.z = border_polygon->at(po).z;
             
             marker2.colors.push_back(color);
             marker2.points.push_back(point);
@@ -111,7 +111,6 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
         i++;
         pub_border_poly_marker.publish(marker2);
     }
-    
     return true;
 }
 
@@ -134,7 +133,6 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     
     marker.color.a=1;
     marker.color.b=0;
-    
     
     bool left=true;
     auto centroids=footstep_planner.getFeasibleCentroids(polygons,left);
@@ -190,8 +188,8 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
     {
         sensor_msgs::PointCloud2 cluster_cloud_msg;
         pcl::toROSMsg(cluster, cluster_cloud_msg);
-        cluster_cloud_msg.header = input->header;
         cluster_cloud_msg.header.seq = j++;
+        cluster_cloud_msg.header.frame_id=input->header.frame_id;
         pub_cluster_cloud_.publish(cluster_cloud_msg);
         
         ROS_INFO( "Cluster %i: %lu points" , j, cluster.points.size() );

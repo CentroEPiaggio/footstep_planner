@@ -50,9 +50,9 @@ bool atan_compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
     return atan2(a.y,a.x) < atan2(b.y,b.x);
 }
 
-std::vector< pcl::PointCloud<pcl::PointXYZ> > borderExtraction::extractBorders(    std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> >& clusters)
+std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > borderExtraction::extractBorders(    std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> >& clusters)
 {
-    std::vector< pcl::PointCloud<pcl::PointXYZ> > polygons;   
+    std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > polygons;   
     
     if(clusters.size()==0)
     {
@@ -125,8 +125,8 @@ std::vector< pcl::PointCloud<pcl::PointXYZ> > borderExtraction::extractBorders( 
          std::cout<<"- Border number of points: "<<border.size()<<std::endl;
 //         
 //         pub_border_marker.publish(marker);
-        
-        pcl::PointCloud<pcl::PointXYZ> border_polygon;
+        pcl::PointCloud<pcl::PointXYZ> temp;
+        std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> border_polygon= std::make_shared<pcl::PointCloud<pcl::PointXYZ>>(temp);
         
         std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
         
@@ -136,7 +136,7 @@ std::vector< pcl::PointCloud<pcl::PointXYZ> > borderExtraction::extractBorders( 
             
         }
         
-        std::cout<<"- Polygon number of points: "<<border_polygon.size()<<std::endl;
+        std::cout<<"- Polygon number of points: "<<border_polygon->size()<<std::endl;
         
         polygons.push_back(border_polygon);
         
@@ -148,7 +148,7 @@ std::vector< pcl::PointCloud<pcl::PointXYZ> > borderExtraction::extractBorders( 
 
 
 
-bool borderExtraction::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input, pcl::PointCloud< pcl::PointXYZ >& output,double tolerance)
+bool borderExtraction::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input,  std::shared_ptr<pcl::PointCloud< pcl::PointXYZ >> output,double tolerance)
 {  
     if(!input.size()) return false;
     
@@ -194,12 +194,12 @@ bool borderExtraction::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& inpu
         {
             point.z = result[i];
             j=0;
-            output.push_back(point);
+            output->push_back(point);
         }
         
         control=false;
     }
-    
+    delete result;
     std::cout<<"- INFO: i = "<<i<<std::endl;
     if(j!=0) {std::cout<<"- !! Error in output dimension (no 3d) !!"<<std::endl;}
     
