@@ -25,6 +25,7 @@ int main(int argc, char **argv)
     while(!quit)
     {
         ros::spinOnce();
+        node.run();
         freq.sleep();
     }
     

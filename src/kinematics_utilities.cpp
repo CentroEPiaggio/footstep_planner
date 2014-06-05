@@ -5,13 +5,12 @@
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <urdf_model/joint.h>
 
-
-
 kinematics_utilities::kinematics_utilities()
 {
     coman= coman_model.coman_iDyn3.getKDLTree();
     coman.getChain("Waist","l_sole",left_leg);
     coman.getChain("Waist","r_sole",right_leg);
+    num_joints=left_leg.getNrOfJoints()+right_leg.getNrOfJoints();
     coman.getChain("l_sole","Waist",LR_legs);
     LR_legs.addChain(right_leg);
     coman.getChain("r_sole","Waist",RL_legs);
@@ -24,7 +23,14 @@ kinematics_utilities::kinematics_utilities()
     ikLRvelsolver = new KDL::ChainIkSolverVel_pinv(LR_legs);
     ikRLvelsolver = new KDL::ChainIkSolverVel_pinv(RL_legs);
     
-    //readJoints(coman_model.coman_model);
+    //TODO:readJoints(coman_model.coman_model);
+    q_min.resize(num_joints);
+    q_max.resize(num_joints);
+    for (int i=0;i<num_joints;i++)
+    {
+        q_max(i)=M_PI;
+        q_min(i)=-M_PI;
+    }
     ikLRsolver= new KDL::ChainIkSolverPos_NR_JL(LR_legs,q_min,q_max,*fkLRsolver,*ikLRvelsolver);
     ikRLsolver= new KDL::ChainIkSolverPos_NR_JL(RL_legs,q_min,q_max,*fkRLsolver,*ikRLvelsolver);
     
@@ -74,7 +80,7 @@ bool kinematics_utilities::readJoints(urdf::Model &robot_model) {
         joint = robot_model.getJoint(link->parent_joint->name);
         if (!joint) {
             printf("Could not find joint: %s",link->parent_joint->name.c_str());
-            return false;
+            return false; //TODO we cannot search for l_sole starting from r_sole, we need to double this loop and merge the results into q_min and q_max
         }
         if (joint->type != urdf::Joint::UNKNOWN && joint->type != urdf::Joint::FIXED) {
             printf( "adding joint: [%s]", joint->name.c_str() );

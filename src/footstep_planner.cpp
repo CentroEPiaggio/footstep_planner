@@ -45,7 +45,7 @@ bool footstepPlanner::centroid_is_reachable(KDL::Frame centroid)
     auto temp=(fromCloudToWorld*current_foot).Inverse()*centroid;
     int ik_valid = current_ik_solver->CartToJnt(jnt_pos_in, temp, jnt_pos_out);
     std::cout<<"centroide in foot"<<temp<<std::endl;
-    if (ik_valid>0)
+    if (ik_valid>=0)
     {
         return true;
     }
@@ -58,7 +58,7 @@ void footstepPlanner::setWorldTransform(KDL::Frame transform)
     this->fromCloudToWorld=transform;
 }
 
-std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud<pcl::PointXYZ>> > polygons,bool left)
+std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud<pcl::PointXYZ>> > polygons,bool left,KDL::Frame& foot_frame)
 {
     if (left)
     {
@@ -70,14 +70,8 @@ std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(st
         kinematics.fkRsolver->JntToCart(right_joints,current_foot);
         current_ik_solver=kinematics.ikRLsolver;
     }
-//     std::cout<<"from waist to current foot:"<<current_foot<<std::endl;
-//     
-//     std::cout<<"from camera to foot"<<current_foot*fromCloudToWorld<<std::endl;
-//     
-    static tf::TransformBroadcaster br;
-    tf::Transform transform;
-    tf::transformKDLToTF(fromCloudToWorld*current_foot,transform);
-    br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "camera_link", "current_foot"));
+
+    foot_frame=fromCloudToWorld*current_foot;
     
     Eigen::Matrix<double,4,1> centroid;
     std::map<int,Eigen::Matrix<double,4,1>> centroids;

@@ -1,6 +1,7 @@
 #include "ros_server.h"
 #include <kdl_conversions/kdl_msg.h>
 #include <tf_conversions/tf_kdl.h>
+#include <tf/transform_broadcaster.h>
 using namespace planner;
 
 extern volatile bool quit;
@@ -148,7 +149,10 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     marker.color.b=0;
     
     bool left=true;
-    auto centroids=footstep_planner.getFeasibleCentroids(polygons,left);
+    KDL::Frame current_foot;
+    auto centroids=footstep_planner.getFeasibleCentroids(polygons,left,current_foot);
+    tf::transformKDLToTF(current_foot,current_foot_transform);
+
     for (auto centroid:centroids)
     {
         if(left){ marker.color.r=1; marker.color.g=0; left=false;}
@@ -164,7 +168,7 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
         marker.pose.orientation.z=-0.5;
         
         marker.id = centroid.first; //to have a unique id
-        
+        marker.lifetime=ros::Duration(10);
         
         footsteps.push_back(marker.pose);
         
@@ -211,7 +215,14 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
         half_sec.sleep();
     }
     
-    return true;
+//     return true;
+return extractBorders(request,response);
 }
 
 
+void rosServer::run()
+{
+    static tf::TransformBroadcaster br;
+    
+    br.sendTransform(tf::StampedTransform(current_foot_transform, ros::Time::now(), "camera_link", "current_foot"));
+}

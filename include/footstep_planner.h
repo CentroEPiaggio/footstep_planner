@@ -34,7 +34,7 @@ public:
     
     double dist_from_robot(pcl::PointXYZ point);
     
-    std::map< int, Eigen::Matrix< double, 4, 1 > > getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > > polygons, bool left);
+    std::map<int,Eigen::Matrix<double,4,1>> getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud<pcl::PointXYZ>> > polygons,bool left,KDL::Frame& foot_frame);
     void setParams(double feasible_area_);
     void setWorldTransform(KDL::Frame transform);
     

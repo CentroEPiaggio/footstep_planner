@@ -58,12 +58,14 @@ public:
     footstepPlanner footstep_planner;
     curvatureFilter curvature_filter;
     borderExtraction border_extraction;
+    tf::Transform current_foot_transform;
     
   public:
     //------------------ Callbacks -------------------
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    void run();
     
     std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> > clusters;
     std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ> >> polygons;
