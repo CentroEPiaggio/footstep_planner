@@ -1,3 +1,9 @@
 <launch>
-<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-0.1 0.4 1.9 4.7 -1.4 3.14 camera_link world 1000" />
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="-0.1 0.4 1.9 4.7 -1.4 3.14 camera_link world 500" />
+<!--node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="0 0 0 0 0 0 world base_link 500" /-->
+<remap from="/joint_states" to="/footstep/joint_states"/>
+<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+ <rosparam param="source_list">["/footstep/joint_states"]</rosparam>
+</node>
+<include file="$(find pilot_interface)/launch/robot_state_viz.launch"/>
 </launch>

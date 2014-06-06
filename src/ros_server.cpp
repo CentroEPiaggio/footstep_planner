@@ -2,6 +2,7 @@
 #include <kdl_conversions/kdl_msg.h>
 #include <tf_conversions/tf_kdl.h>
 #include <tf/transform_broadcaster.h>
+#include <sensor_msgs/JointState.h>
 using namespace planner;
 
 extern volatile bool quit;
@@ -9,10 +10,13 @@ extern volatile bool quit;
 rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~")
 {
     // init publishers and subscribers
+    
+    camera_link_name = nh.resolveName("/camera_link");
 
     pub_cluster_cloud_ = nh_.advertise<sensor_msgs::PointCloud2>(nh_.resolveName("cluster_cloud"), 3000);
-    pub_border_poly_marker = nh_.advertise<visualization_msgs::Marker>("/border_poly_marker",1,this);
-    pub_footstep = nh_.advertise<visualization_msgs::Marker>("/footstep_marker",100,this);
+    pub_border_poly_marker = nh_.advertise<visualization_msgs::Marker>("/border_poly_marker",1,true);
+    pub_footstep = nh_.advertise<visualization_msgs::Marker>("/footstep_marker",1,true);
+    pub_ik_joints = nh_.advertise<sensor_msgs::JointState>("/footstep/joint_states",1,true);
     
     //sub_input_cloud_ = nh_.subscribe(nh_.resolveName("input_cloud"), 100, &CurvatureFilter::filterByCurvature, this);
     
@@ -43,7 +47,7 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
     
     visualization_msgs::Marker marker;
     
-    marker.header.frame_id="/camera_link";
+    marker.header.frame_id=camera_link_name;
     marker.ns="borders";
     marker.type=visualization_msgs::Marker::SPHERE_LIST;
     
@@ -62,7 +66,7 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
     
     visualization_msgs::Marker marker2;
     
-    marker2.header.frame_id="/camera_link";
+    marker2.header.frame_id=camera_link_name;
     marker2.ns="border_poly";
     marker2.type=visualization_msgs::Marker::SPHERE_LIST;
     //marker2.type=visualization_msgs::Marker::LINE_STRIP;
@@ -126,7 +130,7 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     std::cout<<std::endl<<"> Number of polygons: "<<polygons.size()<<std::endl;
     tf::StampedTransform transform;
     try{
-        listener.lookupTransform("/camera_link", "/world",
+        listener.lookupTransform(camera_link_name, "/world",
         ros::Time(0), transform);
     }
     catch (tf::TransformException ex){
@@ -138,7 +142,7 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     footstep_planner.setWorldTransform(temp);
     
     visualization_msgs::Marker marker;
-    marker.header.frame_id="/camera_link";
+    marker.header.frame_id=camera_link_name;
     marker.ns = "feet";
     marker.type = visualization_msgs::Marker::CUBE;
     marker.scale.x=0.1;
@@ -149,18 +153,17 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     marker.color.b=0;
     
     bool left=true;
-    KDL::Frame current_foot;
-    auto centroids=footstep_planner.getFeasibleCentroids(polygons,left,current_foot);
-    tf::transformKDLToTF(current_foot,current_foot_transform);
+    auto centroids=footstep_planner.getFeasibleCentroids(polygons,left);
+   
 
     for (auto centroid:centroids)
     {
-        if(left){ marker.color.r=1; marker.color.g=0; left=false;}
-        else { marker.color.r=0; marker.color.g=1; left=true;}
+//         if(left){ marker.color.r=1; marker.color.g=0; left=false;}
+//         else { marker.color.r=0; marker.color.g=1; left=true;}
         
-        marker.pose.position.x=centroid.second[0];
-        marker.pose.position.y=centroid.second[1];
-        marker.pose.position.z=centroid.second[2];
+        marker.pose.position.x=std::get<0>(centroid.second)[0];
+        marker.pose.position.y=std::get<0>(centroid.second)[1];
+        marker.pose.position.z=std::get<0>(centroid.second)[2];
         
         marker.pose.orientation.w=0.5; //TODO: orientation (x,y) as the plane where is placed, (z) as we want
         marker.pose.orientation.x=0.5;
@@ -168,13 +171,45 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
         marker.pose.orientation.z=-0.5;
         
         marker.id = centroid.first; //to have a unique id
-        marker.lifetime=ros::Duration(10);
+        marker.lifetime=ros::Duration(60);
         
         footsteps.push_back(marker.pose);
         
         pub_footstep.publish(marker);
-        ros::Duration half_sec(0.1);
-        half_sec.sleep();  
+        
+        sensor_msgs::JointState temp;
+        if (left)
+        {
+            temp.name=footstep_planner.kinematics.left_leg_names;
+            temp.name.insert(temp.name.end(),footstep_planner.kinematics.right_leg_names.begin(),footstep_planner.kinematics.right_leg_names.end());
+            for (auto nome:temp.name)
+                std::cout<<nome<<" ";
+        }
+        else
+        {
+            temp.name=footstep_planner.kinematics.right_leg_names;
+            temp.name.insert(temp.name.end(),footstep_planner.kinematics.left_leg_names.begin(),footstep_planner.kinematics.left_leg_names.end());
+        }
+        for (int i=0;i<std::get<1>(centroid.second).rows();i++)
+        {
+            temp.position.push_back(std::get<1>(centroid.second)(i));
+            std::cout<<temp.position[i]<<" ";
+        }
+        std::cout<<std::endl;
+        
+        pub_ik_joints.publish(temp);
+        pub_ik_joints.publish(temp);
+        ros::Duration sleep_time(0.5);
+        sleep_time.sleep();
+        pub_ik_joints.publish(temp);
+        pub_ik_joints.publish(temp);
+        sleep_time.sleep();
+//         std::cout<<"world to base link:"<<std::get<2>(centroid.second)<<std::endl;
+        tf::transformKDLToTF(std::get<2>(centroid.second),current_robot_transform);
+        static tf::TransformBroadcaster br;
+        br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
+        ros::Duration two_sec(2);
+        two_sec.sleep();  
     }
     return true;
 }
@@ -212,7 +247,7 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
         ROS_INFO( "Cluster %i: %lu points" , j, cluster.points.size() );
         
         ros::Duration half_sec(0.5);
-        half_sec.sleep();
+//         half_sec.sleep();
     }
     
 //     return true;
@@ -222,7 +257,8 @@ return extractBorders(request,response);
 
 void rosServer::run()
 {
-    static tf::TransformBroadcaster br;
-    
-    br.sendTransform(tf::StampedTransform(current_foot_transform, ros::Time::now(), "camera_link", "current_foot"));
+//     static tf::TransformBroadcaster br;
+//     static tf::TransformListener lr;
+//     br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
+//     std::cout<<"transform sent"<<std::endl;
 }

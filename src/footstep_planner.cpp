@@ -1,18 +1,20 @@
 #include "footstep_planner.h"
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
+// #include <pcl/point_cloud.h>
+// #include <pcl/point_types.h>
 #include <pcl/features/normal_3d.h>
-#include <pcl/features/normal_3d_omp.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/filter.h>
-#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/segmentation/conditional_euclidean_clustering.h>
-#include <pcl/range_image/range_image.h>
-#include <pcl/features/range_image_border_extractor.h>
-#include <pcl/features/boundary.h>
+// #include <pcl/features/normal_3d_omp.h>
+// #include <pcl/filters/voxel_grid.h>
+// #include <pcl/filters/filter.h>
+// #include <pcl/segmentation/extract_clusters.h>
+// #include <pcl/segmentation/conditional_euclidean_clustering.h>
+// #include <pcl/range_image/range_image.h>
+// #include <pcl/features/range_image_border_extractor.h>
+// #include <pcl/features/boundary.h>
 #include <iostream>
 #include <tf/transform_broadcaster.h>
 #include <tf_conversions/tf_kdl.h>
+#include <stdlib.h>     /* srand, rand */
+
 using namespace planner;
 
 footstepPlanner::footstepPlanner()
@@ -35,7 +37,7 @@ bool footstepPlanner::step_is_stable(KDL::Frame centroid)
   return true;
 }
 
-bool footstepPlanner::centroid_is_reachable(KDL::Frame centroid)
+bool footstepPlanner::centroid_is_reachable(KDL::Frame centroid, KDL::JntArray& jnt_pos)
 {
     KDL::JntArray jnt_pos_in;
     jnt_pos_in.resize(kinematics.q_min.rows());
@@ -44,9 +46,10 @@ bool footstepPlanner::centroid_is_reachable(KDL::Frame centroid)
     jnt_pos_out.resize(kinematics.q_min.rows());
     auto temp=(fromCloudToWorld*current_foot).Inverse()*centroid;
     int ik_valid = current_ik_solver->CartToJnt(jnt_pos_in, temp, jnt_pos_out);
-    std::cout<<"centroide in foot"<<temp<<std::endl;
+    //std::cout<<"centroide in foot"<<temp<<std::endl;
     if (ik_valid>=0)
     {
+        jnt_pos=jnt_pos_out;
         return true;
     }
       
@@ -58,30 +61,34 @@ void footstepPlanner::setWorldTransform(KDL::Frame transform)
     this->fromCloudToWorld=transform;
 }
 
-std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud<pcl::PointXYZ>> > polygons,bool left,KDL::Frame& foot_frame)
+std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > footstepPlanner::getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > > polygons, bool left)
 {
+    KDL::JntArray current_joints;
     if (left)
     {
-        kinematics.fkLsolver->JntToCart(left_joints,current_foot);
+        current_joints=left_joints;
         current_ik_solver=kinematics.ikLRsolver;
+        current_fk_solver=kinematics.fkLsolver;
     }
     else
     {
-        kinematics.fkRsolver->JntToCart(right_joints,current_foot);
+        current_joints=right_joints;
         current_ik_solver=kinematics.ikRLsolver;
+        current_fk_solver=kinematics.fkRsolver;
+        
     }
-
-    foot_frame=fromCloudToWorld*current_foot;
+    current_fk_solver->JntToCart(current_joints,current_foot);
+//     std::cout<<"from world to foot"<<current_foot<<std::endl;
     
     Eigen::Matrix<double,4,1> centroid;
-    std::map<int,Eigen::Matrix<double,4,1>> centroids;
+    std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > centroids;
     for(unsigned int j=0;j<polygons.size();j++)
     {
-        std::cout<<"> Polygon number of points: "<<polygons.at(j)->size()<<std::endl;
+//         std::cout<<"> Polygon number of points: "<<polygons.at(j)->size()<<std::endl;
         
         if(!polygon_in_feasibile_area(polygons.at(j)))
         {
-            std::cout<<"!! Polygon "<<j<<" outside the feasible area"<<std::endl;
+//             std::cout<<"!! Polygon "<<j<<" outside the feasible area"<<std::endl;
             continue;
         }
         
@@ -92,31 +99,72 @@ std::map<int,Eigen::Matrix<double,4,1>> footstepPlanner::getFeasibleCentroids(st
             //for now we place the foot in the centroid of the polygon (safe if convex)
             if(pcl::compute3DCentroid(polygon_grid.at(i), centroid ))
             {                
-                for (int angle=0;angle<360;angle=angle+1000) //TODO: fix this
+                for (int angle=-60;angle<=60;angle=angle+30) //TODO: fix this
                 {                
                     KDL::Frame temp;
                     temp.p[0]=centroid[0];
                     temp.p[1]=centroid[1];
                     temp.p[2]=centroid[2];
-                    temp.M=KDL::Rotation::RPY(0,0,angle);
-                    std::cout<<"centroid in camera link"<<temp<<std::endl;
-                    if(centroid_is_reachable(temp)) //check if the centroid id inside the reachable area
+                    temp.M=KDL::Rotation::RPY(0,-1.77,1.57);
+                     KDL::Frame rotz;
+                     rotz.M=KDL::Rotation::RPY(0,0,angle/180.0*3.14159265);
+                     temp=temp*rotz;
+                    //std::cout<<"centroid in camera link"<<temp<<std::endl;
+                    KDL::JntArray position;
+                    if(centroid_is_reachable(temp,position)) //check if the centroid id inside the reachable area
                     {
+                        std::cout<<"ik result:";
+                        for (int i=0;i<position.rows();i++)
+                            std::cout<<position(i)<<" ";
+                        std::cout<<std::endl;
                         if(step_is_stable(temp))//check if the centroid can be used to perform a stable step
                         {
                             
                             // for now we just alternate a left step and a right one, we should use a proper way to do it
-                            centroids[i*100+j]=centroid;
                             std::cout<<"> Foot Placed in the centroid of cell "<<i<<" of the polygon "<<j<<std::endl;
-                            
-                            
+                            KDL::Frame foot_position;
+                            KDL::JntArray single_leg;
+                            auto size=left_joints.rows();
+                            single_leg.resize(size);
+                            std::cout<<"current leg: ";
+                            for (int k=0;k<size;k++)
+                            {
+                                single_leg(size-k-1)=position(k);
+                            }
+                            for (int k=0;k<size;k++)
+                            {
+                            std::cout<<single_leg(k)<<" ";
+                            }
+                            std::cout<<std::endl;
+                            current_fk_solver->JntToCart(single_leg,foot_position);
+//                             std::cout<<"from foot to waist"<<foot_position.Inverse()<<std::endl;
+                            static tf::TransformBroadcaster br;
+                            tf::Transform fucking_transform;
+                            tf::transformKDLToTF(current_foot,fucking_transform);
+                            br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "current_foot"));
+                            ros::Duration t(0.1);
+                            t.sleep();
+//                             tf::transformKDLToTF(current_foot*foot_position.Inverse(),fucking_transform);
+//                             br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "mobile_waist"));
+//                             t.sleep();
+//                             tf::transformKDLToTF(foot_position,fucking_transform);
+//                             br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "mobile_foot"));
+//                             t.sleep();
+//                             t=ros::Duration(1);
+                            //t.sleep();
+                            auto temp_pos=position;
+                            size=position.rows();
+                            for (int i=0;i<left_joints.rows();i++)
+                                position(i+left_joints.rows())=temp_pos(size-i-1);
+                            centroids[i*100+j+angle]=std::make_tuple(centroid,position,current_foot*foot_position.Inverse());
+                           // j=10000;
                         } 
-                        else std::cout<<"!! Step not stable"<<std::endl;
+//                         else std::cout<<"!! Step not stable"<<std::endl;
                     } 
-                    else std::cout<<"!! Step not reachable"<<std::endl;
+//                     else std::cout<<"!! Step not reachable"<<std::endl;
                 }
             } 
-            else std::cout<<"!! ERR: Error in computing the centroid !!"<<std::endl;
+//             else std::cout<<"!! ERR: Error in computing the centroid !!"<<std::endl;
         }
     }
     return centroids;

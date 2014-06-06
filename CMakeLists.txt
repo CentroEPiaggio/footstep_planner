@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
         visualization_msgs
         tf
 	tf_conversions
+	urdf
 )
 
 ## System dependencies are found with CMake's conventions

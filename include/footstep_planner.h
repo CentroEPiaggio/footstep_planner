@@ -14,15 +14,16 @@ class footstepPlanner
 {
     
 private:
-    kinematics_utilities kinematics;
     KDL::Frame fromCloudToWorld;
     KDL::JntArray left_joints,right_joints,leg_joints;
     KDL::Frame current_foot;
     KDL::ChainIkSolverPos_NR_JL* current_ik_solver;
+    KDL::ChainFkSolverPos_recursive* current_fk_solver;
 public:
     footstepPlanner();
+    kinematics_utilities kinematics;
     
-    bool centroid_is_reachable(KDL::Frame centroid);
+    bool centroid_is_reachable(KDL::Frame centroid, KDL::JntArray& jnt_pos);
     
     bool step_is_stable(KDL::Frame centroid);
     
@@ -34,7 +35,7 @@ public:
     
     double dist_from_robot(pcl::PointXYZ point);
     
-    std::map<int,Eigen::Matrix<double,4,1>> getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud<pcl::PointXYZ>> > polygons,bool left,KDL::Frame& foot_frame);
+    std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > > polygons, bool left);
     void setParams(double feasible_area_);
     void setWorldTransform(KDL::Frame transform);
     

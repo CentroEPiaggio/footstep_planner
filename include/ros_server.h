@@ -58,7 +58,9 @@ public:
     footstepPlanner footstep_planner;
     curvatureFilter curvature_filter;
     borderExtraction border_extraction;
-    tf::Transform current_foot_transform;
+    tf::Transform current_robot_transform;
+    ros::Publisher pub_ik_joints;
+    std::string camera_link_name;
     
   public:
     //------------------ Callbacks -------------------
