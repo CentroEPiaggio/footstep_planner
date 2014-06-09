@@ -236,15 +236,15 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
     
     clusters=curvature_filter.filterByCurvature(input_cloud_ptr);
     int j=0;
-    for (auto cluster:clusters)
+    for (pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cluster:clusters)
     {
         sensor_msgs::PointCloud2 cluster_cloud_msg;
-        pcl::toROSMsg(cluster, cluster_cloud_msg);
+        pcl::toROSMsg(*cluster, cluster_cloud_msg);
         cluster_cloud_msg.header.seq = j++;
         cluster_cloud_msg.header.frame_id=input->header.frame_id;
         pub_cluster_cloud_.publish(cluster_cloud_msg);
         
-        ROS_INFO( "Cluster %i: %lu points" , j, cluster.points.size() );
+        ROS_INFO( "Cluster %i: %lu points" , j, cluster->points.size() );
         
         ros::Duration half_sec(0.5);
 //         half_sec.sleep();

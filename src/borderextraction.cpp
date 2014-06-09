@@ -50,7 +50,7 @@ bool atan_compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
     return atan2(a.y,a.x) < atan2(b.y,b.x);
 }
 
-std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > borderExtraction::extractBorders(    std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> >& clusters)
+std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > borderExtraction::extractBorders(const std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >& clusters)
 {
     std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > polygons;   
     
@@ -64,7 +64,7 @@ std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > borderExtraction
     {
         std::cout<<std::endl;
         
-        std::cout<<"- Size of cluster "<<i<<": "<<clusters.at(i).size()<<std::endl;
+        std::cout<<"- Size of cluster "<<i<<": "<<clusters.at(i)->size()<<std::endl;
         
         pcl::PointCloud<pcl::Boundary> boundaries; 
         pcl::BoundaryEstimation<pcl::PointXYZ, pcl::Normal, pcl::Boundary> boundEst; 
@@ -76,11 +76,11 @@ std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > borderExtraction
         pcl::PointXYZ pcl_point;
 
         
-        for(unsigned int pc=0; pc<clusters.at(i).size();pc++)
+        for(unsigned int pc=0; pc<clusters.at(i)->size();pc++)
         {
-            pcl_point.x = clusters.at(i).at(pc).x;
-            pcl_point.y = clusters.at(i).at(pc).y;
-            pcl_point.z = clusters.at(i).at(pc).z;
+            pcl_point.x = clusters.at(i)->at(pc).x;
+            pcl_point.y = clusters.at(i)->at(pc).y;
+            pcl_point.z = clusters.at(i)->at(pc).z;
             
             cloud->points.push_back(pcl_point);
         }

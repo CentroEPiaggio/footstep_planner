@@ -14,7 +14,7 @@ class borderExtraction
 {
 public:
     
-    std::vector< std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > > extractBorders(std::vector< pcl::PointCloud< pcl::PointXYZRGBNormal > >& clusters);
+    std::vector< std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > > extractBorders(const std::vector< boost::shared_ptr< pcl::PointCloud< pcl::PointXYZRGBNormal > > >& clusters);
     
 private:
     bool douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input, std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > output, double tolerance);

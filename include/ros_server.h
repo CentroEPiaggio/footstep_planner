@@ -69,7 +69,7 @@ public:
     bool planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     void run();
     
-    std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> > clusters;
+    std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > clusters;
     std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ> >> polygons;
     std::vector <geometry_msgs::Pose> footsteps;
     

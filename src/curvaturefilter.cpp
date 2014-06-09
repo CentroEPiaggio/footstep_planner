@@ -35,11 +35,11 @@ bool enforceCurvature (const pcl::PointXYZRGBNormal& point_a, const pcl::PointXY
 }
 
 //void CurvatureFilter::filterByCurvature(const sensor_msgs::PointCloud2 & input)
-std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> >  curvatureFilter::filterByCurvature(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_ptr)
+std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::filterByCurvature(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_ptr)
 {
     ros::Time start_time = ros::Time::now();
     
-    std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> >  clusters;
+    std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  clusters;
     //remove nans
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
     std::vector<int> nans;
@@ -185,10 +185,10 @@ std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal> >  curvatureFilter::filterB
         cloud_cluster_ptr->height = 1;
         cloud_cluster_ptr->is_dense = true;
         
-        pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_cluster;
-        cloud_cluster = *cloud_cluster_ptr;
+        //pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_cluster;
+        //cloud_cluster = *cloud_cluster_ptr;
         
-        clusters.push_back(cloud_cluster);
+        clusters.push_back(cloud_cluster_ptr);
         
         j++;
     }
