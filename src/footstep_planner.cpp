@@ -61,7 +61,7 @@ void footstepPlanner::setWorldTransform(KDL::Frame transform)
     this->fromCloudToWorld=transform;
 }
 
-std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > footstepPlanner::getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > > polygons, bool left)
+std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > footstepPlanner::getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left)
 {
     KDL::JntArray current_joints;
     if (left)
@@ -86,29 +86,35 @@ std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Fr
     {
 //         std::cout<<"> Polygon number of points: "<<polygons.at(j)->size()<<std::endl;
         
-        if(!polygon_in_feasibile_area(polygons.at(j)))
+        if(!polygon_in_feasibile_area(polygons.at(j).border))
         {
 //             std::cout<<"!! Polygon "<<j<<" outside the feasible area"<<std::endl;
             continue;
         }
         
-        std::vector< pcl::PointCloud<pcl::PointXYZ> > polygon_grid =  compute_polygon_grid(polygons.at(j)); //divide the polygon in smaller ones
+        //TODO delete the next line, it's useless
+        std::vector< pcl::PointCloud<pcl::PointXYZ> > polygon_grid =  compute_polygon_grid(polygons.at(j).border); //divide the polygon in smaller ones
        
         for(unsigned int i=0;i<polygon_grid.size();i++)
         {
             //for now we place the foot in the centroid of the polygon (safe if convex)
+            //TODO: http://stackoverflow.com/questions/2096474/given-a-surface-normal-find-rotation-for-3d-plane
+            for each point in the point cloud
             if(pcl::compute3DCentroid(polygon_grid.at(i), centroid ))
             {                
-                for (int angle=-60;angle<=60;angle=angle+30) //TODO: fix this
+                for (int angle=-40;angle<=40;angle=angle+20) //TODO: fix this
                 {                
                     KDL::Frame temp;
                     temp.p[0]=centroid[0];
                     temp.p[1]=centroid[1];
                     temp.p[2]=centroid[2];
                     temp.M=KDL::Rotation::RPY(0,-1.77,1.57);
-                     KDL::Frame rotz;
+                     KDL::Frame rotz,movx;
                      rotz.M=KDL::Rotation::RPY(0,0,angle/180.0*3.14159265);
+                     movx.p.y(-0.1);
+                     temp=temp*movx;
                      temp=temp*rotz;
+                     
                     //std::cout<<"centroid in camera link"<<temp<<std::endl;
                     KDL::JntArray position;
                     if(centroid_is_reachable(temp,position)) //check if the centroid id inside the reachable area
@@ -156,7 +162,7 @@ std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Fr
                             size=position.rows();
                             for (int i=0;i<left_joints.rows();i++)
                                 position(i+left_joints.rows())=temp_pos(size-i-1);
-                            centroids[i*100+j+angle]=std::make_tuple(centroid,position,current_foot*foot_position.Inverse());
+                            centroids[i*100+j*10000+angle]=std::make_tuple(centroid,position,current_foot*foot_position.Inverse());
                            // j=10000;
                         } 
 //                         else std::cout<<"!! Step not stable"<<std::endl;
@@ -171,7 +177,7 @@ std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Fr
 }
 
 
-std::vector< pcl::PointCloud<pcl::PointXYZ> > footstepPlanner::compute_polygon_grid( std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> polygon)
+std::vector< pcl::PointCloud<pcl::PointXYZ> > footstepPlanner::compute_polygon_grid( pcl::PointCloud< pcl::PointXYZ >::Ptr polygon)
 {
   std::vector< pcl::PointCloud<pcl::PointXYZ> > polygon_grid;
   
@@ -191,7 +197,7 @@ double footstepPlanner::dist_from_robot(pcl::PointXYZ point)
   return sqrt(x_diff*x_diff + y_diff*y_diff + z_diff*z_diff);
 }
 
-bool footstepPlanner::polygon_in_feasibile_area(std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> polygon)
+bool footstepPlanner::polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon)
 {
   for (unsigned int i=0;i<polygon->size();i++)
   {

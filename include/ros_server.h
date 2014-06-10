@@ -70,7 +70,7 @@ public:
     void run();
     
     std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > clusters;
-    std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ> >> polygons;
+    std::vector< polygon_with_normals > polygons;
     std::vector <geometry_msgs::Pose> footsteps;
     
 };

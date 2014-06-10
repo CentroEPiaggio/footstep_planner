@@ -5,6 +5,7 @@
 #include <iostream>
 #include <eigen3/Eigen/src/Core/Matrix.h>
 #include "kinematics_utilities.h"
+#include "borderextraction.h"
 #include <tf/transform_datatypes.h>
 
 namespace planner
@@ -29,13 +30,13 @@ public:
     
     bool plane_is_compatible(Eigen::Matrix< double, 4, 1 > centroid);
     
-    std::vector< pcl::PointCloud<pcl::PointXYZ> > compute_polygon_grid(std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > polygon);
+    std::vector< pcl::PointCloud<pcl::PointXYZ> > compute_polygon_grid(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon);
     
-    bool polygon_in_feasibile_area(std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > polygon);
+    bool polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon);
     
     double dist_from_robot(pcl::PointXYZ point);
     
-    std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > getFeasibleCentroids(std::vector< std::shared_ptr< pcl::PointCloud< pcl::PointXYZ > > > polygons, bool left);
+    std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left);
     void setParams(double feasible_area_);
     void setWorldTransform(KDL::Frame transform);
     

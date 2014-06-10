@@ -50,15 +50,20 @@ bool atan_compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
     return atan2(a.y,a.x) < atan2(b.y,b.x);
 }
 
-std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > borderExtraction::extractBorders(const std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >& clusters)
+std::vector< polygon_with_normals > borderExtraction::extractBorders(const std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >& clusters)
 {
-    std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > polygons;   
+    std::vector<  polygon_with_normals > polygons;   
     
     if(clusters.size()==0)
     {
         std::cout<<"No clusters to process, you should call the [/filter_by_curvature] service first"<<std::endl;
         return polygons;
     }
+    
+    
+    //TODO
+    usare le normali dei cluster invece di ricalcolarle per trovare i boundaries
+    uniform sampling/voxel grid sui cluster, e per ogni punto restituito, cercare il closest point del cluster e salvarlo (completo di normale)
        
     for (unsigned int i=0; i< clusters.size(); i++)
     {
@@ -75,6 +80,8 @@ std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > borderExtraction
         
         pcl::PointXYZ pcl_point;
 
+        pcl::PointXYZRGBNormal a;
+        std::cout<<a.normal_x<<std::endl;
         
         for(unsigned int pc=0; pc<clusters.at(i)->size();pc++)
         {
@@ -125,20 +132,21 @@ std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > borderExtraction
          std::cout<<"- Border number of points: "<<border.size()<<std::endl;
 //         
 //         pub_border_marker.publish(marker);
-        pcl::PointCloud<pcl::PointXYZ> temp;
-        std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> border_polygon= std::make_shared<pcl::PointCloud<pcl::PointXYZ>>(temp);
+        polygon_with_normals temp;
+        temp.border=douglas_peucker_3d(border,0.05);
+        //TODO: initiliaze temp.normal
         
         std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
         
-        if(!douglas_peucker_3d(border,border_polygon,0.05)){
+        if(!temp.border){
             std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl; 
             return polygons;
             
         }
         
-        std::cout<<"- Polygon number of points: "<<border_polygon->size()<<std::endl;
+        std::cout<<"- Polygon number of points: "<<temp.border->size()<<std::endl;
         
-        polygons.push_back(border_polygon);
+        polygons.push_back(temp);
         
  
     }
@@ -148,9 +156,10 @@ std::vector<  std::shared_ptr<pcl::PointCloud<pcl::PointXYZ>> > borderExtraction
 
 
 
-bool borderExtraction::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input,  std::shared_ptr<pcl::PointCloud< pcl::PointXYZ >> output,double tolerance)
+pcl::PointCloud< pcl::PointXYZ >::Ptr borderExtraction::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input,double tolerance)
 {  
-    if(!input.size()) return false;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr output;
+    if(!input.size()) return output;
     
     std::sort(input.begin(),input.end(),atan_compare_2d); //sorting input for douglas_peucker_3d procedure
     
@@ -203,7 +212,7 @@ bool borderExtraction::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& inpu
     std::cout<<"- INFO: i = "<<i<<std::endl;
     if(j!=0) {std::cout<<"- !! Error in output dimension (no 3d) !!"<<std::endl;}
     
-    return true;
+    return output;
 }
 
 

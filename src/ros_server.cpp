@@ -1,4 +1,5 @@
 #include "ros_server.h"
+#include <borderextraction.h>
 #include <kdl_conversions/kdl_msg.h>
 #include <tf_conversions/tf_kdl.h>
 #include <tf/transform_broadcaster.h>
@@ -91,7 +92,7 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
     uint8_t r, g, b;
     int32_t rgb; 
     int i=0;
-    for (auto border_polygon:polygons)
+    for (polygon_with_normals& border_polygon:polygons)
     {
         r = 255*((double)rand()/(double)RAND_MAX);
         g = 255*((double)rand()/(double)RAND_MAX);
@@ -103,11 +104,11 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
 	color.g=g;
 	color.b=b;
                 
-        for(int po = 0; po < border_polygon->points.size(); po++) 
+        for(int po = 0; po < border_polygon.border->points.size(); po++) 
         { 
-            point.x = border_polygon->at(po).x;
-            point.y = border_polygon->at(po).y;
-            point.z = border_polygon->at(po).z;
+            point.x = border_polygon.border->at(po).x;
+            point.y = border_polygon.border->at(po).y;
+            point.z = border_polygon.border->at(po).z;
             
             marker2.colors.push_back(color);
             marker2.points.push_back(point);
@@ -155,12 +156,12 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     bool left=true;
     auto centroids=footstep_planner.getFeasibleCentroids(polygons,left);
    
-
+int k=0;
     for (auto centroid:centroids)
     {
 //         if(left){ marker.color.r=1; marker.color.g=0; left=false;}
 //         else { marker.color.r=0; marker.color.g=1; left=true;}
-        
+        k++;
         marker.pose.position.x=std::get<0>(centroid.second)[0];
         marker.pose.position.y=std::get<0>(centroid.second)[1];
         marker.pose.position.z=std::get<0>(centroid.second)[2];
@@ -210,6 +211,7 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
         br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
         ros::Duration two_sec(2);
         two_sec.sleep();  
+        if (k>4) break;
     }
     return true;
 }

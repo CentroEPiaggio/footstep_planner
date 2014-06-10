@@ -191,6 +191,7 @@ std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::fi
         clusters.push_back(cloud_cluster_ptr);
         
         j++;
+        if (j>10 ) break; //HACK 
     }
     
     
