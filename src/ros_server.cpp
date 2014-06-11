@@ -42,6 +42,8 @@ rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~"),publisher(nh,n
     KDL::Frame fromCameraToWorld;
     tf::transformTFToKDL(transform,fromCameraToWorld);
     footstep_planner.setWorldTransform(fromCameraToWorld);
+    current_direction=fromCameraToWorld*KDL::Vector(1,0,0); //TODO
+    footstep_planner.setCurrentDirection(current_direction); //TODO
 }
 
 bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)

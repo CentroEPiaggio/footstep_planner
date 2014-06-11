@@ -64,6 +64,12 @@ std::vector<KDL::Frame> footstepPlanner::createFramesFromNormal(pcl::PointXYZRGB
     //TODO
 }
 
+//World frame
+void footstepPlanner::setCurrentDirection(KDL::Frame direction)
+{
+    this->desired_direction=direction; //TODO convert into camera_link frame
+}
+
 
 std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left)
 {
@@ -94,21 +100,15 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
         }
         for(unsigned int i=0; i<polygon.normals->size(); i++)
         {
-            auto frames=createFramesFromNormal((*polygon.normals)[i]);
+            KDL::Frame plane_frame=createFramesFromNormal((*polygon.normals)[i]);
             int k=-1;
-            for (auto temp:frames) 
+            for (double angle=-0.8;angle<=0.8;angle=angle+0.1) 
             {
                 k++;
-//                 KDL::Frame temp;
-//                 temp.p[0]=centroid[0];
-//                 temp.p[1]=centroid[1];
-//                 temp.p[2]=centroid[2];
-//                 temp.M=KDL::Rotation::RPY(0,-1.77,1.57);
-//                 KDL::Frame rotz,movx;
-//                 rotz.M=KDL::Rotation::RPY(0,0,angle/180.0*3.14159265);
-//                 movx.p.y(-0.1);
-//                 temp=temp*movx;
-//                 temp=temp*rotz;
+                KDL::Frame temp;
+                KDL::Frame rotz;
+                rotz.M=KDL::Rotation::RotZ(angle);
+                temp=temp*rotz;
 
                 //std::cout<<"centroid in camera link"<<temp<<std::endl;
                 KDL::JntArray position;

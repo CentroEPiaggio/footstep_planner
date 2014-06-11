@@ -25,6 +25,7 @@ private:
     
     KDL::ChainIkSolverPos_NR_JL* current_ik_solver;
     KDL::ChainFkSolverPos_recursive* current_fk_solver;
+    KDL::Frame desired_direction;
     
     //Camera Link frame
     std::vector<KDL::Frame> createFramesFromNormal(pcl::PointXYZRGBNormal normal);
@@ -54,6 +55,9 @@ public:
     void setWorldTransform(KDL::Frame transform);
     std::pair<int,foot_with_joints> selectBestCentroid(std::map< int,foot_with_joints > centroids, bool left);
     inline KDL::Frame getWorldTransform(){return fromCloudToWorld;};
+    
+    //World Frame
+    void setCurrentDirection(KDL::Frame current_direction);
     
     
     // robot area for the footstep planner
