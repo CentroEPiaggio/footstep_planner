@@ -26,6 +26,7 @@
 #include "footstep_planner.h"
 #include "curvaturefilter.h"
 #include "borderextraction.h"
+#include "ros_publisher.h"
 #include <drc_shared/idynutils.h>
 // class object for the ROS node
 namespace planner {
@@ -42,9 +43,7 @@ public:
     ros::NodeHandle priv_nh_;
 
     //! Publishers
-    ros::Publisher pub_cluster_cloud_;
-    ros::Publisher pub_border_poly_marker;
-    ros::Publisher pub_footstep;
+    ros_publisher publisher;
     
     //! Subscribers
     ros::Subscriber sub_input_cloud_;
@@ -59,7 +58,7 @@ public:
     curvatureFilter curvature_filter;
     borderExtraction border_extraction;
     tf::Transform current_robot_transform;
-    ros::Publisher pub_ik_joints;
+    
     std::string camera_link_name;
     
   public:
@@ -71,7 +70,7 @@ public:
     
     std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > clusters;
     std::vector< polygon_with_normals > polygons;
-    std::vector <geometry_msgs::Pose> footsteps;
+    std::vector <KDL::Frame> footsteps;
     
 };
 

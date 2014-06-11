@@ -20,25 +20,26 @@ private:
     KDL::Frame current_foot;
     KDL::ChainIkSolverPos_NR_JL* current_ik_solver;
     KDL::ChainFkSolverPos_recursive* current_fk_solver;
-public:
-    footstepPlanner();
-    kinematics_utilities kinematics;
-    
+    std::vector<KDL::Frame> createFramesFromNormal(pcl::PointNormal normal);
     bool centroid_is_reachable(KDL::Frame centroid, KDL::JntArray& jnt_pos);
     
     bool step_is_stable(KDL::Frame centroid);
     
     bool plane_is_compatible(Eigen::Matrix< double, 4, 1 > centroid);
     
-    std::vector< pcl::PointCloud<pcl::PointXYZ> > compute_polygon_grid(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon);
-    
     bool polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon);
     
     double dist_from_robot(pcl::PointXYZ point);
+public:
+    footstepPlanner();
+    kinematics_utilities kinematics;
     
     std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left);
     void setParams(double feasible_area_);
+    void setCurrentSupportFoot(KDL::Frame foot_position);
     void setWorldTransform(KDL::Frame transform);
+    std::pair<int,std::tuple<KDL::Frame, KDL::JntArray> selectBestCentroid(std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > centroids, bool left);
+    inline KDL::Frame getWorldTransform(){return fromCloudToWorld;};
     
     
     // robot area for the footstep planner

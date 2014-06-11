@@ -71,6 +71,11 @@ kinematics_utilities::kinematics_utilities():coman_model()
         std::cout<<"ERROR in joint name initialization"<<std::endl;
     if (!initJointNames(coman_urdf_model,"r_sole","Waist",right_leg_names))
         std::cout<<"ERROR in joint name initialization"<<std::endl;
+        joint_names_LR=left_leg_names;
+        joint_names_LR.insert(joint_names_LR.end(),right_leg_names.begin(),right_leg_names.end());
+        joint_names_RL=right_leg_names;
+        joint_names_RL.insert(joint_names_RL.end(),left_leg_names.begin(),left_leg_names.end());
+    
 }
 
 

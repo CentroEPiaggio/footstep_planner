@@ -35,6 +35,7 @@ public:
     
     int num_joints;
     std::vector<std::string> left_leg_names,right_leg_names;
+    std::vector<std::string> joint_names_LR,joint_names_RL;
     
     
     

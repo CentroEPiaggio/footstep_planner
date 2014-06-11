@@ -78,7 +78,7 @@ add_definitions(
         ${PCL_DEFINITIONS}
         )
 
-add_executable(foot_planner 
+add_executable(foot_planner src/ros_publisher.cpp 
         src/ros_server.cpp
         src/footstep_planner.cpp
         src/kinematics_utilities.cpp
