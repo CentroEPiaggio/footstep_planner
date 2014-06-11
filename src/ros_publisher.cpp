@@ -101,7 +101,7 @@ void ros_publisher::publish_plane_borders(std::vector<polygon_with_normals> bord
     
 }
 
-void ros_publisher::publish_foot_position(KDL::Frame fromWorldTofoot,std::string centroid_id, KDL::Frame fromCameraToworld)
+void ros_publisher::publish_foot_position(KDL::Frame fromWorldTofoot,int centroid_id, KDL::Frame fromCameraToworld)
 {
     
     foot_marker.pose.position.x=fromWorldTofoot.p.x();
@@ -132,10 +132,6 @@ void ros_publisher::publish_robot_joints(KDL::JntArray joints, std::vector<std::
     pub_ik_joints.publish(temp);
     pub_ik_joints.publish(temp);
     sleep_time.sleep();
-    //         std::cout<<"world to base link:"<<std::get<2>(centroid.second)<<std::endl;
-//     tf::transformKDLToTF(std::get<2>(centroid.second),current_robot_transform);
-//     static tf::TransformBroadcaster br;
-//     br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
     ros::Duration two_sec(2);
     two_sec.sleep();  
 }

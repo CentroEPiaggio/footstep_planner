@@ -16,7 +16,6 @@ public:
     kinematics_utilities();
 //    Eigen::Matrix<double,6,1> left_foot, right_foot;
     
-    KDL::Frame left_foot,right_foot,world;
     urdf::Model coman_urdf_model;
     
     iDynUtils coman_model;

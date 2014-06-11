@@ -59,13 +59,13 @@ void footstepPlanner::setWorldTransform(KDL::Frame transform)
     current_foot=fromCloudToWorld*current_foot;
 }
 
-std::vector<KDL::Frame> createFramesFromNormal(pcl::PointNormal normal)
+std::vector<KDL::Frame> footstepPlanner::createFramesFromNormal(pcl::PointNormal normal)
 {
     //TODO
 }
 
 
-std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > footstepPlanner::getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left)
+std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left)
 {
     KDL::JntArray current_joints;
     if (left)
@@ -82,8 +82,7 @@ std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Fr
 
     }
 
-    KDL::Frame centroid;
-    std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > centroids;
+    std::map< int, foot_with_joints> centroids;
     int j=-1;
     for(auto polygon:polygons)
     {
@@ -93,12 +92,12 @@ std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Fr
 //             std::cout<<"!! Polygon "<<j<<" outside the feasible area"<<std::endl;
             continue;
         }
-        for(unsigned int i=0; i<polygon.normals.size(); i++)
+        for(unsigned int i=0; i<polygon.normals->size(); i++)
         {
             //TODO: http://stackoverflow.com/questions/2096474/given-a-surface-normal-find-rotation-for-3d-plane
-            auto frames=createFramesFromNormal(polygon.normals[i]);
+            auto frames=createFramesFromNormal((*polygon.normals)[i]);
             int k=-1;
-            for (auto temp:frames) //TODO: fix this
+            for (auto temp:frames) 
             {
                 k++;
 //                 KDL::Frame temp;
@@ -150,7 +149,7 @@ std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Fr
                         size=position.rows();
                         for (int i=0; i<left_joints.rows(); i++)
                             position(i+left_joints.rows())=temp_pos(size-i-1);
-                        centroids[i*100+j*10000+k]=std::make_tuple(centroid,position,current_foot*foot_position.Inverse());
+                        centroids[i*100+j*10000+k]=std::make_tuple(current_foot*foot_position.Inverse(),position);
                         // j=10000;
                     }
 //                         else std::cout<<"!! Step not stable"<<std::endl;
@@ -162,6 +161,12 @@ std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Fr
     }
     return centroids;
 }
+
+std::pair<int,foot_with_joints> footstepPlanner::selectBestCentroid(std::map< int, foot_with_joints > centroids, bool left)
+{
+    return *centroids.begin();//TODO
+}
+
 
 
 double footstepPlanner::dist_from_robot(pcl::PointXYZ point)

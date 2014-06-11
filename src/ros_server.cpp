@@ -8,7 +8,7 @@ using namespace planner;
 
 extern volatile bool quit;
 
-rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~")
+rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~"),publisher(nh,nh.resolveName("/camera_link"))
 {
     // init publishers and subscribers
     
@@ -62,18 +62,30 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     bool left=true;
     auto centroids=footstep_planner.getFeasibleCentroids(polygons,left);
     auto final_centroid=footstep_planner.selectBestCentroid(centroids,left);    
+    path.push_back(final_centroid);
     left=false;
+    footstep_planner.setCurrentSupportFoot(std::get<0>(final_centroid.second));
+    centroids=footstep_planner.getFeasibleCentroids(polygons,left);
+    final_centroid=footstep_planner.selectBestCentroid(centroids,left);  
+    path.push_back(final_centroid);
+    left=true;
+    footstep_planner.setCurrentSupportFoot(std::get<0>(final_centroid.second));
+    centroids=footstep_planner.getFeasibleCentroids(polygons,left);
+    final_centroid=footstep_planner.selectBestCentroid(centroids,left);    
+    path.push_back(final_centroid);
     
-    
-    
-    for (auto centroid:centroids)
+    for (auto centroid:path)
     {
-        footsteps.push_back(std::get<2>(centroid.second));//TODO
-        publisher.publish_foot_position(std::get<2>(centroid.second),centroid.first,footstep_planner.getWorldTransform());
+        publisher.publish_foot_position(std::get<0>(centroid.second),centroid.first,footstep_planner.getWorldTransform());
         if (left)
             publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_LR);
         else
             publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_RL);
+        //         std::cout<<"world to base link:"<<std::get<2>(centroid.second)<<std::endl;
+        //     tf::transformKDLToTF(std::get<2>(centroid.second),current_robot_transform);
+        //     static tf::TransformBroadcaster br;
+        //     br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
+        
     }
     return true;
 }

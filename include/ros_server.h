@@ -61,6 +61,8 @@ public:
     
     std::string camera_link_name;
     
+    //WORLD Reference Frame
+    std::vector<std::pair<int,foot_with_joints>> path;
   public:
     //------------------ Callbacks -------------------
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
@@ -68,9 +70,9 @@ public:
     bool planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     void run();
     
+    //Camera_link reference Frame
     std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > clusters;
     std::vector< polygon_with_normals > polygons;
-    std::vector <KDL::Frame> footsteps;
     
 };
 

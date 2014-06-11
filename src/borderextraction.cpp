@@ -62,8 +62,8 @@ std::vector< polygon_with_normals > borderExtraction::extractBorders(const std::
     
     
     //TODO
-    usare le normali dei cluster invece di ricalcolarle per trovare i boundaries
-    uniform sampling/voxel grid sui cluster, e per ogni punto restituito, cercare il closest point del cluster e salvarlo (completo di normale)
+//     usare le normali dei cluster invece di ricalcolarle per trovare i boundaries
+//     uniform sampling/voxel grid sui cluster, e per ogni punto restituito, cercare il closest point del cluster e salvarlo (completo di normale)
        
     for (unsigned int i=0; i< clusters.size(); i++)
     {

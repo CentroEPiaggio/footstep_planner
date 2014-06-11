@@ -11,6 +11,8 @@
 namespace planner
 {
 
+typedef std::tuple<KDL::Frame,KDL::JntArray> foot_with_joints;
+    
 class footstepPlanner
 {
     
@@ -34,11 +36,11 @@ public:
     footstepPlanner();
     kinematics_utilities kinematics;
     
-    std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left);
+    std::map< int, foot_with_joints > getFeasibleCentroids(std::vector< planner::polygon_with_normals > polygons, bool left);
     void setParams(double feasible_area_);
     void setCurrentSupportFoot(KDL::Frame foot_position);
     void setWorldTransform(KDL::Frame transform);
-    std::pair<int,std::tuple<KDL::Frame, KDL::JntArray> selectBestCentroid(std::map< int, std::tuple< Eigen::Matrix< double, 4, 1 >, KDL::JntArray, KDL::Frame > > centroids, bool left);
+    std::pair<int,foot_with_joints> selectBestCentroid(std::map< int,foot_with_joints > centroids, bool left);
     inline KDL::Frame getWorldTransform(){return fromCloudToWorld;};
     
     
