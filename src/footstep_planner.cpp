@@ -59,7 +59,7 @@ void footstepPlanner::setWorldTransform(KDL::Frame transform)
     current_foot=fromCloudToWorld*current_foot;
 }
 
-std::vector<KDL::Frame> footstepPlanner::createFramesFromNormal(pcl::PointNormal normal)
+std::vector<KDL::Frame> footstepPlanner::createFramesFromNormal(pcl::PointXYZRGBNormal normal)
 {
     //TODO
 }
@@ -94,7 +94,6 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
         }
         for(unsigned int i=0; i<polygon.normals->size(); i++)
         {
-            //TODO: http://stackoverflow.com/questions/2096474/given-a-surface-normal-find-rotation-for-3d-plane
             auto frames=createFramesFromNormal((*polygon.normals)[i]);
             int k=-1;
             for (auto temp:frames) 

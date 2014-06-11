@@ -19,10 +19,17 @@ class footstepPlanner
 private:
     KDL::Frame fromCloudToWorld;
     KDL::JntArray left_joints,right_joints,leg_joints;
+    
+    //World frame
     KDL::Frame current_foot;
+    
     KDL::ChainIkSolverPos_NR_JL* current_ik_solver;
     KDL::ChainFkSolverPos_recursive* current_fk_solver;
-    std::vector<KDL::Frame> createFramesFromNormal(pcl::PointNormal normal);
+    
+    //Camera Link frame
+    std::vector<KDL::Frame> createFramesFromNormal(pcl::PointXYZRGBNormal normal);
+    
+    //World frame
     bool centroid_is_reachable(KDL::Frame centroid, KDL::JntArray& jnt_pos);
     
     bool step_is_stable(KDL::Frame centroid);
@@ -36,9 +43,14 @@ public:
     footstepPlanner();
     kinematics_utilities kinematics;
     
+    //Camera link frame
     std::map< int, foot_with_joints > getFeasibleCentroids(std::vector< planner::polygon_with_normals > polygons, bool left);
     void setParams(double feasible_area_);
+    
+    //World frame
     void setCurrentSupportFoot(KDL::Frame foot_position);
+    
+    
     void setWorldTransform(KDL::Frame transform);
     std::pair<int,foot_with_joints> selectBestCentroid(std::map< int,foot_with_joints > centroids, bool left);
     inline KDL::Frame getWorldTransform(){return fromCloudToWorld;};

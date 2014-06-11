@@ -13,7 +13,7 @@ namespace planner
     struct polygon_with_normals
     {
         pcl::PointCloud<pcl::PointXYZ>::Ptr border;
-        pcl::PointCloud<pcl::PointNormal>::Ptr normals;
+        pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr normals;
     };
     
     
@@ -25,7 +25,7 @@ public:
     std::vector< polygon_with_normals > extractBorders(const std::vector< boost::shared_ptr< pcl::PointCloud< pcl::PointXYZRGBNormal > > >& clusters);
     
 private:
-    pcl::PointCloud< pcl::PointXYZ >::Ptr douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZ >& input, double tolerance);
+    pcl::PointCloud< pcl::PointXYZ >::Ptr douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZRGBNormal >& input, double tolerance);
     
 };
 
