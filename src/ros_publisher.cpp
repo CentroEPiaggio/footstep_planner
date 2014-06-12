@@ -35,7 +35,7 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     borders_marker.color.a=1;
     
     
-    foot_marker.header.frame_id=camera_link_name;
+    foot_marker.header.frame_id="/world";
     foot_marker.ns = "feet";
     foot_marker.type = visualization_msgs::Marker::CUBE;
     foot_marker.scale.x=0.1;
@@ -43,8 +43,8 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     foot_marker.scale.z=0.02;
     
     foot_marker.color.a=1;
-    foot_marker.color.b=0;
-    foot_marker.lifetime=ros::Duration(60);
+    foot_marker.color.b=255;
+    foot_marker.lifetime=ros::Duration(600);
     
 }
 
@@ -128,7 +128,7 @@ void ros_publisher::publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal
     marker.scale.x=0.005;
     marker.scale.y=0.002;
     marker.scale.z=0.005;
-    marker.lifetime=ros::Duration(150);
+    marker.lifetime=ros::Duration(600);
     marker.color.r=1;
     marker.color.a=1;
     marker.type=visualization_msgs::Marker::ARROW;
@@ -139,9 +139,9 @@ void ros_publisher::publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal
         point1.x=(*normals)[i].x;
         point1.y=(*normals)[i].y;
         point1.z=(*normals)[i].z;
-        point2.x=(*normals)[i].normal_x/10.0+point1.x;
-        point2.y=(*normals)[i].normal_y/10.0+point1.y;
-        point2.z=(*normals)[i].normal_z/10.0+point1.z;
+        point2.x=(*normals)[i].normal_x/20.0+point1.x;
+        point2.y=(*normals)[i].normal_y/20.0+point1.y;
+        point2.z=(*normals)[i].normal_z/20.0+point1.z;
         
         marker.points.clear();
         marker.id=i;

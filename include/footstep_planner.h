@@ -41,7 +41,7 @@ private:
     
     bool polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon);
     
-    double dist_from_robot(pcl::PointXYZ point);
+    double dist_from_robot(pcl::PointXYZ point, double x, double y, double z);
 public:
     footstepPlanner();
     kinematics_utilities kinematics;
