@@ -230,15 +230,18 @@ double footstepPlanner::dist_from_robot(pcl::PointXYZ point, double x,double y,d
 bool footstepPlanner::polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon)
 {
     KDL::Frame Camera_StanceFoot = World_Camera.Inverse()*World_StanceFoot;
-    KDL::Vector StanceFoot_direction(1,0,0);
-    auto filter=Camera_StanceFoot*StanceFoot_direction;
+    KDL::Vector World_direction(1,0,0);
+    auto filter=World_Camera.Inverse()*World_direction;
     for (unsigned int i=0; i<polygon->size(); i++)
     {
-        
-        if(dist_from_robot(polygon->at(i),Camera_StanceFoot.p.x,Camera_StanceFoot.p.y,Camera_StanceFoot.p.z) < feasible_area_) return true;
-        
+        auto& point_cloud=polygon->at(i);
+        auto& point_foot=Camera_StanceFoot.p;
+        auto& point1=filter;
+        KDL::Vector point(point_cloud.x-point_foot.x(),point_cloud.y-point_foot.y(),point_cloud.z-point_foot.z());
+        if ((point.x()*point1.x()+point.y()*point1.y()+point.z()*point1.z())>0) //If the point is the direction of the foot motion
+            if(dist_from_robot(polygon->at(i),Camera_StanceFoot.p.x(),Camera_StanceFoot.p.y(),Camera_StanceFoot.p.z()) < feasible_area_) 
+                return true;
     }
-
     return false;
 }
 
