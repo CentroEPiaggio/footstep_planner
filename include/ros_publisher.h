@@ -18,6 +18,8 @@ public:
     void publish_plane_borders(std::vector< polygon_with_normals> borders);
     void publish_foot_position(KDL::Frame fromWorldTofoot, int centroid_id, KDL::Frame fromCameraToworld);
     void publish_robot_joints(KDL::JntArray joints, std::vector<std::string> joint_names);
+    void publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal >::Ptr normals,int i);
+    
 private:
     ros::NodeHandle node;
     ros::Publisher pub_cluster_cloud_;
@@ -28,6 +30,7 @@ private:
     std::string camera_link_name;
     visualization_msgs::Marker borders_marker;
     visualization_msgs::Marker foot_marker;
+    ros::Publisher pub_normal_cloud_;
     
 };
 

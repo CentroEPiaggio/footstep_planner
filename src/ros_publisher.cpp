@@ -2,8 +2,8 @@
 #include <borderextraction.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <sensor_msgs/JointState.h>
-
 using namespace planner;
 
 ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name)
@@ -14,6 +14,7 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     pub_border_poly_marker = node.advertise<visualization_msgs::Marker>("/border_poly_marker",1,true);
     pub_footstep = node.advertise<visualization_msgs::Marker>("/footstep_marker",1,true);
     pub_ik_joints = node.advertise<sensor_msgs::JointState>("/footstep/joint_states",1,true);
+    pub_normal_cloud_ = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("normal_cloud"), 1);
     
     borders_marker.header.frame_id=camera_link_name;
     borders_marker.ns="border_poly";
@@ -116,22 +117,59 @@ void ros_publisher::publish_foot_position(KDL::Frame fromWorldTofoot,int centroi
     
 }
 
+void ros_publisher::publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal >::Ptr normals, int i)
+{
+    visualization_msgs::MarkerArray msg;
+    
+    visualization_msgs::Marker marker;
+    marker.header.stamp=ros::Time::now();
+    marker.header.frame_id=camera_link_name;
+    marker.ns="normals"+std::to_string(i);
+    marker.scale.x=0.005;
+    marker.scale.y=0.002;
+    marker.scale.z=0.005;
+    marker.lifetime=ros::Duration(150);
+    marker.color.r=1;
+    marker.color.a=1;
+    marker.type=visualization_msgs::Marker::ARROW;
+    geometry_msgs::Point point1,point2;
+    
+    for (int i=0;i<normals->size();i++)
+    {
+        point1.x=(*normals)[i].x;
+        point1.y=(*normals)[i].y;
+        point1.z=(*normals)[i].z;
+        point2.x=(*normals)[i].normal_x/10.0+point1.x;
+        point2.y=(*normals)[i].normal_y/10.0+point1.y;
+        point2.z=(*normals)[i].normal_z/10.0+point1.z;
+        
+        marker.points.clear();
+        marker.id=i;
+        marker.points.push_back(point1);
+        marker.points.push_back(point2);
+        
+        msg.markers.push_back(marker);
+    }
+    pub_normal_cloud_.publish(msg);
+}
+
 void ros_publisher::publish_robot_joints(KDL::JntArray joints, std::vector<std::string> joint_names)
 {
     sensor_msgs::JointState temp;
+    temp.header.stamp=ros::Time::now();
     for (int i=0;i<joints.rows();i++)
     {
         temp.position.push_back(joints(i));
     }
     temp.name=joint_names;
     
+//     pub_ik_joints.publish(temp);
+//     pub_ik_joints.publish(temp);
+//     ros::Duration sleep_time(0.5);
+//     sleep_time.sleep();
+//     pub_ik_joints.publish(temp);
     pub_ik_joints.publish(temp);
-    pub_ik_joints.publish(temp);
-    ros::Duration sleep_time(0.5);
-    sleep_time.sleep();
-    pub_ik_joints.publish(temp);
-    pub_ik_joints.publish(temp);
-    sleep_time.sleep();
-    ros::Duration two_sec(2);
-    two_sec.sleep();  
+//     sleep_time.sleep();
+//     ros::Duration two_sec(2);
+//     two_sec.sleep();  
 }

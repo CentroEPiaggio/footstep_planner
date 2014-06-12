@@ -109,13 +109,13 @@ std::vector< polygon_with_normals > borderExtraction::extractBorders(const std::
         temp.border=douglas_peucker_3d(border,0.05);
         pcl::PointCloud<pcl::PointXYZRGBNormal> temp_cloud;
         temp.normals=temp_cloud.makeShared();
-//         pcl::SamplingSurfaceNormal<pcl::PointXYZRGBNormal> sampler;
-//         sampler.setSample(1000);
-//         sampler.setRatio(0.01);
-//         sampler.setInputCloud(clusters[i]);
-//         sampler.setSeed(time(NULL));
-//         sampler.filter(*temp.normals);
-
+        pcl::SamplingSurfaceNormal<pcl::PointXYZRGBNormal> sampler;
+        sampler.setSample(100);
+        sampler.setRatio(0.02);
+        sampler.setInputCloud(clusters[i]);
+        sampler.setSeed(time(NULL));
+        sampler.filter(*temp.normals);
+        
         std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
 
         if(!temp.border) {

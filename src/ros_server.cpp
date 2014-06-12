@@ -39,6 +39,9 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
 {
     polygons=border_extraction.extractBorders(clusters);
     publisher.publish_plane_borders(polygons); 
+    int i=0;
+    for (auto polygon:polygons)
+        publisher.publish_normal_cloud(polygon.normals,i++);
     return true;
 }
 
@@ -51,10 +54,8 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     std::cout<<std::endl<<"> Number of polygons: "<<polygons.size()<<std::endl;
     
     bool left=true;
-    auto centroids=footstep_planner.getFeasibleCentroids(polygons,left);
-    auto final_centroid=footstep_planner.selectBestCentroid(centroids,left);    
-    path.push_back(final_centroid);
-    for (auto centroid:centroids)
+    auto World_centroids=footstep_planner.getFeasibleCentroids(polygons,left);
+    for (auto centroid:World_centroids)
     {
         publisher.publish_foot_position(std::get<0>(centroid.second),centroid.first,footstep_planner.getWorldTransform());
         if (left)
@@ -66,12 +67,31 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
         static tf::TransformBroadcaster br;
         br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
         
+        ros::Duration sleep_time(1);
+        sleep_time.sleep();
     }
-//     left=false;
-//     footstep_planner.setCurrentSupportFoot(std::get<0>(final_centroid.second));
-//     centroids=footstep_planner.getFeasibleCentroids(polygons,left);
-//     final_centroid=footstep_planner.selectBestCentroid(centroids,left);  
-//     path.push_back(final_centroid);
+    auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left);    
+    path.push_back(final_centroid);
+    
+    left=false;
+    footstep_planner.setCurrentSupportFoot(std::get<0>(final_centroid.second));
+    World_centroids=footstep_planner.getFeasibleCentroids(polygons,left);
+    for (auto centroid:World_centroids)
+    {
+        publisher.publish_foot_position(std::get<0>(centroid.second),centroid.first,footstep_planner.getWorldTransform());
+        if (left)
+            publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_LR);
+        else
+            publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_RL);
+        //std::cout<<"world to base link:"<<std::get<2>(centroid.second)<<std::endl;
+        tf::transformKDLToTF(std::get<2>(centroid.second),current_robot_transform);
+        static tf::TransformBroadcaster br;
+        br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
+        ros::Duration sleep_time(1);
+        sleep_time.sleep();
+    }
+    final_centroid=footstep_planner.selectBestCentroid(World_centroids,left);  
+    path.push_back(final_centroid);
 //     left=true;
 //     footstep_planner.setCurrentSupportFoot(std::get<0>(final_centroid.second));
 //     centroids=footstep_planner.getFeasibleCentroids(polygons,left);
@@ -122,7 +142,7 @@ void rosServer::run()
 {
     tf::StampedTransform transform;
     try{
-        listener.lookupTransform(camera_link_name, "/world",
+        listener.lookupTransform("/world", camera_link_name,
                                  ros::Time(0), transform);
     }
     catch (tf::TransformException ex){
@@ -130,7 +150,7 @@ void rosServer::run()
     }
     KDL::Frame World_Camera;
     tf::transformTFToKDL(transform,World_Camera);
-    footstep_planner.setWorldTransform(World_Camera.Inverse());
+    footstep_planner.setWorldTransform(World_Camera);
 //     static tf::TransformBroadcaster br;
 //     static tf::TransformListener lr;
 //     br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));

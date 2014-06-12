@@ -15,9 +15,7 @@ footstepPlanner::footstepPlanner()
     SetToZero(left_joints);
     SetToZero(right_joints);
     SetToZero(leg_joints);
-    kinematics.fkLsolver->JntToCart(left_joints,World_StanceFoot);
-    World_StanceFoot=World_StanceFoot;
-    
+    kinematics.fkLsolver->JntToCart(left_joints,World_StanceFoot);   
 }
 
 void footstepPlanner::setCurrentSupportFoot(KDL::Frame foot_position)
@@ -110,19 +108,20 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
         }
         ROS_INFO("NORMAL size: %d ",polygon.normals->size());
         int normals=0;
-        Eigen::Matrix<double,4,1> centroid;
-        pcl::compute3DCentroid(*polygon.border, centroid );
-        KDL::Frame temp;
-        temp.p[0]=centroid[0];
-        temp.p[1]=centroid[1];
-        temp.p[2]=centroid[2];
-        temp.M=KDL::Rotation::RPY(0,-1.77,1.57);
-        KDL::Frame rotz;
-        rotz.M=KDL::Rotation::RPY(0,0,0.0/180.0*3.14159265);
-        temp=temp*rotz;
-        int i=0;
-        //for(unsigned int i=0; i<polygon.normals->size(); i++)
+
+//         int i=0;
+        for(unsigned int i=0; i<polygon.normals->size(); i++)
         {
+            //Eigen::Matrix<double,4,1> centroid;
+            //pcl::compute3DCentroid(*polygon.border, centroid );
+            KDL::Frame temp;
+            temp.p[0]=(*polygon.normals)[i].x;
+            temp.p[1]=(*polygon.normals)[i].y;
+            temp.p[2]=(*polygon.normals)[i].z;
+            temp.M=KDL::Rotation::RPY(0,-1.77,1.57);
+            KDL::Frame rotz;
+            rotz.M=KDL::Rotation::RPY(0,0,0.0/180.0*3.14159265);
+            temp=temp*rotz;
             //KDL::Frame plane_frame=createFramesFromNormal((*polygon.normals)[i]);
             int k=-1;
             //for (double angle=-0.8;angle<=0.8;angle=angle+0.4) 
@@ -156,25 +155,24 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
                         current_fk_solver->JntToCart(single_leg,Waist_StanceFoot);
                         static tf::TransformBroadcaster br;
                         tf::Transform fucking_transform;
-                        tf::transformKDLToTF(World_StanceFoot,fucking_transform);
-                        br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
-                        ros::Duration t(0.1);
-                        t.sleep();
-                        tf::transformKDLToTF(World_StanceFoot*(Waist_StanceFoot.Inverse()),fucking_transform);
-                        br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "mobile_waist"));
-                        t.sleep();
-                        tf::transformKDLToTF(World_Camera*Camera_MovingFoot,fucking_transform);
-                        br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "mobile_foot"));
-                        t.sleep();
-                        t=ros::Duration(1);
-                        t.sleep();
+//                         tf::transformKDLToTF(World_StanceFoot,fucking_transform);
+//                         br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
+//                         ros::Duration t(0.1);
+//                         t.sleep();
+//                         tf::transformKDLToTF(World_StanceFoot*(Waist_StanceFoot.Inverse()),fucking_transform);
+//                         br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "mobile_waist"));
+//                         t.sleep();
+//                         tf::transformKDLToTF(World_Camera*Camera_MovingFoot,fucking_transform);
+//                         br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "mobile_foot"));
+//                         t.sleep();
+//                         t=ros::Duration(1);
+//                         t.sleep();
                         auto temp_pos=joints_position;
                         size=joints_position.rows();
                         for (int i=0; i<left_joints.rows(); i++)
                             joints_position(i+left_joints.rows())=temp_pos(size-i-1);
                         centroids[i*100+j*10000+k]=std::make_tuple(World_Camera*Camera_MovingFoot,joints_position,World_StanceFoot*(Waist_StanceFoot.Inverse()));
                         normals++;
-                        if (normals>10) i=100000;
                         // j=10000;
                     }
 //                         else std::cout<<"!! Step not stable"<<std::endl;
@@ -189,6 +187,7 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
 
 std::pair<int,foot_with_joints> footstepPlanner::selectBestCentroid(std::map< int, foot_with_joints > centroids, bool left)
 {
+    
     return *centroids.begin();//TODO
 }
 
