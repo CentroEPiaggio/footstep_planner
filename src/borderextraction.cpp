@@ -7,6 +7,7 @@
 #include "psimpl.h"
 #include <pcl/filters/sampling_surface_normal.h>
 #include <time.h>
+#include <eigen3/Eigen/src/Core/Matrix.h>
 
 using namespace planner;
 
@@ -104,17 +105,16 @@ std::vector< polygon_with_normals > borderExtraction::extractBorders(const std::
         }
 
         std::cout<<"- Border number of points: "<<border.size()<<std::endl;
-
         polygon_with_normals temp;
         temp.border=douglas_peucker_3d(border,0.05);
-        
-        
-        pcl::SamplingSurfaceNormal<pcl::PointXYZRGBNormal> sampler;
-        sampler.setSample(100);
-        sampler.setRatio(0.05);
-        sampler.setInputCloud(clusters[i]);
-        sampler.setSeed(time(NULL));
-        sampler.filter(*temp.normals);
+        pcl::PointCloud<pcl::PointXYZRGBNormal> temp_cloud;
+        temp.normals=temp_cloud.makeShared();
+//         pcl::SamplingSurfaceNormal<pcl::PointXYZRGBNormal> sampler;
+//         sampler.setSample(1000);
+//         sampler.setRatio(0.01);
+//         sampler.setInputCloud(clusters[i]);
+//         sampler.setSeed(time(NULL));
+//         sampler.filter(*temp.normals);
 
         std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
 
@@ -135,7 +135,7 @@ std::vector< polygon_with_normals > borderExtraction::extractBorders(const std::
 
 pcl::PointCloud< pcl::PointXYZ >::Ptr borderExtraction::douglas_peucker_3d(pcl::PointCloud< pcl::PointXYZRGBNormal >& input,double tolerance)
 {
-    pcl::PointCloud<pcl::PointXYZ>::Ptr output;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr output(new pcl::PointCloud<pcl::PointXYZ>());
     if(!input.size()) return output;
 
     std::sort(input.begin(),input.end(),atan_compare_2d); //sorting input for douglas_peucker_3d procedure

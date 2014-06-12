@@ -21,13 +21,16 @@ int main(int argc, char **argv)
     srv_exit = nh.advertiseService(nh.resolveName("exit"),&endcycle);
     
     ros::Rate freq ( 1 );
+    freq.sleep();
+    node.run();
+    
     std_srvs::EmptyRequest req;
     std_srvs::EmptyResponse res;
     node.filterByCurvature(req,res); //HACK
+    
     while(!quit)
     {
         ros::spinOnce();
-        node.run();
         freq.sleep();
     }
     

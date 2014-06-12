@@ -13,7 +13,6 @@ rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~"),publisher(nh,n
     // init publishers and subscribers
     
     camera_link_name = nh.resolveName("/camera_link");
-    
     srv_filter_cloud_ = nh_.advertiseService(nh_.resolveName("filter_by_curvature"), &rosServer::filterByCurvature, this);
     srv_border_extraction = nh_.advertiseService(nh_.resolveName("border_extraction"), &rosServer::extractBorders, this);
     srv_footstep_placer = nh_.advertiseService(nh_.resolveName("footstep_placer"),&rosServer::planFootsteps, this);
@@ -31,17 +30,7 @@ rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~"),publisher(nh,n
     priv_nh_.param<double>("feasible_area", feasible_area_, 2.5);
     footstep_planner.setParams(feasible_area_);
     
-    tf::StampedTransform transform;
-    try{
-        listener.lookupTransform(camera_link_name, "/world",
-                                 ros::Time(0), transform);
-    }
-    catch (tf::TransformException ex){
-        ROS_ERROR("%s",ex.what());
-    }
-    KDL::Frame fromWorldToCamera;
-    tf::transformTFToKDL(transform,fromWorldToCamera);
-    footstep_planner.setWorldTransform(fromWorldToCamera);
+ 
     current_direction=KDL::Vector(1,0,0); //TODO receive from the operator?
     footstep_planner.setCurrentDirection(current_direction); //TODO
 }
@@ -65,30 +54,43 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     auto centroids=footstep_planner.getFeasibleCentroids(polygons,left);
     auto final_centroid=footstep_planner.selectBestCentroid(centroids,left);    
     path.push_back(final_centroid);
-    left=false;
-    footstep_planner.setCurrentSupportFoot(std::get<0>(final_centroid.second));
-    centroids=footstep_planner.getFeasibleCentroids(polygons,left);
-    final_centroid=footstep_planner.selectBestCentroid(centroids,left);  
-    path.push_back(final_centroid);
-    left=true;
-    footstep_planner.setCurrentSupportFoot(std::get<0>(final_centroid.second));
-    centroids=footstep_planner.getFeasibleCentroids(polygons,left);
-    final_centroid=footstep_planner.selectBestCentroid(centroids,left);    
-    path.push_back(final_centroid);
-    
-    for (auto centroid:path)
+    for (auto centroid:centroids)
     {
         publisher.publish_foot_position(std::get<0>(centroid.second),centroid.first,footstep_planner.getWorldTransform());
         if (left)
             publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_LR);
         else
             publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_RL);
-        //         std::cout<<"world to base link:"<<std::get<2>(centroid.second)<<std::endl;
-        //     tf::transformKDLToTF(std::get<2>(centroid.second),current_robot_transform);
-        //     static tf::TransformBroadcaster br;
-        //     br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
+            //std::cout<<"world to base link:"<<std::get<2>(centroid.second)<<std::endl;
+        tf::transformKDLToTF(std::get<2>(centroid.second),current_robot_transform);
+        static tf::TransformBroadcaster br;
+        br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
         
     }
+//     left=false;
+//     footstep_planner.setCurrentSupportFoot(std::get<0>(final_centroid.second));
+//     centroids=footstep_planner.getFeasibleCentroids(polygons,left);
+//     final_centroid=footstep_planner.selectBestCentroid(centroids,left);  
+//     path.push_back(final_centroid);
+//     left=true;
+//     footstep_planner.setCurrentSupportFoot(std::get<0>(final_centroid.second));
+//     centroids=footstep_planner.getFeasibleCentroids(polygons,left);
+//     final_centroid=footstep_planner.selectBestCentroid(centroids,left);    
+//     path.push_back(final_centroid);
+    
+//     for (auto centroid:path)
+//     {
+//         publisher.publish_foot_position(std::get<0>(centroid.second),centroid.first,footstep_planner.getWorldTransform());
+//         if (left)
+//             publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_LR);
+//         else
+//             publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_RL);
+//         //         std::cout<<"world to base link:"<<std::get<2>(centroid.second)<<std::endl;
+//              tf::transformKDLToTF(std::get<2>(centroid.second),current_robot_transform);
+//              static tf::TransformBroadcaster br;
+//              br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
+//         
+//     }
     return true;
 }
 
@@ -118,6 +120,17 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
 
 void rosServer::run()
 {
+    tf::StampedTransform transform;
+    try{
+        listener.lookupTransform(camera_link_name, "/world",
+                                 ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex){
+        ROS_ERROR("%s",ex.what());
+    }
+    KDL::Frame World_Camera;
+    tf::transformTFToKDL(transform,World_Camera);
+    footstep_planner.setWorldTransform(World_Camera.Inverse());
 //     static tf::TransformBroadcaster br;
 //     static tf::TransformListener lr;
 //     br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));

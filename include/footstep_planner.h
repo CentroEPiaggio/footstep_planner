@@ -11,17 +11,17 @@
 namespace planner
 {
 
-typedef std::tuple<KDL::Frame,KDL::JntArray> foot_with_joints;
+typedef std::tuple<KDL::Frame,KDL::JntArray, KDL::Frame> foot_with_joints;
     
 class footstepPlanner
 {
     
 private:
-    KDL::Frame fromWorldToCloud;
+    KDL::Frame World_Camera;
     KDL::JntArray left_joints,right_joints,leg_joints;
     
     //World frame
-    KDL::Frame current_foot;
+    KDL::Frame World_StanceFoot;
     
     KDL::ChainIkSolverPos_NR_JL* current_ik_solver;
     KDL::ChainFkSolverPos_recursive* current_fk_solver;
@@ -33,7 +33,7 @@ private:
     KDL::Frame createFramesFromNormal(pcl::PointXYZRGBNormal normal);
     
     //World frame
-    bool centroid_is_reachable(KDL::Frame centroid, KDL::JntArray& jnt_pos);
+    bool centroid_is_reachable(KDL::Frame World_MovingFoot, KDL::JntArray& jnt_pos);
     
     bool step_is_stable(KDL::Frame centroid);
     
@@ -57,7 +57,7 @@ public:
     
     void setWorldTransform(KDL::Frame transform);
     std::pair<int,foot_with_joints> selectBestCentroid(std::map< int,foot_with_joints > centroids, bool left);
-    inline KDL::Frame getWorldTransform(){return fromWorldToCloud;};
+    inline KDL::Frame getWorldTransform(){return World_Camera;};
     
     //Camera Link Frame
     void setCurrentDirection(KDL::Vector direction);
