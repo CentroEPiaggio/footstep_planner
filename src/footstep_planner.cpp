@@ -16,7 +16,7 @@ footstepPlanner::footstepPlanner()
     SetToZero(right_joints);
     SetToZero(leg_joints);
     kinematics.fkLsolver->JntToCart(left_joints,current_foot);
-    current_foot=fromCloudToWorld*current_foot;
+    current_foot=fromWorldToCloud*current_foot;
 }
 
 void footstepPlanner::setCurrentSupportFoot(KDL::Frame foot_position)
@@ -55,8 +55,8 @@ bool footstepPlanner::centroid_is_reachable(KDL::Frame centroid, KDL::JntArray& 
 
 void footstepPlanner::setWorldTransform(KDL::Frame transform)
 {
-    this->fromCloudToWorld=transform;
-    current_foot=fromCloudToWorld*current_foot;
+    this->fromWorldToCloud=transform;
+    current_foot=fromWorldToCloud*current_foot;
 }
 
 std::vector<KDL::Frame> footstepPlanner::createFramesFromNormal(pcl::PointXYZRGBNormal normal)
@@ -112,7 +112,7 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
 
                 //std::cout<<"centroid in camera link"<<temp<<std::endl;
                 KDL::JntArray position;
-                if(centroid_is_reachable(fromCloudToWorld*temp,position)) //check if the centroid id inside the reachable area
+                if(centroid_is_reachable(fromWorldToCloud*temp,position)) //check if the centroid id inside the reachable area
                 {
                     std::cout<<"ik result:";
                     for (int i=0; i<position.rows(); i++)

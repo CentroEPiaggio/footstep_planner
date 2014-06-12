@@ -39,10 +39,10 @@ rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~"),publisher(nh,n
     catch (tf::TransformException ex){
         ROS_ERROR("%s",ex.what());
     }
-    KDL::Frame fromCameraToWorld;
-    tf::transformTFToKDL(transform,fromCameraToWorld);
-    footstep_planner.setWorldTransform(fromCameraToWorld);
-    current_direction=fromCameraToWorld*KDL::Vector(1,0,0); //TODO
+    KDL::Frame fromWorldToCamera;
+    tf::transformTFToKDL(transform,fromWorldToCamera);
+    footstep_planner.setWorldTransform(fromWorldToCamera);
+    current_direction=fromWorldToCamera*KDL::Vector(1,0,0); //TODO
     footstep_planner.setCurrentDirection(current_direction); //TODO
 }
 

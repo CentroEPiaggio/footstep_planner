@@ -17,7 +17,7 @@ class footstepPlanner
 {
     
 private:
-    KDL::Frame fromCloudToWorld;
+    KDL::Frame fromWorldToCloud;
     KDL::JntArray left_joints,right_joints,leg_joints;
     
     //World frame
@@ -54,7 +54,7 @@ public:
     
     void setWorldTransform(KDL::Frame transform);
     std::pair<int,foot_with_joints> selectBestCentroid(std::map< int,foot_with_joints > centroids, bool left);
-    inline KDL::Frame getWorldTransform(){return fromCloudToWorld;};
+    inline KDL::Frame getWorldTransform(){return fromWorldToCloud;};
     
     //World Frame
     void setCurrentDirection(KDL::Frame current_direction);

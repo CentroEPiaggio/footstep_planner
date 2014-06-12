@@ -10,7 +10,7 @@ bool endcycle(std_srvs::Empty::Request& request, std_srvs::Empty::Response& resp
 
 int main(int argc, char **argv) 
 {
-    ros::init(argc, argv, "object_modelling_node");
+    ros::init(argc, argv, "footstep_planner");
     ros::NodeHandle nh;
     
     quit=false;
