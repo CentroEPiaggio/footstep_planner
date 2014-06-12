@@ -7,7 +7,7 @@
 #include "kinematics_utilities.h"
 #include "borderextraction.h"
 #include <tf/transform_datatypes.h>
-
+#include <graham_smith.h>
 namespace planner
 {
 
@@ -25,10 +25,12 @@ private:
     
     KDL::ChainIkSolverPos_NR_JL* current_ik_solver;
     KDL::ChainFkSolverPos_recursive* current_fk_solver;
-    KDL::Frame desired_direction;
+    
+    //Camera Link Frame
+    KDL::Vector desired_direction;
     
     //Camera Link frame
-    std::vector<KDL::Frame> createFramesFromNormal(pcl::PointXYZRGBNormal normal);
+    KDL::Frame createFramesFromNormal(pcl::PointXYZRGBNormal normal);
     
     //World frame
     bool centroid_is_reachable(KDL::Frame centroid, KDL::JntArray& jnt_pos);
@@ -43,6 +45,7 @@ private:
 public:
     footstepPlanner();
     kinematics_utilities kinematics;
+    graham_smith gs_utils;
     
     //Camera link frame
     std::map< int, foot_with_joints > getFeasibleCentroids(std::vector< planner::polygon_with_normals > polygons, bool left);
@@ -56,8 +59,8 @@ public:
     std::pair<int,foot_with_joints> selectBestCentroid(std::map< int,foot_with_joints > centroids, bool left);
     inline KDL::Frame getWorldTransform(){return fromWorldToCloud;};
     
-    //World Frame
-    void setCurrentDirection(KDL::Frame current_direction);
+    //Camera Link Frame
+    void setCurrentDirection(KDL::Vector direction);
     
     
     // robot area for the footstep planner

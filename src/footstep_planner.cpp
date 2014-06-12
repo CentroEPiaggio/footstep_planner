@@ -59,15 +59,17 @@ void footstepPlanner::setWorldTransform(KDL::Frame transform)
     current_foot=fromWorldToCloud*current_foot;
 }
 
-std::vector<KDL::Frame> footstepPlanner::createFramesFromNormal(pcl::PointXYZRGBNormal normal)
+//Camera link
+KDL::Frame footstepPlanner::createFramesFromNormal(pcl::PointXYZRGBNormal normal)
 {
-    //TODO
+    return gs_utils.createFramesFromNormal(normal);
 }
 
-//World frame
-void footstepPlanner::setCurrentDirection(KDL::Frame direction)
+//Camera link frame
+void footstepPlanner::setCurrentDirection(KDL::Vector direction)
 {
-    this->desired_direction=direction; //TODO convert into camera_link frame
+    this->desired_direction=direction;
+    gs_utils.setCurrentDirection(direction);
 }
 
 

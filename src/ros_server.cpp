@@ -42,7 +42,7 @@ rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~"),publisher(nh,n
     KDL::Frame fromWorldToCamera;
     tf::transformTFToKDL(transform,fromWorldToCamera);
     footstep_planner.setWorldTransform(fromWorldToCamera);
-    current_direction=fromWorldToCamera*KDL::Vector(1,0,0); //TODO
+    current_direction=KDL::Vector(1,0,0); //TODO receive from the operator?
     footstep_planner.setCurrentDirection(current_direction); //TODO
 }
 
