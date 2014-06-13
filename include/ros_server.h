@@ -65,6 +65,9 @@ public:
     
     //WORLD Reference Frame
     std::vector<std::pair<int,foot_with_joints>> path;
+    
+    bool singleFoot(bool left);
+    
   public:
     //------------------ Callbacks -------------------
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);

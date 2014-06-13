@@ -43,7 +43,7 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     foot_marker.scale.z=0.02;
     
     foot_marker.color.a=1;
-    foot_marker.color.b=255;
+    foot_marker.color.r=255;
     foot_marker.lifetime=ros::Duration(600);
     
 }
@@ -102,7 +102,7 @@ void ros_publisher::publish_plane_borders(std::vector<polygon_with_normals> bord
     
 }
 
-void ros_publisher::publish_foot_position(KDL::Frame fromWorldTofoot,int centroid_id, KDL::Frame fromCameraToworld)
+void ros_publisher::publish_foot_position(KDL::Frame fromWorldTofoot,int centroid_id, KDL::Frame fromCameraToworld,bool left=true)
 {
     
     foot_marker.pose.position.x=fromWorldTofoot.p.x();
@@ -110,7 +110,8 @@ void ros_publisher::publish_foot_position(KDL::Frame fromWorldTofoot,int centroi
     foot_marker.pose.position.z=fromWorldTofoot.p.z();
     
     fromWorldTofoot.M.GetQuaternion(foot_marker.pose.orientation.x,foot_marker.pose.orientation.y,foot_marker.pose.orientation.z,foot_marker.pose.orientation.w);
-    
+    foot_marker.color.r=255*left;
+    foot_marker.color.g=255*(!left);
     foot_marker.id = centroid_id; //to have a unique id
             
     pub_footstep.publish(foot_marker);

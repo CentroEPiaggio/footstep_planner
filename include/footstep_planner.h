@@ -7,7 +7,7 @@
 #include "kinematics_utilities.h"
 #include "borderextraction.h"
 #include <tf/transform_datatypes.h>
-#include <graham_smith.h>
+#include "gram_schmidt.h"
 namespace planner
 {
 
@@ -27,7 +27,8 @@ private:
     KDL::ChainFkSolverPos_recursive* current_fk_solver;
     
     //Camera Link Frame
-    KDL::Vector desired_direction;
+    KDL::Vector Camera_DesiredDirection;
+    bool world_camera_set=false;
     
     //Camera Link frame
     KDL::Frame createFramesFromNormal(pcl::PointXYZRGBNormal normal);
@@ -45,7 +46,7 @@ private:
 public:
     footstepPlanner();
     kinematics_utilities kinematics;
-    graham_smith gs_utils;
+    gram_schmidt gs_utils;
     
     //Camera link frame
     std::map< int, foot_with_joints > getFeasibleCentroids(std::vector< planner::polygon_with_normals > polygons, bool left);

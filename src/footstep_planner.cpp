@@ -7,6 +7,8 @@
 #include <cmath>
 using namespace planner;
 
+#define DISTANCE_THRESHOLD 0.02
+
 footstepPlanner::footstepPlanner()
 {
     left_joints.resize(kinematics.left_leg.getNrOfJoints());
@@ -55,6 +57,7 @@ bool footstepPlanner::centroid_is_reachable(KDL::Frame World_MovingFoot, KDL::Jn
 void footstepPlanner::setWorldTransform(KDL::Frame transform)
 {
     this->World_Camera=transform;
+    world_camera_set=true;
     //current_foot_W=World_Camera*current_foot_W;
 }
 
@@ -67,13 +70,20 @@ KDL::Frame footstepPlanner::createFramesFromNormal(pcl::PointXYZRGBNormal normal
 //Camera link frame
 void footstepPlanner::setCurrentDirection(KDL::Vector direction)
 {
-    this->desired_direction=direction;
+    this->Camera_DesiredDirection=direction;
     gs_utils.setCurrentDirection(direction);
 }
 
 
 std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left)
 {
+    if (!world_camera_set)
+    {
+        throw "camera - world transformation was not set";
+    }
+    auto World_CurrentDirection=KDL::Vector(1,-0.5,0); //TODO receive from the operator?
+    setCurrentDirection(World_Camera.Inverse()*World_CurrentDirection); //TODO
+    
     static tf::TransformBroadcaster br;
     tf::Transform fucking_transform;
     tf::transformKDLToTF(World_StanceFoot,fucking_transform);
@@ -106,42 +116,28 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
              std::cout<<"!! Polygon "<<j<<" outside the feasible area"<<std::endl;
             continue;
         }
-        ROS_INFO("NORMAL size: %d ",polygon.normals->size());
+        ROS_INFO("NORMAL size: %lu ",polygon.normals->size());
         int normals=0;
 
 //         int i=0;
         for(unsigned int i=0; i<polygon.normals->size(); i++)
         {
-            //Eigen::Matrix<double,4,1> centroid;
-            //pcl::compute3DCentroid(*polygon.border, centroid );
-            KDL::Frame temp;
-            temp.p[0]=(*polygon.normals)[i].x;
-            temp.p[1]=(*polygon.normals)[i].y;
-            temp.p[2]=(*polygon.normals)[i].z;
-            temp.M=KDL::Rotation::RPY(0,-1.77,1.57);
-            KDL::Frame rotz;
-            rotz.M=KDL::Rotation::RPY(0,0,0.0/180.0*3.14159265);
-            temp=temp*rotz;
-            //KDL::Frame plane_frame=createFramesFromNormal((*polygon.normals)[i]);
+            KDL::Frame plane_frame=createFramesFromNormal((*polygon.normals)[i]);
             int k=-1;
-            //for (double angle=-0.8;angle<=0.8;angle=angle+0.4) 
+            for (double angle=-0.8;angle<=0.8;angle=angle+0.2) 
             {
                 //double angle=0.0;
                 k++;
                 KDL::Frame Camera_MovingFoot;
-                //KDL::Frame rotz;
-                //rotz.M=KDL::Rotation::RotZ(angle);
-                //Camera_MovingFoot=plane_frame*rotz;
-                Camera_MovingFoot=temp;
+                KDL::Frame rotz;
+                rotz.M=KDL::Rotation::RotZ(angle);
+                Camera_MovingFoot=plane_frame*rotz;
+//                 Camera_MovingFoot=temp;
                 //std::cout<<"centroid in camera link"<<temp<<std::endl;
                 KDL::JntArray joints_position;
                 
                 if(centroid_is_reachable(World_Camera*Camera_MovingFoot,joints_position)) //check if the centroid id inside the reachable area
                 {
-   /*                 std::cout<<"ik result:";
-                    for (int i=0; i<joints_position.rows(); i++)
-                        std::cout<<joints_position(i)<<" ";
-                    std::cout<<std::endl;*/
                     if(step_is_stable(Camera_MovingFoot))//check if the centroid can be used to perform a stable step
                     {
                         KDL::Frame Waist_StanceFoot;
@@ -155,18 +151,6 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
                         current_fk_solver->JntToCart(single_leg,Waist_StanceFoot);
                         static tf::TransformBroadcaster br;
                         tf::Transform fucking_transform;
-//                         tf::transformKDLToTF(World_StanceFoot,fucking_transform);
-//                         br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
-//                         ros::Duration t(0.1);
-//                         t.sleep();
-//                         tf::transformKDLToTF(World_StanceFoot*(Waist_StanceFoot.Inverse()),fucking_transform);
-//                         br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "mobile_waist"));
-//                         t.sleep();
-//                         tf::transformKDLToTF(World_Camera*Camera_MovingFoot,fucking_transform);
-//                         br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "mobile_foot"));
-//                         t.sleep();
-//                         t=ros::Duration(1);
-//                         t.sleep();
                         auto temp_pos=joints_position;
                         size=joints_position.rows();
                         for (int i=0; i<left_joints.rows(); i++)
@@ -187,6 +171,7 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
 
 std::pair<int,foot_with_joints> footstepPlanner::selectBestCentroid(std::map< int, foot_with_joints > centroids, bool left)
 {
+    std::vector<int> minimum_indexes;
     std::pair<int, foot_with_joints> result= *centroids.begin();//TODO
     double min=100000000000000;
     for (auto centroid:centroids)
@@ -197,22 +182,54 @@ std::pair<int,foot_with_joints> footstepPlanner::selectBestCentroid(std::map< in
         if (left)
         {
             refy=-0.15;
-            refx=0.25;
+            refx=0.20;
         }
         else
         {
             refy=0.15;
-            refx=0.25;
+            refx=0.20;
         }
-            
-        if (pow(StanceFoot_MovingFoot.p.x()-refx,2)+pow(StanceFoot_MovingFoot.p.y()-refy,2)<min)
+        auto distance=pow(StanceFoot_MovingFoot.p.x()-refx,2)+pow(StanceFoot_MovingFoot.p.y()-refy,2);
+        
+        if (distance-min>DISTANCE_THRESHOLD) //If it is too big, keep the old min
+            continue;
+        if (min-distance>DISTANCE_THRESHOLD) //New minimum
         {
-            min=pow(StanceFoot_MovingFoot.p.x()-refx,2)+pow(StanceFoot_MovingFoot.p.y()-refy,2);
-            result=centroid;
-            std::cout<<min<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
+            min=distance;
+            std::cout<<"new min: "<<min<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
+            minimum_indexes.clear();
+            minimum_indexes.push_back(centroid.first);
+            continue;
+        }
+        if (distance-min<DISTANCE_THRESHOLD && min-distance>-DISTANCE_THRESHOLD) //If near, keep them both
+        {
+            minimum_indexes.push_back(centroid.first);
+            std::cout<<"another min: "<<distance<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
         }
     }
-    return result;
+    
+    double maximum=0;
+    int maximum_index=minimum_indexes[0];
+    for (auto index:minimum_indexes)
+    {
+        KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
+        KDL::Vector World_FootDirection = World_StanceFoot*KDL::Vector(1,0,0);
+        auto filter=World_DesiredDirection+World_FootDirection;
+        auto moving_foot=std::get<0>(centroids[index])*KDL::Vector(1,0,0);
+        
+        auto scalar=dot(filter,moving_foot);
+        std::cout<<"indici minimi"<<std::endl;
+        std::cout<<" "<<scalar<<" "<<index;
+        
+        if (scalar>maximum)
+        {
+            maximum=scalar;
+            maximum_index=index;
+        }
+    }
+    
+    
+    return std::make_pair(maximum_index,centroids[maximum_index]);
     
 }
 
@@ -230,7 +247,7 @@ double footstepPlanner::dist_from_robot(pcl::PointXYZ point, double x,double y,d
 bool footstepPlanner::polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon)
 {
     KDL::Frame Camera_StanceFoot = World_Camera.Inverse()*World_StanceFoot;
-    KDL::Vector World_direction(1,0,0);
+    KDL::Vector World_direction(1,0,0); //TODO
     auto filter=World_Camera.Inverse()*World_direction;
     for (unsigned int i=0; i<polygon->size(); i++)
     {
