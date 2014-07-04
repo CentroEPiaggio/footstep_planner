@@ -8,6 +8,7 @@
 #include "borderextraction.h"
 #include <tf/transform_datatypes.h>
 #include "gram_schmidt.h"
+#include "kinematic_filter.h"
 namespace planner
 {
 
@@ -23,9 +24,9 @@ private:
     //World frame
     KDL::Frame World_StanceFoot;
     
-    KDL::ChainIkSolverPos_NR_JL* current_ik_solver;
-    KDL::ChainFkSolverPos_recursive* current_fk_solver;
-    
+    kinematic_filter kinematicFilter;
+
+
     //Camera Link Frame
     KDL::Vector Camera_DesiredDirection;
     bool world_camera_set=false;
@@ -45,9 +46,9 @@ private:
     double dist_from_robot(pcl::PointXYZ point, double x, double y, double z);
 public:
     footstepPlanner();
-    kinematics_utilities kinematics;
     gram_schmidt gs_utils;
-    
+    kinematics_utilities kinematics; //TODO: remove!!
+
     //Camera link frame
     std::map< int, foot_with_joints > getFeasibleCentroids(std::vector< planner::polygon_with_normals > polygons, bool left);
     void setParams(double feasible_area_);

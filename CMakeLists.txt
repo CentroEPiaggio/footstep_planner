@@ -78,14 +78,17 @@ add_definitions(
         ${PCL_DEFINITIONS}
         )
 
-add_executable(foot_planner src/gram_schmidt.cpp src/ros_publisher.cpp 
-        src/ros_server.cpp
-        src/footstep_planner.cpp
-        src/kinematics_utilities.cpp
-        src/curvaturefilter.cpp
-        src/borderextraction.cpp
-        src/main.cpp
-        )
+add_executable(foot_planner
+       src/gram_schmidt.cpp
+       src/ros_publisher.cpp
+       src/ros_server.cpp
+       src/footstep_planner.cpp
+       src/kinematics_utilities.cpp
+       src/curvaturefilter.cpp
+       src/borderextraction.cpp
+       src/kinematic_filter.cpp
+       src/main.cpp
+       )
 
 target_link_libraries(foot_planner
         ${catkin_LIBRARIES} 

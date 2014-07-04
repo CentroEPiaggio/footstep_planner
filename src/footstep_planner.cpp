@@ -9,7 +9,7 @@ using namespace planner;
 
 #define DISTANCE_THRESHOLD 0.02
 
-footstepPlanner::footstepPlanner()
+footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics) //TODO:remove kinematics from here
 {
     left_joints.resize(kinematics.left_leg.getNrOfJoints());
     right_joints.resize(kinematics.right_leg.getNrOfJoints());
@@ -33,25 +33,6 @@ void footstepPlanner::setParams(double feasible_area_)
 bool footstepPlanner::step_is_stable(KDL::Frame centroid)
 {
     return true;
-}
-
-bool footstepPlanner::centroid_is_reachable(KDL::Frame World_MovingFoot, KDL::JntArray& jnt_pos)
-{
-    KDL::JntArray jnt_pos_in;
-    jnt_pos_in.resize(kinematics.q_min.rows());
-    SetToZero(jnt_pos_in);
-    KDL::JntArray jnt_pos_out;
-    jnt_pos_out.resize(kinematics.q_min.rows());
-    auto temp=World_StanceFoot.Inverse()*World_MovingFoot;
-    int ik_valid = current_ik_solver->CartToJnt(jnt_pos_in, temp, jnt_pos_out);
-//     std::cout<<"mobile_foot in stance_foot"<<temp<<std::endl;
-    if (ik_valid>=0)
-    {
-        jnt_pos=jnt_pos_out;
-        return true;
-    }
-
-    return false;
 }
 
 void footstepPlanner::setWorldTransform(KDL::Frame transform)
@@ -91,23 +72,12 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
     br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
     ros::Duration sleep_time(0.5);
     sleep_time.sleep();
-    KDL::JntArray current_joints;
-    if (left)
-    {
-        current_joints=left_joints;
-        current_ik_solver=kinematics.ikLRsolver;
-        current_fk_solver=kinematics.fkLsolver;
-    }
-    else
-    {
-        current_joints=right_joints;
-        current_ik_solver=kinematics.ikRLsolver;
-        current_fk_solver=kinematics.fkRsolver;
-
-    }
-
+    kinematicFilter.setLeftRightFoot(left);
+    kinematicFilter.setWorld_StanceFoot(World_StanceFoot);
     std::map< int, foot_with_joints> centroids;
     int j=-1;
+    std::list<std::tuple<int,KDL::Frame,KDL::JntArray>> steps;
+
     for(auto polygon:polygons)
     {
         j++;
@@ -132,38 +102,36 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
                 KDL::Frame rotz;
                 rotz.M=KDL::Rotation::RotZ(angle);
                 Camera_MovingFoot=plane_frame*rotz;
-//                 Camera_MovingFoot=temp;
-                //std::cout<<"centroid in camera link"<<temp<<std::endl;
                 KDL::JntArray joints_position;
-                
-                if(centroid_is_reachable(World_Camera*Camera_MovingFoot,joints_position)) //check if the centroid id inside the reachable area
-                {
-                    if(step_is_stable(Camera_MovingFoot))//check if the centroid can be used to perform a stable step
-                    {
-                        KDL::Frame Waist_StanceFoot;
-                        KDL::JntArray single_leg;
-                        auto size=left_joints.rows();
-                        single_leg.resize(size);
-                        for (int k=0; k<size; k++)
-                        {
-                            single_leg(size-k-1)=joints_position(k);
-                        }
-                        current_fk_solver->JntToCart(single_leg,Waist_StanceFoot);
-                        static tf::TransformBroadcaster br;
-                        tf::Transform fucking_transform;
-                        auto temp_pos=joints_position;
-                        size=joints_position.rows();
-                        for (int i=0; i<left_joints.rows(); i++)
-                            joints_position(i+left_joints.rows())=temp_pos(size-i-1);
-                        centroids[i*100+j*10000+k]=std::make_tuple(World_Camera*Camera_MovingFoot,joints_position,World_StanceFoot*(Waist_StanceFoot.Inverse()));
-                        normals++;
-                        // j=10000;
-                    }
-//                         else std::cout<<"!! Step not stable"<<std::endl;
-                }
-//                     else std::cout<<"!! Step not reachable"<<std::endl;
+                steps.push_back(std::make_tuple(i*100+j*10000+k,World_Camera*Camera_MovingFoot,joints_position));
+                normals++;
+
             }
-//             else std::cout<<"!! ERR: Error in computing the centroid !!"<<std::endl;
+        }
+    }
+
+    kinematicFilter.filter(steps);
+    for (auto step:steps)
+    {
+        if(step_is_stable(std::get<1>(step)))//check if the centroid can be used to perform a stable step
+        {
+            KDL::Frame Waist_StanceFoot;
+            KDL::JntArray single_leg;
+            auto size=left_joints.rows();
+            single_leg.resize(size);
+            auto joints_position=std::get<2>(step);
+            for (int k=0; k<size; k++)
+            {
+                single_leg(size-k-1)=joints_position(k);
+            }
+            kinematicFilter.current_fk_solver->JntToCart(single_leg,Waist_StanceFoot); //TODO this should use the results from the CoM filter!!
+            auto temp_pos=joints_position;
+            size=joints_position.rows();
+            for (int i=0; i<left_joints.rows(); i++)
+            {
+                joints_position(i+left_joints.rows())=temp_pos(size-i-1);
+            }
+            centroids[std::get<0>(step)]=std::make_tuple(std::get<1>(step),std::get<2>(step),World_StanceFoot*(Waist_StanceFoot.Inverse()));
         }
     }
     return centroids;
