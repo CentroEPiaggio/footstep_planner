@@ -29,7 +29,7 @@ find_package(PCL 1.7 REQUIRED)
 find_package(iDynTree REQUIRED)
 find_package(drc_shared REQUIRED)
 find_package(kdl_codyco REQUIRED)
-
+find_package(TinyXML REQUIRED)
 
 add_message_files(
         FILES
@@ -78,6 +78,8 @@ add_definitions(
         ${PCL_DEFINITIONS}
         )
 
+FILE(GLOB HEADER_FILES include/*.h)
+
 add_executable(foot_planner
        src/gram_schmidt.cpp
        src/ros_publisher.cpp
@@ -90,15 +92,38 @@ add_executable(foot_planner
        src/com_filter.cpp
        src/step_quality_evaluator.cpp
        src/main.cpp
+        ${HEADER_FILES}
        )
 
+add_executable(affordances
+        src/affordances_main.cpp
+        src/gram_schmidt.cpp
+        src/ros_publisher.cpp
+        src/ros_server.cpp
+        src/footstep_planner.cpp
+        src/kinematics_utilities.cpp
+        src/curvaturefilter.cpp
+        src/borderextraction.cpp
+        src/kinematic_filter.cpp
+        src/com_filter.cpp
+        src/step_quality_evaluator.cpp
+        ${HEADER_FILES}
+)
+
 target_link_libraries(foot_planner
-        ${catkin_LIBRARIES} 
+        ${catkin_LIBRARIES}
         ${PCL_LIBRARIES}
         ${drc_shared_LIBRARIES}
          ${iDynTree_LIBRARIES}
         )
 
+target_link_libraries(affordances
+        ${catkin_LIBRARIES}
+        ${PCL_LIBRARIES}
+        ${drc_shared_LIBRARIES}
+        ${iDynTree_LIBRARIES}
+        ${TinyXML_LIBRARIES}
+        )
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(yarp_ros_interface ${YARP_LIBRARIES} icubmod ${ICUB_LIBRARIES} ${catkin_LIBRARIES})
@@ -116,6 +141,11 @@ install(TARGETS foot_planner
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
+install(TARGETS affordances
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
