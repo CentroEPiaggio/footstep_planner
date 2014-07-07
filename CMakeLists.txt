@@ -87,6 +87,8 @@ add_executable(foot_planner
        src/curvaturefilter.cpp
        src/borderextraction.cpp
        src/kinematic_filter.cpp
+       src/com_filter.cpp
+       src/step_quality_evaluator.cpp
        src/main.cpp
        )
 

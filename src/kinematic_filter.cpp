@@ -1,5 +1,7 @@
 #include "kinematic_filter.h"
 
+using namespace planner;
+
 kinematic_filter::kinematic_filter()
 {
     left_joints.resize(kinematics.left_leg.getNrOfJoints());
@@ -32,12 +34,12 @@ void kinematic_filter::setLeftRightFoot(bool left)
     }
 }
 
-bool kinematic_filter::filter(std::list<std::tuple<int,KDL::Frame,KDL::JntArray>>& data)
+bool kinematic_filter::filter(std::list<foot_with_joints> &data)
 {
 
     for (auto single_step=data.begin();single_step!=data.end();)
     {
-        if (!frame_is_reachable(std::get<1>(*single_step),std::get<2>(*single_step)))
+        if (!frame_is_reachable(single_step->World_MovingFoot,single_step->joints))
             single_step=data.erase(single_step);
         else
             single_step++;

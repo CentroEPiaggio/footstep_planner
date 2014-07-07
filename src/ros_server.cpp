@@ -58,11 +58,10 @@ bool rosServer::singleFoot(bool left)
         {
             k=0;
             if (left)
-                publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_LR);
+                publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.joint_names_LR);
             else
-                publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_RL);
-            //std::cout<<"world to base link:"<<std::get<2>(centroid.second)<<std::endl;
-            tf::transformKDLToTF(std::get<2>(centroid.second),current_robot_transform);
+                publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.joint_names_RL);
+            tf::transformKDLToTF(centroid.World_Waist,current_robot_transform);
             static tf::TransformBroadcaster br;
             br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
             
@@ -71,8 +70,8 @@ bool rosServer::singleFoot(bool left)
         }
     }
     auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left);  
-    publisher.publish_foot_position(std::get<0>(final_centroid.second),final_centroid.first,footstep_planner.getWorldTransform(),left);
-    footstep_planner.setCurrentSupportFoot(std::get<0>(final_centroid.second));
+    publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
+    footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot); //Finally we make the step
     
     path.push_back(final_centroid);
     
@@ -81,7 +80,7 @@ bool rosServer::singleFoot(bool left)
 
 bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
-    
+
     if(polygons.size()==0) {
         std::cout<<"No polygons to process, you should call the [/filter_by_curvature] and [/border_extraction] services first"<<std::endl; 
         return false;        
@@ -98,13 +97,11 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
      for (auto centroid:path)
     {
         left=!left;
-//        publisher.publish_foot_position(std::get<0>(centroid.second),centroid.first,footstep_planner.getWorldTransform(),left);
         if (left)
-            publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_LR);
+            publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.joint_names_LR);
         else
-            publisher.publish_robot_joints(std::get<1>(centroid.second),footstep_planner.kinematics.joint_names_RL);
-        //         std::cout<<"world to base link:"<<std::get<2>(centroid.second)<<std::endl;
-        tf::transformKDLToTF(std::get<2>(centroid.second),current_robot_transform);
+            publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.joint_names_RL);
+        tf::transformKDLToTF(centroid.World_Waist,current_robot_transform);
         static tf::TransformBroadcaster br;
         br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
         ros::Duration sleep_time(3);

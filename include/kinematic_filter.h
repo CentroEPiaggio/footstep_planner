@@ -8,11 +8,14 @@
 #include <kdl/chainiksolverpos_nr_jl.hpp>
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kinematics_utilities.h>
+#include <data_types.h>
+
+
 class kinematic_filter
 {
 public:
     kinematic_filter();
-    bool filter(std::list<std::tuple<int,KDL::Frame,KDL::JntArray>>& data);
+    bool filter(std::list<planner::foot_with_joints>& data);
     void setWorld_StanceFoot(const KDL::Frame& World_StanceFoot);
     void setLeftRightFoot(bool left);
 public: //TODO: make private

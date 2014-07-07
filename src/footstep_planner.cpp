@@ -30,11 +30,6 @@ void footstepPlanner::setParams(double feasible_area_)
     this->feasible_area_=feasible_area_;
 }
 
-bool footstepPlanner::step_is_stable(KDL::Frame centroid)
-{
-    return true;
-}
-
 void footstepPlanner::setWorldTransform(KDL::Frame transform)
 {
     this->World_Camera=transform;
@@ -56,7 +51,7 @@ void footstepPlanner::setCurrentDirection(KDL::Vector direction)
 }
 
 
-std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left)
+std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left)
 {
     if (!world_camera_set)
     {
@@ -74,9 +69,8 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
     sleep_time.sleep();
     kinematicFilter.setLeftRightFoot(left);
     kinematicFilter.setWorld_StanceFoot(World_StanceFoot);
-    std::map< int, foot_with_joints> centroids;
     int j=-1;
-    std::list<std::tuple<int,KDL::Frame,KDL::JntArray>> steps;
+    std::list<foot_with_joints> steps;
 
     for(auto polygon:polygons)
     {
@@ -103,7 +97,11 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
                 rotz.M=KDL::Rotation::RotZ(angle);
                 Camera_MovingFoot=plane_frame*rotz;
                 KDL::JntArray joints_position;
-                steps.push_back(std::make_tuple(i*100+j*10000+k,World_Camera*Camera_MovingFoot,joints_position));
+                foot_with_joints temp;
+                temp.index=i*100+j*10000+k;
+                temp.World_MovingFoot=World_Camera*Camera_MovingFoot;
+                temp.joints=joints_position;
+                steps.push_back(std::move(temp));
                 normals++;
 
             }
@@ -111,106 +109,81 @@ std::map< int, foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vec
     }
 
     kinematicFilter.filter(steps);
-    for (auto step:steps)
-    {
-        if(step_is_stable(std::get<1>(step)))//check if the centroid can be used to perform a stable step
-        {
-            KDL::Frame Waist_StanceFoot;
-            KDL::JntArray single_leg;
-            auto size=left_joints.rows();
-            single_leg.resize(size);
-            auto joints_position=std::get<2>(step);
-            for (int k=0; k<size; k++)
-            {
-                single_leg(size-k-1)=joints_position(k);
-            }
-            kinematicFilter.current_fk_solver->JntToCart(single_leg,Waist_StanceFoot); //TODO this should use the results from the CoM filter!!
-            auto temp_pos=joints_position;
-            size=joints_position.rows();
-            for (int i=0; i<left_joints.rows(); i++)
-            {
-                joints_position(i+left_joints.rows())=temp_pos(size-i-1);
-            }
-            centroids[std::get<0>(step)]=std::make_tuple(std::get<1>(step),std::get<2>(step),World_StanceFoot*(Waist_StanceFoot.Inverse()));
-        }
-    }
-    return centroids;
+    comFilter.filter(steps);
+    prepareForROSVisualization(steps);
+    return steps;
 }
 
-std::pair<int,foot_with_joints> footstepPlanner::selectBestCentroid(std::map< int, foot_with_joints > centroids, bool left)
+
+bool footstepPlanner::prepareForROSVisualization(std::list<foot_with_joints>& steps)
 {
-    std::vector<int> minimum_indexes;
-    std::pair<int, foot_with_joints> result= *centroids.begin();//TODO
-    double min=100000000000000;
-    for (auto centroid:centroids)
+    for (auto& step:steps)
     {
-        KDL::Frame StanceFoot_MovingFoot = ((std::get<0>(centroid.second)).Inverse()*World_StanceFoot).Inverse(); //World_Camera*Camera_MovingFoot ;
-        double refy=0;
-        double refx=0;
-        if (left)
+        KDL::Frame Waist_StanceFoot;
+        KDL::JntArray single_leg;
+        auto single_leg_size=left_joints.rows();
+        single_leg.resize(single_leg_size);
+        auto& joints_position=step.joints;
+        for (int k=0; k<single_leg_size; k++)
         {
-            refy=-0.15;
-            refx=0.20;
+            single_leg(single_leg_size-k-1)=joints_position(k); //Swap joint indexes because ROS and KDL have different chain order (our fault, but we had to cause of left/right chains)
         }
-        else
+
+        kinematicFilter.current_fk_solver->JntToCart(single_leg,Waist_StanceFoot);
+
+        auto temp_pos=joints_position; //We HAVE to copy the vector since we are swapping joint indexes
+        auto legs_size=joints_position.rows();
+        for (int i=0; i<single_leg_size; i++)
         {
-            refy=0.15;
-            refx=0.20;
+            joints_position(i+single_leg_size)=temp_pos(legs_size-i-1);
         }
-        auto distance=pow(StanceFoot_MovingFoot.p.x()-refx,2)+pow(StanceFoot_MovingFoot.p.y()-refy,2);
-        
+        step.World_Waist=World_StanceFoot*(Waist_StanceFoot.Inverse());
+    }
+    return true;
+}
+
+foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints > centroids, bool left)
+{
+    std::vector<foot_with_joints*> minimum_steps;
+    double min=100000000000000;
+    foot_with_joints* result=&(*centroids.begin());
+    for (auto& centroid:centroids)
+    {
+        auto distance=stepQualityEvaluator.distance_from_reference_step(centroid,left);
         if (distance-min>DISTANCE_THRESHOLD) //If it is too big, keep the old min
             continue;
         if (min-distance>DISTANCE_THRESHOLD) //New minimum
         {
             min=distance;
-            std::cout<<"new min: "<<min<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
-            minimum_indexes.clear();
-            minimum_indexes.push_back(centroid.first);
+            //std::cout<<"new min: "<<min<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
+            minimum_steps.clear();
+            minimum_steps.push_back(&(centroid)); //TODO: any better idea?
             continue;
         }
         if (distance-min<DISTANCE_THRESHOLD && min-distance>-DISTANCE_THRESHOLD) //If near, keep them both
         {
-            minimum_indexes.push_back(centroid.first);
-            std::cout<<"another min: "<<distance<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
+            minimum_steps.push_back(&(centroid));
+            //std::cout<<"another min: "<<distance<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
         }
     }
     
     double maximum=0;
-    int maximum_index=minimum_indexes[0];
-    for (auto index:minimum_indexes)
+    int maximum_index=(*minimum_steps.begin())->index;
+    KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
+
+    for (auto centroid:minimum_steps)
     {
-        KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
-        KDL::Vector World_FootDirection = World_StanceFoot*KDL::Vector(1,0,0);
-        auto filter=World_DesiredDirection+World_FootDirection;
-        auto moving_foot=std::get<0>(centroids[index])*KDL::Vector(1,0,0);
-        
-        auto scalar=dot(filter,moving_foot);
-        std::cout<<"indici minimi"<<std::endl;
-        std::cout<<" "<<scalar<<" "<<index;
-        
+        auto scalar=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);
         if (scalar>maximum)
         {
             maximum=scalar;
-            maximum_index=index;
+            result=centroid;
         }
     }
-    
-    
-    return std::make_pair(maximum_index,centroids[maximum_index]);
-    
+    return *result;
 }
 
 
-
-double footstepPlanner::dist_from_robot(pcl::PointXYZ point, double x,double y,double z)
-{
-    double x_diff = point.x - x;
-    double y_diff = point.y - y;
-    double z_diff = point.z - z;
-
-    return sqrt(x_diff*x_diff + y_diff*y_diff + z_diff*z_diff);
-}
 
 bool footstepPlanner::polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon)
 {
@@ -230,4 +203,12 @@ bool footstepPlanner::polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >
     return false;
 }
 
+double footstepPlanner::dist_from_robot(pcl::PointXYZ point, double x,double y,double z)
+{
+    double x_diff = point.x - x;
+    double y_diff = point.y - y;
+    double z_diff = point.z - z;
+
+    return sqrt(x_diff*x_diff + y_diff*y_diff + z_diff*z_diff);
+}
 

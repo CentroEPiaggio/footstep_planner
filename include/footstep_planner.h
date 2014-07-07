@@ -9,10 +9,13 @@
 #include <tf/transform_datatypes.h>
 #include "gram_schmidt.h"
 #include "kinematic_filter.h"
+#include "com_filter.h"
+#include "step_quality_evaluator.h"
+#include <data_types.h>
 namespace planner
 {
 
-typedef std::tuple<KDL::Frame,KDL::JntArray, KDL::Frame> foot_with_joints;
+//typedef std::tuple<KDL::Frame,KDL::JntArray, KDL::Frame> foot_with_joints;
     
 class footstepPlanner
 {
@@ -25,15 +28,16 @@ private:
     KDL::Frame World_StanceFoot;
     
     kinematic_filter kinematicFilter;
-
-
+    com_filter comFilter;
+    step_quality_evaluator stepQualityEvaluator;
     //Camera Link Frame
     KDL::Vector Camera_DesiredDirection;
     bool world_camera_set=false;
     
     //Camera Link frame
     KDL::Frame createFramesFromNormal(pcl::PointXYZRGBNormal normal);
-    
+    bool prepareForROSVisualization(std::list<foot_with_joints>& steps);
+
     //World frame
     bool centroid_is_reachable(KDL::Frame World_MovingFoot, KDL::JntArray& jnt_pos);
     
@@ -50,7 +54,7 @@ public:
     kinematics_utilities kinematics; //TODO: remove!!
 
     //Camera link frame
-    std::map< int, foot_with_joints > getFeasibleCentroids(std::vector< planner::polygon_with_normals > polygons, bool left);
+    std::list<foot_with_joints> getFeasibleCentroids(std::vector< planner::polygon_with_normals > polygons, bool left);
     void setParams(double feasible_area_);
     
     //World frame
@@ -58,8 +62,8 @@ public:
     
     
     void setWorldTransform(KDL::Frame transform);
-    std::pair<int,foot_with_joints> selectBestCentroid(std::map< int,foot_with_joints > centroids, bool left);
-    inline KDL::Frame getWorldTransform(){return World_Camera;};
+    foot_with_joints selectBestCentroid(std::list<foot_with_joints> centroids, bool left);
+    inline KDL::Frame getWorldTransform(){return World_Camera;}
     
     //Camera Link Frame
     void setCurrentDirection(KDL::Vector direction);
