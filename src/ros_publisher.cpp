@@ -102,14 +102,14 @@ void ros_publisher::publish_plane_borders(std::vector<polygon_with_normals> bord
     
 }
 
-void ros_publisher::publish_foot_position(KDL::Frame fromWorldTofoot,int centroid_id, KDL::Frame fromCameraToworld,bool left=true)
+void ros_publisher::publish_foot_position(KDL::Frame World_MovingFoot,int centroid_id, bool left=true)
 {
     
-    foot_marker.pose.position.x=fromWorldTofoot.p.x();
-    foot_marker.pose.position.y=fromWorldTofoot.p.y();
-    foot_marker.pose.position.z=fromWorldTofoot.p.z();
+    foot_marker.pose.position.x=World_MovingFoot.p.x();
+    foot_marker.pose.position.y=World_MovingFoot.p.y();
+    foot_marker.pose.position.z=World_MovingFoot.p.z();
     
-    fromWorldTofoot.M.GetQuaternion(foot_marker.pose.orientation.x,foot_marker.pose.orientation.y,foot_marker.pose.orientation.z,foot_marker.pose.orientation.w);
+    World_MovingFoot.M.GetQuaternion(foot_marker.pose.orientation.x,foot_marker.pose.orientation.y,foot_marker.pose.orientation.z,foot_marker.pose.orientation.w);
     foot_marker.color.r=255*left;
     foot_marker.color.g=255*(!left);
     foot_marker.id = centroid_id; //to have a unique id
