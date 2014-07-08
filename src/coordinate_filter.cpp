@@ -1,34 +1,34 @@
 #include "coordinate_filter.h"
 
 coordinate_filter::coordinate_filter(unsigned int filter_axis_, double axis_min_, double axis_max_):
-filter_axis(filter_axis_),axis_min(axis_min_),axis_max(axis_max_)
+filter_axis(filter_axis_),default_axis_min(axis_min_),default_axis_max(axis_max_)
 {	
-	stance_foot_set = false;
+    stance_foot_set = false;
 }
 
 void coordinate_filter::set_stance_foot(KDL::Frame Camera_StanceFoot_)
 {
-	Camera_StanceFoot = Camera_StanceFoot;
-	
+    Camera_StanceFoot = Camera_StanceFoot;
+    
     m_x = Camera_StanceFoot.M(filter_axis,0);
     m_y = Camera_StanceFoot.M(filter_axis,1);
     m_z = Camera_StanceFoot.M(filter_axis,2);
-	
-	stance_foot_set = true;
+    
+    stance_foot_set = true;
 }
 
 bool coordinate_filter::border_is_in_bounds(pcl::PointCloud<pcl::PointXYZ>::Ptr border)
 {
-	double value;
+    double value;
 
-	for (pcl::PointCloud<pcl::PointXYZ>::iterator it=border->begin(); it!=border->end();++it)
-	{
-		value = m_x*(*it).x + m_y*(*it).y + m_z*(*it).z;
-		
-		if(value <= axis_max && value >= axis_min) return true;
-	}
+    for (pcl::PointCloud<pcl::PointXYZ>::iterator it=border->begin(); it!=border->end();++it)
+    {
+	value = m_x*(*it).x + m_y*(*it).y + m_z*(*it).z;
 	
-	return false;
+	if(value <= axis_max && value >= axis_min) return true;
+    }
+    
+    return false;
 }
 
 bool coordinate_filter::normal_is_in_bounds(pcl::PointXYZRGBNormal& normal)
@@ -40,44 +40,57 @@ bool coordinate_filter::normal_is_in_bounds(pcl::PointXYZRGBNormal& normal)
     return true;
 }
 
-void coordinate_filter::filter_borders(std::list<polygon_with_normals>& data)
-{
+void coordinate_filter::filter_borders(std::list<polygon_with_normals>& data, bool left)
+{  
     if(!stance_foot_set)
     {
         std::cout<<"ERROR: STANCE FOOT NOT SET"<<std::endl;
         return;
     }
+    
+    if(filter_axis==1)
+    {
+        axis_max = (left)*default_axis_max + (!left)*(-default_axis_min);
+        axis_min = (left)*default_axis_min + (!left)*(-default_axis_max);
+    }
+    
     for(std::list<polygon_with_normals>::iterator it=data.begin(); it!=data.end();)
+    {
+	if(!border_is_in_bounds(it->border))
 	{
-		if(!border_is_in_bounds(it->border))
-		{
-              it=data.erase(it);
-		}
-        else
-            it++;
+	    it=data.erase(it);
 	}
+	else
+	    it++;
+    }
 }
 
-void coordinate_filter::filter_normals(std::list<polygon_with_normals>& data)
+void coordinate_filter::filter_normals(std::list<polygon_with_normals>& data, bool left)
 {
     if(!stance_foot_set)
     {
         std::cout<<"ERROR: STANCE FOOT NOT SET"<<std::endl;
         return;
     }
-  
-	pcl::PointCloud<pcl::PointXYZRGBNormal> normals;
-  
-	for(auto item:data)
-	{	  
-		for(pcl::PointCloud<pcl::PointXYZRGBNormal>::iterator it=item.normals->begin(); it!=item.normals->end();++it)
-		{
-			if(normal_is_in_bounds(*it))
-			{
-				normals.push_back(*it); //TODO: controllare se va bene eliminare le normali dai piani
-			}
-		}
-		
-		*(item.normals) = normals;
+   
+    if(filter_axis==1)
+    {
+        axis_max = (left)*default_axis_max + (!left)*(-default_axis_min);
+        axis_min = (left)*default_axis_min + (!left)*(-default_axis_max);
+    }
+    
+    pcl::PointCloud<pcl::PointXYZRGBNormal> normals;
+
+    for(auto item:data)
+    {	  
+	for(pcl::PointCloud<pcl::PointXYZRGBNormal>::iterator it=item.normals->begin(); it!=item.normals->end();++it)
+	{
+	    if(normal_is_in_bounds(*it))
+	    {
+		    normals.push_back(*it); //TODO: controllare se va bene eliminare le normali dai piani
+	    }
 	}
+	
+	*(item.normals) = normals;
+    }
 }
