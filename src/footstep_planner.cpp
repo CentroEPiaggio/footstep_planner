@@ -113,9 +113,9 @@ void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& aff
     
     ROS_INFO("Number of affordances after geometric filter on borders: %lu ",affordances.size());  
     
-    filter_by_coordinates.at(0)->filter_normals(affordances,left);   //filter on x
-    filter_by_coordinates.at(1)->filter_normals(affordances,left);   //filter on y
-    filter_by_coordinates.at(2)->filter_normals(affordances,left);   //filter on z 
+    filter_by_coordinates.at(0)->filter_points(affordances,left);   //filter on x
+    filter_by_coordinates.at(1)->filter_points(affordances,left);   //filter on y
+    filter_by_coordinates.at(2)->filter_points(affordances,left);   //filter on z
 }
 
 void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bool left)
@@ -129,7 +129,7 @@ void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool
 }
 
 
-std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals > affordances, bool left)
+std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left)
 {
     if (!world_camera_set)
     {
