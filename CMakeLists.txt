@@ -109,6 +109,8 @@ add_executable(affordances
         src/kinematic_filter.cpp
         src/com_filter.cpp
         src/step_quality_evaluator.cpp
+        src/coordinate_filter.cpp
+	src/tilt_filter.cpp
         ${HEADER_FILES}
 )
 
