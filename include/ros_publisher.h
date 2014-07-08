@@ -15,7 +15,7 @@ class ros_publisher
 public:
     ros_publisher(ros::NodeHandle handle, std::string camera_link_name);
     void publish_plane_clusters(std::vector<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr> clusters);
-    void publish_plane_borders(std::vector< polygon_with_normals> borders);
+    void publish_plane_borders(std::list< polygon_with_normals> borders);
     void publish_foot_position(KDL::Frame World_MovingFoot, int centroid_id, bool left);
     void publish_robot_joints(KDL::JntArray joints, std::vector<std::string> joint_names);
     void publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal >::Ptr normals,int i);

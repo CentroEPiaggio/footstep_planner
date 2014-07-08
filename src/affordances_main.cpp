@@ -125,7 +125,7 @@ void dump_to_stdout(const char* pFilename)
     }
 }
 
-void build_simple_doc(std::string filename, const std::vector<planner::polygon_with_normals>& clusters )
+void build_simple_doc(std::string filename, const std::list<planner::polygon_with_normals>& clusters )
 {
     pcl::StreamWriter writer;
 
@@ -134,17 +134,17 @@ void build_simple_doc(std::string filename, const std::vector<planner::polygon_w
     TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
     TiXmlElement * element = new TiXmlElement( "augmented_pcl_list" );
     element->SetAttribute("size",std::to_string(list_size));
-    for (int i=0;i<list_size;i++)
+    for (auto& cluster:clusters)
     {
         TiXmlElement * single_augmented_pcl = new TiXmlElement("augmented_pcl");
         TiXmlElement * pcl_xyzrgbanormal = new TiXmlElement("xyzrgbanormal");
         std::ostringstream temp;
-        writer.writeASCII(temp,*(clusters[i].normals));
+        writer.writeASCII(temp,*(cluster.normals));
         TiXmlText * text = new TiXmlText( temp.str() );
 
         TiXmlElement * pcl_border = new TiXmlElement("border");
         std::ostringstream temp1;
-        writer.writeASCII(temp1,*(clusters[i].border));
+        writer.writeASCII(temp1,*(cluster.border));
         TiXmlText * text1 = new TiXmlText( temp1.str() );
 
         TiXmlElement * pcl_normal = new TiXmlElement("normal");
@@ -163,7 +163,7 @@ void build_simple_doc(std::string filename, const std::vector<planner::polygon_w
     doc.SaveFile( filename );
 }
 
-bool read_simple_doc(std::string filename, std::vector<planner::polygon_with_normals>& clusters )
+bool read_simple_doc(std::string filename, std::list<planner::polygon_with_normals>& clusters )
 {
     TiXmlDocument doc(filename);
     bool loadOkay = doc.LoadFile();

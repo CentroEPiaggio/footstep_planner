@@ -66,7 +66,7 @@ void ros_publisher::publish_plane_clusters(std::vector< boost::shared_ptr< pcl::
     }
 }
 
-void ros_publisher::publish_plane_borders(std::vector<polygon_with_normals> borders)
+void ros_publisher::publish_plane_borders(std::list<polygon_with_normals> borders)
 {
     geometry_msgs::Point point;    
     std_msgs::ColorRGBA color;

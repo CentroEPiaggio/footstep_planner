@@ -5,6 +5,7 @@
 #include <tf_conversions/tf_kdl.h>
 #include <stdlib.h>     /* srand, rand */
 #include <cmath>
+
 using namespace planner;
 
 #define DISTANCE_THRESHOLD 0.02
@@ -18,6 +19,15 @@ footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics) //TODO
     SetToZero(right_joints);
     SetToZero(leg_joints);
     kinematics.fkLsolver->JntToCart(left_joints,World_StanceFoot);   
+    
+    coordinate_filter* temp_filter = new coordinate_filter(0,0.2,0.2);
+    filter_by_coordinates.push_back(temp_filter);
+    temp_filter = new coordinate_filter(1,0.2,0.2);
+    filter_by_coordinates.push_back(temp_filter);
+    temp_filter = new coordinate_filter(2,0.2,0.2);
+    filter_by_coordinates.push_back(temp_filter);
+    
+    filter_by_tilt = new tilt_filter();
 }
 
 void footstepPlanner::setCurrentSupportFoot(KDL::Frame foot_position)
@@ -50,8 +60,39 @@ void footstepPlanner::setCurrentDirection(KDL::Vector direction)
     gs_utils.setCurrentDirection(direction);
 }
 
+void footstepPlanner::generate_frames_from_normals(std::list< polygon_with_normals >& affordances, std::list< foot_with_joints >& steps)
+{
+    int j=-1;
 
-std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vector< polygon_with_normals > polygons, bool left)
+    for(auto item:affordances)
+    {
+        j++;
+        ROS_INFO("Polygon %d number of normals : %lu ",j,item.normals->size());
+
+        for(unsigned int i=0; i<item.normals->size(); i++)
+        {
+            KDL::Frame plane_frame=createFramesFromNormal((*item.normals)[i]);
+            int k=-1;
+            for (double angle=-0.8;angle<=0.8;angle=angle+0.2) 
+            {
+                //double angle=0.0;
+                k++;
+                KDL::Frame Camera_MovingFoot;
+                KDL::Frame rotz;
+                rotz.M=KDL::Rotation::RotZ(angle);
+                Camera_MovingFoot=plane_frame*rotz;
+                KDL::JntArray joints_position;
+                foot_with_joints temp;
+                temp.index=i*100+j*10000+k;
+                temp.World_MovingFoot=World_Camera*Camera_MovingFoot;
+                temp.joints=joints_position;
+                steps.push_back(std::move(temp));
+            }
+        }
+    }
+}
+
+std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals > affordances, bool left)
 {
     if (!world_camera_set)
     {
@@ -69,47 +110,50 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::vector< 
     sleep_time.sleep();
     kinematicFilter.setLeftRightFoot(left);
     kinematicFilter.setWorld_StanceFoot(World_StanceFoot);
-    int j=-1;
+    
+    //-------------------------------------------------- GEOMETRIC FILTERING ------------------------------------------------------
+    
+    ROS_INFO("Number of affordances: %lu ",affordances.size());
+    
+    filter_by_tilt->filter_normals(affordances);   //filter on the tilt of the normal
+    
+    ROS_INFO("Number of affordances after tilt filter : %lu ",affordances.size());    
+    
+    KDL::Frame Camera_StanceFoot =  World_Camera.Inverse()*World_StanceFoot;
+    
+    filter_by_coordinates.at(0)->set_stance_foot(Camera_StanceFoot);   //filter on x
+    filter_by_coordinates.at(0)->filter_borders(affordances);
+    
+    filter_by_coordinates.at(1)->set_stance_foot(Camera_StanceFoot);   //filter on y
+    filter_by_coordinates.at(1)->filter_borders(affordances);
+    
+    filter_by_coordinates.at(2)->set_stance_foot(Camera_StanceFoot);   //filter on z
+    filter_by_coordinates.at(2)->filter_borders(affordances);
+    
+    ROS_INFO("Number of affordances after geometric filter on borders: %lu ",affordances.size());  
+    
+    filter_by_coordinates.at(0)->filter_normals(affordances);   //filter on x
+    filter_by_coordinates.at(1)->filter_normals(affordances);   //filter on y
+    filter_by_coordinates.at(2)->filter_normals(affordances);   //filter on z
+
     std::list<foot_with_joints> steps;
+    
+    generate_frames_from_normals(affordances,steps); //generating kdl frames to place foot
 
-    for(auto polygon:polygons)
-    {
-        j++;
-        if(!polygon_in_feasibile_area(polygon.border))
-        {
-             std::cout<<"!! Polygon "<<j<<" outside the feasible area"<<std::endl;
-            continue;
-        }
-        ROS_INFO("NORMAL size: %lu ",polygon.normals->size());
-        int normals=0;
-
-//         int i=0;
-        for(unsigned int i=0; i<polygon.normals->size(); i++)
-        {
-            KDL::Frame plane_frame=createFramesFromNormal((*polygon.normals)[i]);
-            int k=-1;
-            for (double angle=-0.8;angle<=0.8;angle=angle+0.2) 
-            {
-                //double angle=0.0;
-                k++;
-                KDL::Frame Camera_MovingFoot;
-                KDL::Frame rotz;
-                rotz.M=KDL::Rotation::RotZ(angle);
-                Camera_MovingFoot=plane_frame*rotz;
-                KDL::JntArray joints_position;
-                foot_with_joints temp;
-                temp.index=i*100+j*10000+k;
-                temp.World_MovingFoot=World_Camera*Camera_MovingFoot;
-                temp.joints=joints_position;
-                steps.push_back(std::move(temp));
-                normals++;
-
-            }
-        }
-    }
-
+    ROS_INFO("Number of steps after geometric filter: %lu ",steps.size());  
+    
+    //-------------------------------------------------- KINEMATIC FILTERING ------------------------------------------------------
+    
     kinematicFilter.filter(steps);
+    
+    ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
+    
+    //-------------------------------------------------- DYNAMIC FILTERING --------------------------------------------------------
+    
     comFilter.filter(steps);
+    
+    ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());  
+    
     prepareForROSVisualization(steps);
     return steps;
 }
