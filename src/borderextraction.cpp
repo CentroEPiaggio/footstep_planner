@@ -71,6 +71,10 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
     //TODO
 //     uniform sampling/voxel grid sui cluster, e per ogni punto restituito, cercare il closest point del cluster e salvarlo (completo di normale)
 
+    pcl::PointXYZRGBNormal average_normal;
+    Eigen::Vector4f plane;
+    float curv;
+
     for (unsigned int i=0; i< clusters.size(); i++)
     {
         std::cout<<std::endl;
@@ -107,6 +111,7 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
         std::cout<<"- Border number of points: "<<border.size()<<std::endl;
         polygon_with_normals temp;
         temp.border=douglas_peucker_3d(border,0.05);
+	
         pcl::PointCloud<pcl::PointXYZRGBNormal> temp_cloud;
         temp.normals=temp_cloud.makeShared();
         pcl::SamplingSurfaceNormal<pcl::PointXYZRGBNormal> sampler;
@@ -115,7 +120,12 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
         sampler.setInputCloud(clusters[i]);
         sampler.setSeed(time(NULL));
         sampler.filter(*temp.normals);
-        
+	
+	pcl::computePointNormal(*(clusters[i]),plane,curv);
+	average_normal.x=0; average_normal.y=0; average_normal.z=0;
+        average_normal.normal_x=plane[0]; average_normal.normal_y=plane[1]; average_normal.normal_z=plane[2];
+	temp.average_normal=average_normal;
+	
         std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
 
         if(!temp.border) {
