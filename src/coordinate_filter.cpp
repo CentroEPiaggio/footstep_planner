@@ -32,7 +32,7 @@ bool coordinate_filter::border_is_in_bounds(pcl::PointCloud<pcl::PointXYZ>::Ptr 
 
 bool coordinate_filter::normal_is_in_bounds(pcl::PointXYZRGBNormal& normal)
 {
-    double value = m_x*normal.x + m_y*normal.y + m_z*normal.z;
+    value = m_x*normal.x + m_y*normal.y + m_z*normal.z;
 		
     if(value > axis_max || value < axis_min) return false;
 		

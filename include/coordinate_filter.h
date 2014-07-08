@@ -12,7 +12,6 @@ class coordinate_filter
     ~coordinate_filter();
 
     void set_stance_foot(KDL::Frame Camera_StanceFoot);
-    void set_bounds(double min, double max);
 
     void filter_borders(std::list<polygon_with_normals>& data);
     void filter_normals(std::list<polygon_with_normals>& data);
@@ -25,6 +24,7 @@ class coordinate_filter
     KDL::Vector rotate_lower_limit, rotate_upper_limit;
     double m_x, m_y, m_z;
     bool stance_foot_set;
+    double value;
 public:
 
 };
