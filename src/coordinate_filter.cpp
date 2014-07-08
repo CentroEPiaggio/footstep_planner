@@ -2,17 +2,18 @@
 
 coordinate_filter::coordinate_filter(unsigned int filter_axis_, double axis_min_, double axis_max_):
 filter_axis(filter_axis_),axis_min(axis_min_),axis_max(axis_max_)
-{
-	m_x = Camera_StanceFoot.M(filter_axis*3,0);
-	m_y = Camera_StanceFoot.M(filter_axis*3,1);
-	m_z = Camera_StanceFoot.M(filter_axis*3,2);
-	
+{	
 	stance_foot_set = false;
 }
 
 void coordinate_filter::set_stance_foot(KDL::Frame Camera_StanceFoot_)
 {
 	Camera_StanceFoot = Camera_StanceFoot;
+	
+	m_x = Camera_StanceFoot.M(filter_axis*3,0);
+	m_y = Camera_StanceFoot.M(filter_axis*3,1);
+	m_z = Camera_StanceFoot.M(filter_axis*3,2);
+	
 	stance_foot_set = true;
 }
 
