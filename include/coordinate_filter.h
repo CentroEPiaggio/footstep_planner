@@ -1,8 +1,9 @@
 #ifndef COORDINATE_FILTER_H
 #define COORDINATE_FILTER_H
 
-#include <kinematics_utilities.h>
+#include <kdl/frames.hpp>
 #include "data_types.h"
+#include <list>
 
 using namespace planner;
 
