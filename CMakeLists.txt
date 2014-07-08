@@ -91,6 +91,7 @@ add_executable(foot_planner
        src/kinematic_filter.cpp
        src/com_filter.cpp
        src/step_quality_evaluator.cpp
+       src/coordinate_filter.cpp
        src/main.cpp
         ${HEADER_FILES}
        )
