@@ -12,6 +12,9 @@
 #include "com_filter.h"
 #include "step_quality_evaluator.h"
 #include <data_types.h>
+#include "coordinate_filter.h"
+#include "tilt_filter.h"
+
 namespace planner
 {
 
@@ -48,13 +51,18 @@ private:
     bool polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon);
     
     double dist_from_robot(pcl::PointXYZ point, double x, double y, double z);
+    void generate_frames_from_normals(std::list< polygon_with_normals >& affordances, std::list< foot_with_joints >& steps);
+    
+    tilt_filter* filter_by_tilt;
+    std::vector<coordinate_filter*> filter_by_coordinates;
+    
 public:
     footstepPlanner();
     gram_schmidt gs_utils;
     kinematics_utilities kinematics; //TODO: remove!!
 
     //Camera link frame
-    std::list<foot_with_joints> getFeasibleCentroids(std::vector< planner::polygon_with_normals > polygons, bool left);
+    std::list<foot_with_joints> getFeasibleCentroids(std::list< planner::polygon_with_normals > polygons, bool left);
     void setParams(double feasible_area_);
     
     //World frame
