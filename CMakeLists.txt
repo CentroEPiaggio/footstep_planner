@@ -94,7 +94,9 @@ add_executable(foot_planner
        src/coordinate_filter.cpp
        src/tilt_filter.cpp
        src/main.cpp
-        ${HEADER_FILES}
+       src/xml_pcl_io.cpp
+       src/pcd_io.cpp
+       ${HEADER_FILES}
        )
 
 add_executable(affordances
@@ -112,6 +114,7 @@ add_executable(affordances
         src/step_quality_evaluator.cpp
         src/coordinate_filter.cpp
 	src/tilt_filter.cpp
+        src/xml_pcl_io.cpp
         ${HEADER_FILES}
 )
 
@@ -120,6 +123,7 @@ target_link_libraries(foot_planner
         ${PCL_LIBRARIES}
         ${drc_shared_LIBRARIES}
          ${iDynTree_LIBRARIES}
+        ${TinyXML_LIBRARIES}
         )
 
 target_link_libraries(affordances
