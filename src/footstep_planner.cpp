@@ -92,6 +92,45 @@ void footstepPlanner::generate_frames_from_normals(std::list< polygon_with_norma
     }
 }
 
+void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& affordances, bool left)
+{
+    ROS_INFO("Number of affordances: %lu ",affordances.size());
+    
+    filter_by_tilt->filter_normals(affordances);   //filter on the tilt of the normal
+    
+    ROS_INFO("Number of affordances after tilt filter : %lu ",affordances.size());    
+    
+    KDL::Frame Camera_StanceFoot =  World_Camera.Inverse()*World_StanceFoot;
+
+    filter_by_coordinates.at(0)->set_stance_foot(Camera_StanceFoot);   //filter on x
+    filter_by_coordinates.at(0)->filter_borders(affordances,left);
+    ROS_INFO("line 126");
+
+    filter_by_coordinates.at(1)->set_stance_foot(Camera_StanceFoot);   //filter on y
+    ROS_INFO("line 129");
+    filter_by_coordinates.at(1)->filter_borders(affordances,left);
+    ROS_INFO("line 131");
+
+    filter_by_coordinates.at(2)->set_stance_foot(Camera_StanceFoot);   //filter on z
+    filter_by_coordinates.at(2)->filter_borders(affordances,left);
+    
+    ROS_INFO("Number of affordances after geometric filter on borders: %lu ",affordances.size());  
+    
+    filter_by_coordinates.at(0)->filter_normals(affordances,left);   //filter on x
+    filter_by_coordinates.at(1)->filter_normals(affordances,left);   //filter on y
+    filter_by_coordinates.at(2)->filter_normals(affordances,left);   //filter on z 
+}
+
+void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bool left)
+{
+    kinematicFilter.filter(steps);
+}
+
+void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool left)
+{
+    comFilter.filter(steps);
+}
+
 std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals > affordances, bool left)
 {
     if (!world_camera_set)
@@ -110,52 +149,26 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     sleep_time.sleep();
     kinematicFilter.setLeftRightFoot(left);
     kinematicFilter.setWorld_StanceFoot(World_StanceFoot);
+        
     
-    //-------------------------------------------------- GEOMETRIC FILTERING ------------------------------------------------------
+    geometric_filtering(affordances,left); //GEOMETRIC FILTER
     
-    ROS_INFO("Number of affordances: %lu ",affordances.size());
-    
-    filter_by_tilt->filter_normals(affordances);   //filter on the tilt of the normal
-    
-    ROS_INFO("Number of affordances after tilt filter : %lu ",affordances.size());    
-    
-    KDL::Frame Camera_StanceFoot =  World_Camera.Inverse()*World_StanceFoot;
-
-    filter_by_coordinates.at(0)->set_stance_foot(Camera_StanceFoot);   //filter on x
-    filter_by_coordinates.at(0)->filter_borders(affordances);
-    ROS_INFO("line 126");
-
-    filter_by_coordinates.at(1)->set_stance_foot(Camera_StanceFoot);   //filter on y
-    ROS_INFO("line 129");
-    filter_by_coordinates.at(1)->filter_borders(affordances);
-    ROS_INFO("line 131");
-
-    filter_by_coordinates.at(2)->set_stance_foot(Camera_StanceFoot);   //filter on z
-    filter_by_coordinates.at(2)->filter_borders(affordances);
-    
-    ROS_INFO("Number of affordances after geometric filter on borders: %lu ",affordances.size());  
-    
-    filter_by_coordinates.at(0)->filter_normals(affordances);   //filter on x
-    filter_by_coordinates.at(1)->filter_normals(affordances);   //filter on y
-    filter_by_coordinates.at(2)->filter_normals(affordances);   //filter on z
-
     std::list<foot_with_joints> steps;
     
     generate_frames_from_normals(affordances,steps); //generating kdl frames to place foot
 
-    ROS_INFO("Number of steps after geometric filter: %lu ",steps.size());  
+    ROS_INFO("Number of steps after geometric filter: %lu ",steps.size()); 
     
-    //-------------------------------------------------- KINEMATIC FILTERING ------------------------------------------------------
-    
-    kinematicFilter.filter(steps);
+        
+    kinematic_filtering(steps,left); //KINEMATIC FILTER
     
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
     
-    //-------------------------------------------------- DYNAMIC FILTERING --------------------------------------------------------
     
-    comFilter.filter(steps);
+    dynamic_filtering(steps,left); //DYNAMIC FILTER
     
     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());  
+    
     
     prepareForROSVisualization(steps);
     return steps;

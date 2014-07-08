@@ -53,6 +53,12 @@ private:
     double dist_from_robot(pcl::PointXYZ point, double x, double y, double z);
     void generate_frames_from_normals(std::list< polygon_with_normals >& affordances, std::list< foot_with_joints >& steps);
     
+    void geometric_filtering(std::list< polygon_with_normals >& affordances, bool left);
+    
+    void kinematic_filtering(std::list<foot_with_joints>& steps, bool left);
+    
+    void dynamic_filtering(std::list<foot_with_joints>& steps, bool left);
+    
     tilt_filter* filter_by_tilt;
     std::vector<coordinate_filter*> filter_by_coordinates;
     
