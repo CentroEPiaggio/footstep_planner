@@ -36,10 +36,8 @@ public:
     std::vector<std::string> left_leg_names,right_leg_names;
     std::vector<std::string> joint_names_LR,joint_names_RL;
     
-    
-    
+
     KDL::Frame getForwardKinematics(KDL::Chain& chain,KDL::ChainFkSolverPos_recursive& solver);
-    KDL::JntArray getInverseKinematics(KDL::Chain& chain,KDL::Frame& left_foot,KDL::Frame& right_foot,KDL::ChainIkSolverPos_NR_JL& solver);
     bool readJoints(urdf::Model& robot_model, std::string tip, std::string parent, KDL::JntArray& q_min, KDL::JntArray& q_max);
         
     KDL::JntArray q_minL,q_minR,q_maxL,q_maxR,q_min,q_max;

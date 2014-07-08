@@ -20,11 +20,11 @@ footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics) //TODO
     SetToZero(leg_joints);
     kinematics.fkLsolver->JntToCart(left_joints,World_StanceFoot);   
     
-    coordinate_filter* temp_filter = new coordinate_filter(0,-0.2,0.8);
+    coordinate_filter* temp_filter = new coordinate_filter(0,-0.5,1);
     filter_by_coordinates.push_back(temp_filter);
-    temp_filter = new coordinate_filter(1,-0.8,0.8);
+    temp_filter = new coordinate_filter(1,-0.5,0.8);
     filter_by_coordinates.push_back(temp_filter);
-    temp_filter = new coordinate_filter(2,-0.4,0.8);
+    temp_filter = new coordinate_filter(2,-0.5,0.5);
     filter_by_coordinates.push_back(temp_filter);
     
     filter_by_tilt = new tilt_filter();
@@ -100,18 +100,15 @@ void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& aff
     
     ROS_INFO("Number of affordances after tilt filter : %lu ",affordances.size());    
     
-    KDL::Frame Camera_StanceFoot =  World_Camera.Inverse()*World_StanceFoot;
+    KDL::Frame StanceFoot_Camera =  World_StanceFoot.Inverse()*World_Camera;
 
-    filter_by_coordinates.at(0)->set_stance_foot(Camera_StanceFoot);   //filter on x
+    filter_by_coordinates.at(0)->set_stance_foot(StanceFoot_Camera);   //filter on x
     filter_by_coordinates.at(0)->filter_borders(affordances,left);
-    ROS_INFO("line 126");
 
-    filter_by_coordinates.at(1)->set_stance_foot(Camera_StanceFoot);   //filter on y
-    ROS_INFO("line 129");
+    filter_by_coordinates.at(1)->set_stance_foot(StanceFoot_Camera);   //filter on y
     filter_by_coordinates.at(1)->filter_borders(affordances,left);
-    ROS_INFO("line 131");
 
-    filter_by_coordinates.at(2)->set_stance_foot(Camera_StanceFoot);   //filter on z
+    filter_by_coordinates.at(2)->set_stance_foot(StanceFoot_Camera);   //filter on z
     filter_by_coordinates.at(2)->filter_borders(affordances,left);
     
     ROS_INFO("Number of affordances after geometric filter on borders: %lu ",affordances.size());  
@@ -130,6 +127,7 @@ void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool
 {
     comFilter.filter(steps);
 }
+
 
 std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals > affordances, bool left)
 {

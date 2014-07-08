@@ -13,19 +13,17 @@ public:
     coordinate_filter(unsigned int filter_axis, double axis_min, double axis_max);
     ~coordinate_filter();
     void filter_borders(std::list<polygon_with_normals>& data, bool left);
-    void filter_normals(std::list<polygon_with_normals>& data, bool left);
-    void set_stance_foot(KDL::Frame Camera_StanceFoot);
+    void filter_points(std::list<polygon_with_normals>& data, bool left);
+    void set_stance_foot(KDL::Frame StanceFoot_Camera);
     
 private:
     bool border_is_in_bounds(pcl::PointCloud<pcl::PointXYZ>::Ptr border);
-    bool normal_is_in_bounds(pcl::PointXYZRGBNormal& normal);
+    bool point_is_in_bounds(pcl::PointXYZRGBNormal& point);
 
     double default_axis_max, default_axis_min;
     double axis_min, axis_max;
     unsigned int filter_axis;
-    KDL::Frame Camera_StanceFoot;
-    KDL::Vector rotate_lower_limit, rotate_upper_limit;
-    double m_x, m_y, m_z;
+    double m_x, m_y, m_z,t;
     bool stance_foot_set;
     double value;
 };

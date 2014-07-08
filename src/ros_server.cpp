@@ -52,7 +52,12 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
 
 bool rosServer::singleFoot(bool left)
 {
-    auto World_centroids=footstep_planner.getFeasibleCentroids(polygons,left);
+    auto poly=polygons;
+    auto World_centroids=footstep_planner.getFeasibleCentroids(poly,left);
+    publisher.publish_plane_borders(poly);
+    ros::Duration sleep_time(0.2);
+    sleep_time.sleep();
+
     int k=0;
     for (auto centroid:World_centroids)
     {

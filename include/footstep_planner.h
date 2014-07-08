@@ -68,7 +68,7 @@ public:
     kinematics_utilities kinematics; //TODO: remove!!
 
     //Camera link frame
-    std::list<foot_with_joints> getFeasibleCentroids(std::list< planner::polygon_with_normals > polygons, bool left);
+    std::list<foot_with_joints> getFeasibleCentroids(std::list<polygon_with_normals> &polygons, bool left);
     void setParams(double feasible_area_);
     
     //World frame
