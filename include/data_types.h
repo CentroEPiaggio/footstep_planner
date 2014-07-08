@@ -13,6 +13,7 @@ struct polygon_with_normals
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr border;
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr normals;
+    pcl::PointXYZRGBNormal average_normal;
 };  
   
 typedef struct
