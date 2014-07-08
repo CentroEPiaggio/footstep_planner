@@ -19,15 +19,15 @@ rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~"),publisher(nh,n
     
     double curvature_threshold_,voxel_size_,normal_radius_,cluster_tolerance_;
     int min_cluster_size_;
-    priv_nh_.param<double>("voxel_size", voxel_size_, 0.02);
-    priv_nh_.param<double>("normal_radius", normal_radius_, 0.05);
-    priv_nh_.param<double>("curvature_threshold", curvature_threshold_, 0.01);
-    priv_nh_.param<int>("min_cluster_size", min_cluster_size_, 100);
-    priv_nh_.param<double>("cluster_tolerance", cluster_tolerance_, 100);
+    priv_nh_.param<double>("voxel_size", voxel_size_, 0.01);
+    priv_nh_.param<double>("normal_radius", normal_radius_, 0.1);
+    priv_nh_.param<double>("curvature_threshold", curvature_threshold_, 0.05);
+    priv_nh_.param<int>("min_cluster_size", min_cluster_size_, 50);
+    priv_nh_.param<double>("cluster_tolerance", cluster_tolerance_, 0.05);
     curvature_filter.setParams(curvature_threshold_,voxel_size_,normal_radius_,min_cluster_size_,cluster_tolerance_);
     
     double feasible_area_=2.5;
-    //priv_nh_.param<double>("feasible_area", feasible_area_, 2.5);
+    priv_nh_.param<double>("feasible_area", feasible_area_, 2.5);
     footstep_planner.setParams(feasible_area_);
     
  
@@ -127,7 +127,6 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
     // convert from sensor_msgs to a tractable PCL object
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::fromROSMsg(*input, *input_cloud_ptr);
-    
     clusters=curvature_filter.filterByCurvature(input_cloud_ptr);
     publisher.publish_plane_clusters(clusters);
     return extractBorders(request,response);
