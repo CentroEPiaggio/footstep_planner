@@ -5,19 +5,11 @@
 #include <std_srvs/Empty.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include "data_types.h"
 
 
-namespace planner
-{
-    
-    struct polygon_with_normals
-    {
-        pcl::PointCloud<pcl::PointXYZ>::Ptr border;
-        pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr normals;
-    };
-    
-    
-    
+using namespace planner;
+
 class borderExtraction
 {
 public:
@@ -29,6 +21,4 @@ private:
     
 };
 
-
-}
 #endif // BORDEREXTRACTION_H
