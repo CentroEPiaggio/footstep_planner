@@ -4,7 +4,9 @@
 #include <tinyxml.h>
 #include <ostream>
 #include <sstream>
-#include "pcd_io.cpp"
+#include <pcd_stream_io.hpp>
+#include <curvaturefilter.h>
+#include <borderextraction.h>
 // ----------------------------------------------------------------------
 // STDOUT dump and indenting utility functions
 // ----------------------------------------------------------------------
@@ -123,11 +125,11 @@ void dump_to_stdout(const char* pFilename)
     }
 }
 
-void build_simple_doc(std::vector<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr>& clusters )
+void build_simple_doc(std::string filename, const std::vector<planner::polygon_with_normals>& clusters )
 {
     pcl::StreamWriter writer;
 
-    int list_size=10;
+    int list_size=clusters.size();
     TiXmlDocument doc;
     TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
     TiXmlElement * element = new TiXmlElement( "augmented_pcl_list" );
@@ -137,17 +139,15 @@ void build_simple_doc(std::vector<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr>&
         TiXmlElement * single_augmented_pcl = new TiXmlElement("augmented_pcl");
         TiXmlElement * pcl_xyzrgbanormal = new TiXmlElement("xyzrgbanormal");
         std::ostringstream temp;
-        writer.writeBinary(temp,*clusters[i]);
+        writer.writeASCII(temp,*(clusters[i].normals));
         TiXmlText * text = new TiXmlText( temp.str() );
 
-
         TiXmlElement * pcl_border = new TiXmlElement("border");
-        //writer.writeASCII(temp,*node.clusters[i]);
+        std::ostringstream temp1;
+        writer.writeASCII(temp1,*(clusters[i].border));
+        TiXmlText * text1 = new TiXmlText( temp1.str() );
 
-        TiXmlText * text1 = new TiXmlText( "point cloud binary serialization here" );
         TiXmlElement * pcl_normal = new TiXmlElement("normal");
-        //writer.writeASCII(temp,*node.clusters[i]);
-
         TiXmlText * text2 = new TiXmlText( "point cloud binary serialization here" );
 
         element->LinkEndChild(single_augmented_pcl);
@@ -160,7 +160,65 @@ void build_simple_doc(std::vector<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr>&
     }
     doc.LinkEndChild( decl );
     doc.LinkEndChild( element );
-    doc.SaveFile( "madeByHand.xml" );
+    doc.SaveFile( filename );
+}
+
+bool read_simple_doc(std::string filename, std::vector<planner::polygon_with_normals>& clusters )
+{
+    TiXmlDocument doc(filename);
+    bool loadOkay = doc.LoadFile();
+    if (!loadOkay)
+    {
+        printf("Failed to load file \"%s\"\n", filename.c_str());
+        return false;
+    }
+
+    pcl::StreamReader reader;
+    int t = doc.Type();
+    if (t!=TiXmlNode::TINYXML_DOCUMENT)
+    {
+        printf("Expected a document at the beginning of the file %s, found something else \n",filename.c_str());
+        return false;
+    }
+
+
+    TiXmlNode* pcl_array=doc.FirstChild("augmented_pcl_list");
+    if (pcl_array==NULL || pcl_array->Type()!=TiXmlNode::TINYXML_ELEMENT)
+    {
+        printf("Could not find element %s into file %s\n","augmented_pcl_list",filename.c_str());
+        return false;
+    }
+
+    TiXmlNode* augmented_pcl;
+    for ( augmented_pcl = pcl_array->FirstChild(); augmented_pcl != 0; augmented_pcl = augmented_pcl->NextSibling())
+    {
+        t=augmented_pcl->Type();
+        if (t==TiXmlNode::TINYXML_ELEMENT && augmented_pcl->ValueStr()=="augmented_pcl")
+        {
+            planner::polygon_with_normals polygon;
+            TiXmlNode* single_pcl=augmented_pcl->FirstChild("xyzrgbanormal");
+            if (single_pcl==NULL)
+                printf("found an %s element without a %s child, xml is malformed \n","augmented_pcl_list","augmented_pcl");
+            std::string pointcloud=single_pcl->FirstChild()->ToText()->Value();
+            pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr temp(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
+            std::istringstream input(pointcloud);
+            reader.read(input,*temp);
+            polygon.normals=temp;
+
+            single_pcl=augmented_pcl->FirstChild("border");
+            if (single_pcl==NULL)
+                printf("found an %s element without a %s child, xml is malformed \n","augmented_pcl_list","border");
+            pointcloud=single_pcl->FirstChild()->ToText()->Value();
+            pcl::PointCloud<pcl::PointXYZ>::Ptr temp1(new pcl::PointCloud<pcl::PointXYZ>);
+            std::istringstream input1(pointcloud);
+            reader.read(input1,*temp1);
+            polygon.border=temp1;
+            clusters.push_back(polygon);
+        }
+        else
+            printf("child of %s ignored since it is not an element, is the xml version different?\n","augmented_pcl_list");
+    }
+    return true;
 }
 
 int main(int argc, char **argv)
@@ -176,9 +234,14 @@ int main(int argc, char **argv)
     std_srvs::EmptyRequest req;
     std_srvs::EmptyResponse res;
     node.filterByCurvature(req,res); //HACK
-
-    build_simple_doc(node.clusters);
-    dump_to_stdout("madeByHand.xml"); // this func defined later in the tutorial
+    std::string filename="madeByHand.xml";
+    build_simple_doc(filename,node.polygons);
+    std::ifstream file;
+    file.open(filename);
+    assert(file.is_open());
+    //dump_to_stdout(filename.c_str());
+    node.polygons.clear();
+    read_simple_doc(filename, node.polygons);
 
     return 0;
 }
