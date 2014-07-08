@@ -96,6 +96,7 @@ add_executable(foot_planner
        )
 
 add_executable(affordances
+        src/pcd_io.cpp
         src/affordances_main.cpp
         src/gram_schmidt.cpp
         src/ros_publisher.cpp

@@ -1,9 +1,10 @@
 
 #include <ros/ros.h>
 #include "ros_server.h"
-#include <ros/serialization.h>
 #include <tinyxml.h>
-
+#include <ostream>
+#include <sstream>
+#include "pcd_io.cpp"
 // ----------------------------------------------------------------------
 // STDOUT dump and indenting utility functions
 // ----------------------------------------------------------------------
@@ -122,8 +123,10 @@ void dump_to_stdout(const char* pFilename)
     }
 }
 
-void build_simple_doc( )
+void build_simple_doc(std::vector<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr>& clusters )
 {
+    pcl::StreamWriter writer;
+
     int list_size=10;
     TiXmlDocument doc;
     TiXmlDeclaration * decl = new TiXmlDeclaration( "1.0", "", "" );
@@ -133,10 +136,18 @@ void build_simple_doc( )
     {
         TiXmlElement * single_augmented_pcl = new TiXmlElement("augmented_pcl");
         TiXmlElement * pcl_xyzrgbanormal = new TiXmlElement("xyzrgbanormal");
-        TiXmlText * text = new TiXmlText( "point cloud binary serialization here" );
+        std::ostringstream temp;
+        writer.writeBinary(temp,*clusters[i]);
+        TiXmlText * text = new TiXmlText( temp.str() );
+
+
         TiXmlElement * pcl_border = new TiXmlElement("border");
+        //writer.writeASCII(temp,*node.clusters[i]);
+
         TiXmlText * text1 = new TiXmlText( "point cloud binary serialization here" );
         TiXmlElement * pcl_normal = new TiXmlElement("normal");
+        //writer.writeASCII(temp,*node.clusters[i]);
+
         TiXmlText * text2 = new TiXmlText( "point cloud binary serialization here" );
 
         element->LinkEndChild(single_augmented_pcl);
@@ -157,19 +168,16 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "affordances");
     ros::NodeHandle nh;
 
-    ros::serialization::Serializer< pcl::PointCloud< pcl::PointXYZRGBNormal > > serializer_xyzrgbnormal;
-    ros::serialization::Serializer< pcl::PointCloud< pcl::PointXYZRGBNormal > > serializer_border;
-    ros::serialization::Serializer< pcl::PointCloud< pcl::PointXYZRGBNormal > > serializer_normal;
 
     planner::rosServer node(nh);
 
     node.run();
 
-//    std_srvs::EmptyRequest req;
-//    std_srvs::EmptyResponse res;
-    //node.filterByCurvature(req,res); //HACK
+    std_srvs::EmptyRequest req;
+    std_srvs::EmptyResponse res;
+    node.filterByCurvature(req,res); //HACK
 
-    build_simple_doc();
+    build_simple_doc(node.clusters);
     dump_to_stdout("madeByHand.xml"); // this func defined later in the tutorial
 
     return 0;
