@@ -20,11 +20,11 @@ footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics) //TODO
     SetToZero(leg_joints);
     kinematics.fkLsolver->JntToCart(left_joints,World_StanceFoot);   
     
-    coordinate_filter* temp_filter = new coordinate_filter(0,0.2,0.2);
+    coordinate_filter* temp_filter = new coordinate_filter(0,-0.2,0.8);
     filter_by_coordinates.push_back(temp_filter);
-    temp_filter = new coordinate_filter(1,0.2,0.2);
+    temp_filter = new coordinate_filter(1,-0.8,0.8);
     filter_by_coordinates.push_back(temp_filter);
-    temp_filter = new coordinate_filter(2,0.2,0.2);
+    temp_filter = new coordinate_filter(2,-0.4,0.8);
     filter_by_coordinates.push_back(temp_filter);
     
     filter_by_tilt = new tilt_filter();
@@ -120,13 +120,16 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     ROS_INFO("Number of affordances after tilt filter : %lu ",affordances.size());    
     
     KDL::Frame Camera_StanceFoot =  World_Camera.Inverse()*World_StanceFoot;
-    
+
     filter_by_coordinates.at(0)->set_stance_foot(Camera_StanceFoot);   //filter on x
     filter_by_coordinates.at(0)->filter_borders(affordances);
-    
+    ROS_INFO("line 126");
+
     filter_by_coordinates.at(1)->set_stance_foot(Camera_StanceFoot);   //filter on y
+    ROS_INFO("line 129");
     filter_by_coordinates.at(1)->filter_borders(affordances);
-    
+    ROS_INFO("line 131");
+
     filter_by_coordinates.at(2)->set_stance_foot(Camera_StanceFoot);   //filter on z
     filter_by_coordinates.at(2)->filter_borders(affordances);
     

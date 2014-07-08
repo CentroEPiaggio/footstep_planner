@@ -99,25 +99,6 @@ add_executable(foot_planner
        ${HEADER_FILES}
        )
 
-add_executable(affordances
-        src/pcd_io.cpp
-        src/affordances_main.cpp
-        src/gram_schmidt.cpp
-        src/ros_publisher.cpp
-        src/ros_server.cpp
-        src/footstep_planner.cpp
-        src/kinematics_utilities.cpp
-        src/curvaturefilter.cpp
-        src/borderextraction.cpp
-        src/kinematic_filter.cpp
-        src/com_filter.cpp
-        src/step_quality_evaluator.cpp
-        src/coordinate_filter.cpp
-	src/tilt_filter.cpp
-        src/xml_pcl_io.cpp
-        ${HEADER_FILES}
-)
-
 target_link_libraries(foot_planner
         ${catkin_LIBRARIES}
         ${PCL_LIBRARIES}
@@ -126,13 +107,7 @@ target_link_libraries(foot_planner
         ${TinyXML_LIBRARIES}
         )
 
-target_link_libraries(affordances
-        ${catkin_LIBRARIES}
-        ${PCL_LIBRARIES}
-        ${drc_shared_LIBRARIES}
-        ${iDynTree_LIBRARIES}
-        ${TinyXML_LIBRARIES}
-        )
+
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(yarp_ros_interface ${YARP_LIBRARIES} icubmod ${ICUB_LIBRARIES} ${catkin_LIBRARIES})
@@ -150,15 +125,46 @@ install(TARGETS foot_planner
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(TARGETS affordances
-   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)
   
 install(DIRECTORY resources/
 DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/resources)
 
+
+OPTION(COMPILE_XML_IO_TEST "Build a test executables with xml input/output" OFF)
+if(COMPILE_XML_IO_TEST)
+add_executable(affordances
+        src/pcd_io.cpp
+        src/affordances_main.cpp
+        src/gram_schmidt.cpp
+        src/ros_publisher.cpp
+        src/ros_server.cpp
+        src/footstep_planner.cpp
+        src/kinematics_utilities.cpp
+        src/curvaturefilter.cpp
+        src/borderextraction.cpp
+        src/kinematic_filter.cpp
+        src/com_filter.cpp
+        src/step_quality_evaluator.cpp
+        src/coordinate_filter.cpp
+        src/tilt_filter.cpp
+        src/xml_pcl_io.cpp
+        ${HEADER_FILES}
+)
+
+target_link_libraries(affordances
+        ${catkin_LIBRARIES}
+        ${PCL_LIBRARIES}
+        ${drc_shared_LIBRARIES}
+        ${iDynTree_LIBRARIES}
+        ${TinyXML_LIBRARIES}
+        )
+
+
+install(TARGETS affordances
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+endif()

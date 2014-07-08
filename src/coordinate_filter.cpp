@@ -10,9 +10,9 @@ void coordinate_filter::set_stance_foot(KDL::Frame Camera_StanceFoot_)
 {
 	Camera_StanceFoot = Camera_StanceFoot;
 	
-	m_x = Camera_StanceFoot.M(filter_axis*3,0);
-	m_y = Camera_StanceFoot.M(filter_axis*3,1);
-	m_z = Camera_StanceFoot.M(filter_axis*3,2);
+    m_x = Camera_StanceFoot.M(filter_axis,0);
+    m_y = Camera_StanceFoot.M(filter_axis,1);
+    m_z = Camera_StanceFoot.M(filter_axis,2);
 	
 	stance_foot_set = true;
 }
@@ -20,7 +20,7 @@ void coordinate_filter::set_stance_foot(KDL::Frame Camera_StanceFoot_)
 bool coordinate_filter::border_is_in_bounds(pcl::PointCloud<pcl::PointXYZ>::Ptr border)
 {
 	double value;
-	
+
 	for (pcl::PointCloud<pcl::PointXYZ>::iterator it=border->begin(); it!=border->end();++it)
 	{
 		value = m_x*(*it).x + m_y*(*it).y + m_z*(*it).z;
@@ -42,20 +42,29 @@ bool coordinate_filter::normal_is_in_bounds(pcl::PointXYZRGBNormal& normal)
 
 void coordinate_filter::filter_borders(std::list<polygon_with_normals>& data)
 {
-        if(!stance_foot_set) {std::cout<<"ERROR: STANCE FOOT NOT SET"<<std::endl; return;}
-	
-	for(std::list<polygon_with_normals>::iterator it=data.begin(); it!=data.end();++it)
+    if(!stance_foot_set)
+    {
+        std::cout<<"ERROR: STANCE FOOT NOT SET"<<std::endl;
+        return;
+    }
+    for(std::list<polygon_with_normals>::iterator it=data.begin(); it!=data.end();)
 	{
 		if(!border_is_in_bounds(it->border))
 		{
-		      data.erase(it);
+              it=data.erase(it);
 		}
+        else
+            it++;
 	}
 }
 
 void coordinate_filter::filter_normals(std::list<polygon_with_normals>& data)
 {
-	if(!stance_foot_set) {std::cout<<"ERROR: STANCE FOOT NOT SET"<<std::endl; return;}
+    if(!stance_foot_set)
+    {
+        std::cout<<"ERROR: STANCE FOOT NOT SET"<<std::endl;
+        return;
+    }
   
 	pcl::PointCloud<pcl::PointXYZRGBNormal> normals;
   
