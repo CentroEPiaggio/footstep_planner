@@ -59,9 +59,9 @@ bool atan_compare_2d(pcl::PointXYZRGBNormal a, pcl::PointXYZRGBNormal b)
 }
 
 
-std::vector< polygon_with_normals > borderExtraction::extractBorders(const std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >& clusters)
+std::list< polygon_with_normals > borderExtraction::extractBorders(const std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >& clusters)
 {
-    std::vector<  polygon_with_normals > polygons;
+    std::list<  polygon_with_normals > polygons;
 
     if(clusters.size()==0)
     {
