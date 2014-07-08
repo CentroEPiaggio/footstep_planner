@@ -26,7 +26,6 @@ int main(int argc, char **argv)
     
     std_srvs::EmptyRequest req;
     std_srvs::EmptyResponse res;
-    node.filterByCurvature(req,res); //HACK
     
     while(!quit)
     {

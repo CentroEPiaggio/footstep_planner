@@ -58,11 +58,11 @@ public:
     curvatureFilter curvature_filter;
     borderExtraction border_extraction;
     tf::Transform current_robot_transform;
-    
+
     //Camera link frame
     KDL::Vector current_direction;
     std::string camera_link_name;
-    
+    std::string filename;
     //WORLD Reference Frame
     std::vector<foot_with_joints> path;
     

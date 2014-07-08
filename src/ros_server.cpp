@@ -4,6 +4,7 @@
 #include <tf_conversions/tf_kdl.h>
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/JointState.h>
+#include <xml_pcl_io.h>
 using namespace planner;
 
 extern volatile bool quit;
@@ -30,7 +31,9 @@ rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~"),publisher(nh,n
     priv_nh_.param<double>("feasible_area", feasible_area_, 2.5);
     footstep_planner.setParams(feasible_area_);
     
- 
+    filename="pointcloud.xml";
+    priv_nh_.param<std::string>("filename", filename, "pointcloud.xml");
+
 }
 
 bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
@@ -40,6 +43,9 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
     int i=0;
     for (auto polygon:polygons)
         publisher.publish_normal_cloud(polygon.normals,i++);
+    std::cout<<"saving your extracted borders and planes on an xml file so that you will not need to call filter_by_curvature anylonger"<<std::endl;
+    xml_pcl_io file_manager;
+    file_manager.write_to_file(filename,polygons);
     return true;
 }
 
@@ -82,8 +88,14 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
 {
 
     if(polygons.size()==0) {
-        std::cout<<"No polygons to process, you should call the [/filter_by_curvature] and [/border_extraction] services first"<<std::endl; 
-        return false;        
+        std::cout<<"No polygons to process, trying to read them from xml file"<<std::endl;
+        xml_pcl_io file_manager;
+        bool read=file_manager.read_from_file(filename,polygons);
+        if (!read || polygons.size()==0)
+        {
+           std::cout<<"problems while reading from file, you should call the [/filter_by_curvature] services first"<<std::endl;
+           return false;
+        }
     }
     std::cout<<std::endl<<"> Number of polygons: "<<polygons.size()<<std::endl;
     
