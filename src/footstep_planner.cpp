@@ -8,7 +8,7 @@
 
 using namespace planner;
 
-#define DISTANCE_THRESHOLD 0.02
+#define DISTANCE_THRESHOLD 0.02*0.02 //We work with squares of distances, so this threshould is the square of 2cm!
 
 footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics) //TODO:remove kinematics from here
 {
@@ -104,14 +104,16 @@ void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& aff
 
     filter_by_coordinates.at(0)->set_stance_foot(StanceFoot_Camera);   //filter on x
     filter_by_coordinates.at(0)->filter_borders(affordances,left);
+    ROS_INFO("Number of affordances after geometric filter X on borders: %lu ",affordances.size());
 
     filter_by_coordinates.at(1)->set_stance_foot(StanceFoot_Camera);   //filter on y
     filter_by_coordinates.at(1)->filter_borders(affordances,left);
+    ROS_INFO("Number of affordances after geometric filter XY on borders: %lu ",affordances.size());
 
     filter_by_coordinates.at(2)->set_stance_foot(StanceFoot_Camera);   //filter on z
     filter_by_coordinates.at(2)->filter_borders(affordances,left);
     
-    ROS_INFO("Number of affordances after geometric filter on borders: %lu ",affordances.size());  
+    ROS_INFO("Number of affordances after geometric filter XYZ on borders: %lu ",affordances.size());
     
     filter_by_coordinates.at(0)->filter_points(affordances,left);   //filter on x
     filter_by_coordinates.at(1)->filter_points(affordances,left);   //filter on y
@@ -129,7 +131,7 @@ void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool
 }
 
 
-std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left)
+std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals >&    affordances, bool left)
 {
     if (!world_camera_set)
     {
@@ -207,7 +209,8 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
     foot_with_joints* result=&(*centroids.begin());
     for (auto& centroid:centroids)
     {
-        auto distance=stepQualityEvaluator.distance_from_reference_step(centroid,left);
+        KDL::Frame StanceFoot_MovingFoot;
+        auto distance=stepQualityEvaluator.distance_from_reference_step(centroid,left,StanceFoot_MovingFoot);
         if (distance-min>DISTANCE_THRESHOLD) //If it is too big, keep the old min
             continue;
         if (min-distance>DISTANCE_THRESHOLD) //New minimum
@@ -240,33 +243,3 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
     }
     return *result;
 }
-
-
-
-bool footstepPlanner::polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon)
-{
-    KDL::Frame Camera_StanceFoot = World_Camera.Inverse()*World_StanceFoot;
-    KDL::Vector World_direction(1,0,0); //TODO
-    auto filter=World_Camera.Inverse()*World_direction;
-    for (unsigned int i=0; i<polygon->size(); i++)
-    {
-        auto& point_cloud=polygon->at(i);
-        auto& point_foot=Camera_StanceFoot.p;
-        auto& point1=filter;
-        KDL::Vector point(point_cloud.x-point_foot.x(),point_cloud.y-point_foot.y(),point_cloud.z-point_foot.z());
-        if ((point.x()*point1.x()+point.y()*point1.y()+point.z()*point1.z())>0) //If the point is the direction of the foot motion
-            if(dist_from_robot(polygon->at(i),Camera_StanceFoot.p.x(),Camera_StanceFoot.p.y(),Camera_StanceFoot.p.z()) < feasible_area_) 
-                return true;
-    }
-    return false;
-}
-
-double footstepPlanner::dist_from_robot(pcl::PointXYZ point, double x,double y,double z)
-{
-    double x_diff = point.x - x;
-    double y_diff = point.y - y;
-    double z_diff = point.z - z;
-
-    return sqrt(x_diff*x_diff + y_diff*y_diff + z_diff*z_diff);
-}
-

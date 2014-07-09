@@ -4,6 +4,18 @@ coordinate_filter::coordinate_filter(unsigned int filter_axis_, double axis_min_
 filter_axis(filter_axis_),default_axis_min(axis_min_),default_axis_max(axis_max_)
 {	
     stance_foot_set = false;
+    this->axis_max=axis_max_;
+    this->axis_min=axis_min_;
+    if (filter_axis_==1)
+    {
+        multiplier_default=1;
+        multiplier_axis=0;
+    }
+    else
+    {
+        multiplier_default=0;
+        multiplier_axis=1;
+    }
 }
 
 void coordinate_filter::set_stance_foot(KDL::Frame StanceFoot_Camera)
@@ -46,11 +58,8 @@ void coordinate_filter::filter_borders(std::list<polygon_with_normals>& data, bo
         return;
     }
     
-    if(filter_axis==1)
-    {
-        axis_max = (left)*default_axis_max + (!left)*(-default_axis_min);
-        axis_min = (left)*default_axis_min + (!left)*(-default_axis_max);
-    }
+    axis_max =multiplier_axis*axis_max+multiplier_default* ((left)*default_axis_max + (!left)*(-default_axis_min));
+    axis_min =multiplier_axis*axis_min+multiplier_default* ((left)*default_axis_min + (!left)*(-default_axis_max));
     
     for(std::list<polygon_with_normals>::iterator it=data.begin(); it!=data.end();)
     {
@@ -71,12 +80,8 @@ void coordinate_filter::filter_points(std::list<polygon_with_normals>& data, boo
         return;
     }
    
-    if(filter_axis==1)
-    {
-        axis_max = (left)*default_axis_max + (!left)*(-default_axis_min);
-        axis_min = (left)*default_axis_min + (!left)*(-default_axis_max);
-    }
-    
+    axis_max =multiplier_axis*axis_max+multiplier_default* ((left)*default_axis_max + (!left)*(-default_axis_min));
+    axis_min =multiplier_axis*axis_min+multiplier_default* ((left)*default_axis_min + (!left)*(-default_axis_max));
 
     for(auto item:data)
     {	  

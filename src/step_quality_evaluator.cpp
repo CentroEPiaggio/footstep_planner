@@ -8,9 +8,10 @@ step_quality_evaluator::step_quality_evaluator()
 }
 
 
-double step_quality_evaluator::distance_from_reference_step(planner::foot_with_joints& centroid, bool left)
+double step_quality_evaluator::distance_from_reference_step(const planner::foot_with_joints& centroid, bool left,KDL::Frame &StanceFoot_MovingFoot)
 {
-        KDL::Frame StanceFoot_MovingFoot = centroid.World_StanceFoot.Inverse()*centroid.World_MovingFoot;// ((std::get<0>(centroid.second)).Inverse()*World_StanceFoot).Inverse(); //World_Camera*Camera_MovingFoot ;
+        //KDL::Frame
+        StanceFoot_MovingFoot = centroid.World_StanceFoot.Inverse()*centroid.World_MovingFoot;// ((std::get<0>(centroid.second)).Inverse()*World_StanceFoot).Inverse(); //World_Camera*Camera_MovingFoot ;
         double refy=((left*2)-1)*left_refy; //is the same as: if (left) refy=-0.15; else refy=0.15;
         auto distance=pow(StanceFoot_MovingFoot.p.x()-refx,2)+pow(StanceFoot_MovingFoot.p.y()-refy,2);
         return distance;
