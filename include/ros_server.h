@@ -28,16 +28,23 @@
 #include "borderextraction.h"
 #include "ros_publisher.h"
 #include <drc_shared/idynutils.h>
+
+#include <yarp/os/all.h>
+#include <drc_shared/yarp_status_interface.h>
+#include <drc_shared/yarp_command_interface.hpp>
+#include <drc_shared/yarp_msgs/fs_planner_msg.h>
+
 // class object for the ROS node
 namespace planner {
 
-class rosServer
+class rosServer: public yarp::os::RateThread
 {
 public:
-    rosServer(ros::NodeHandle nh);
+    rosServer(ros::NodeHandle* nh_,yarp::os::Network* yarp_, double period);
   private:
     //! The node handle
-    ros::NodeHandle nh_;
+    ros::NodeHandle* nh;
+    yarp::os::Network* yarp;
 
     //! Node handle in the private namespace
     ros::NodeHandle priv_nh_;
@@ -68,12 +75,19 @@ public:
     
     bool singleFoot(bool left);
     
+    walkman::drc::yarp_custom_command_interface<fs_planner_msg> *command_interface;
+    fs_planner_msg msg;
+    walkman::drc::yarp_status_interface* status_interface;
+    
   public:
     //------------------ Callbacks -------------------
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
-    void run();
+    void init();
+    
+    virtual bool threadInit();
+    virtual void run();
     
     //Camera_link reference Frame
     std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > clusters;

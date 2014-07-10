@@ -9,14 +9,14 @@ using namespace planner;
 
 extern volatile bool quit;
 
-rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~"),publisher(nh,nh.resolveName("/camera_link"))
+rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period):RateThread(period), nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"))
 {
     // init publishers and subscribers
     
-    camera_link_name = nh.resolveName("/camera_link");
-    srv_filter_cloud_ = nh_.advertiseService(nh_.resolveName("filter_by_curvature"), &rosServer::filterByCurvature, this);
-    srv_border_extraction = nh_.advertiseService(nh_.resolveName("border_extraction"), &rosServer::extractBorders, this);
-    srv_footstep_placer = nh_.advertiseService(nh_.resolveName("footstep_placer"),&rosServer::planFootsteps, this);
+    camera_link_name = nh->resolveName("/camera_link");
+    srv_filter_cloud_ = nh->advertiseService(nh->resolveName("filter_by_curvature"), &rosServer::filterByCurvature, this);
+    srv_border_extraction = nh->advertiseService(nh->resolveName("border_extraction"), &rosServer::extractBorders, this);
+    srv_footstep_placer = nh->advertiseService(nh->resolveName("footstep_placer"),&rosServer::planFootsteps, this);
     
     double curvature_threshold_,voxel_size_,normal_radius_,cluster_tolerance_;
     int min_cluster_size_;
@@ -34,6 +34,47 @@ rosServer::rosServer(ros::NodeHandle nh) : nh_(nh), priv_nh_("~"),publisher(nh,n
     filename="pointcloud.xml";
     priv_nh_.param<std::string>("filename", filename, "pointcloud.xml");
 
+    command_interface = new walkman::drc::yarp_custom_command_interface<fs_planner_msg>("footstep_planner");
+    status_interface = new walkman::drc::yarp_status_interface("footstep_planner");
+}
+
+
+bool rosServer::threadInit()
+{
+    struct sched_param thread_param;
+    thread_param.sched_priority = 99;
+    pthread_setschedparam(pthread_self(), SCHED_FIFO, &thread_param);
+    return true;
+}
+
+void rosServer::run()
+{
+    int seq_num;
+    std::string state="ready";
+    status_interface->setStatus(state);
+    
+    if(command_interface->getCommand(msg,seq_num))
+    {
+
+        std::cout<<" - YARP: Command ["<<seq_num<<"]received: "<<msg.command<<std::endl;
+	
+	if(msg.command=="cap_plan")
+	{
+	  
+	}
+	if(msg.command=="cap_save")
+	{
+
+	}
+	if(msg.command=="load_plan")
+	{
+
+	}
+	if(msg.command=="direction")
+	{
+
+	}
+    }
 }
 
 bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
@@ -132,9 +173,9 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
 {
     
     // wait for a point cloud
-    std::string topic = nh_.resolveName("/camera/depth_registered/points");
+    std::string topic = nh->resolveName("/camera/depth_registered/points");
     ROS_INFO("waiting for a point_cloud2 on topic %s", topic.c_str());
-    sensor_msgs::PointCloud2::ConstPtr input = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(topic, nh_, ros::Duration(3.0));
+    sensor_msgs::PointCloud2::ConstPtr input = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(topic, *nh, ros::Duration(3.0));
     if (!input)
     {
         ROS_ERROR("no point_cloud2 has been received");
@@ -150,7 +191,7 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
 }
 
 
-void rosServer::run()
+void rosServer::init()
 {
     tf::StampedTransform transform;
     try{
