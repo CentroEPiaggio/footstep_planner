@@ -26,6 +26,7 @@ private:
     inline bool frame_is_reachable(const KDL::Frame& World_MovingFoot, KDL::JntArray& jnt_pos);
     KDL::ChainIkSolverPos_NR_JL* current_ik_solver;
     KDL::Frame StanceFoot_World;
+    KDL::Frame World_StanceFoot;
     KDL::JntArray current_joints;
     KDL::JntArray left_joints,right_joints,leg_joints;
 

@@ -20,6 +20,8 @@ private:
     bool border_is_in_bounds(pcl::PointCloud<pcl::PointXYZ>::Ptr border);
     bool point_is_in_bounds(pcl::PointXYZRGBNormal& point);
 
+    double multiplier_default;
+    double multiplier_axis;
     double default_axis_max, default_axis_min;
     double axis_min, axis_max;
     unsigned int filter_axis;

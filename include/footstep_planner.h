@@ -43,14 +43,7 @@ private:
 
     //World frame
     bool centroid_is_reachable(KDL::Frame World_MovingFoot, KDL::JntArray& jnt_pos);
-    
-    bool step_is_stable(KDL::Frame centroid);
-    
-    bool plane_is_compatible(Eigen::Matrix< double, 4, 1 > centroid);
-    
-    bool polygon_in_feasibile_area(pcl::PointCloud< pcl::PointXYZ >::Ptr polygon);
-    
-    double dist_from_robot(pcl::PointXYZ point, double x, double y, double z);
+            
     void generate_frames_from_normals(std::list< polygon_with_normals >& affordances, std::list< foot_with_joints >& steps);
     
     void geometric_filtering(std::list< polygon_with_normals >& affordances, bool left);
