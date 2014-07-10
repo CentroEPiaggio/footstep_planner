@@ -1,24 +1,27 @@
+# Copyright: (C) Mirko Ferrati, Alessandro Settimi, Corrado Pavan, Carlos Rosales
+# Authors: Mirko Ferrati, Alessandro Settimi, Corrado Pavan, Carlos Rosales
+# CopyPolicy: Released under the terms of the GNU GPL v3.0.
+
 cmake_minimum_required(VERSION 2.8.3)
 project(footstep_planner)
 
-set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 ")
+if(COMMAND cmake_policy)
+    cmake_policy(SET CMP0003 OLD)
+    cmake_policy(SET CMP0005 NEW)
+endif(COMMAND cmake_policy)
+include(ExternalProject)
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag("-std=c++11" COMPILER_SUPPORTS_CXX11)
+check_cxx_compiler_flag("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else()
+    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
 
-
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
- roscpp 
-        message_generation 
-        geometry_msgs 
-        std_msgs 
-        shape_msgs
-        sensor_msgs
-        visualization_msgs
-        tf
-	tf_conversions
-	urdf
-)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules/")
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
@@ -30,27 +33,21 @@ find_package(iDynTree REQUIRED)
 find_package(drc_shared REQUIRED)
 find_package(kdl_codyco REQUIRED)
 find_package(TinyXML REQUIRED)
+FIND_PACKAGE(tf REQUIRED)
+FIND_PACKAGE(tf_conversions REQUIRED)
+FIND_PACKAGE(urdf REQUIRED)
+FIND_PACKAGE(roscpp REQUIRED)
+FIND_PACKAGE(message_generation REQUIRED)
 
-add_message_files(
-        FILES
-        Plane.msg
-        PlaneDetectionResult.msg
-        )
+FIND_PACKAGE(catkin REQUIRED)
 
+SET(ROS_HYDRO_LIB_FOLDER /opt/ros/hydro/lib/)
+
+LINK_DIRECTORIES(${ROS_HYDRO_LIB_FOLDER} )
 add_service_files(
         FILES
         PlaneDetection.srv
         )
-
-generate_messages(
-        DEPENDENCIES
-        geometry_msgs
-        std_msgs
-        shape_msgs
-        sensor_msgs
-        visualization_msgs
-        )
-
 
 catkin_package(
   INCLUDE_DIRS include
@@ -105,6 +102,9 @@ target_link_libraries(foot_planner
         ${drc_shared_LIBRARIES}
          ${iDynTree_LIBRARIES}
         ${TinyXML_LIBRARIES}
+        ${urdf_LIBRARIES}
+        ${tf_LIBRARIES}
+        ${tf_conversions_LIBRARIES}
         )
 
 
@@ -159,6 +159,9 @@ target_link_libraries(affordances
         ${drc_shared_LIBRARIES}
         ${iDynTree_LIBRARIES}
         ${TinyXML_LIBRARIES}
+        ${urdf_LIBRARIES}
+        ${tf_LIBRARIES}
+        ${tf_conversions_LIBRARIES}
         )
 
 
