@@ -75,9 +75,9 @@ public:
     
     bool singleFoot(bool left);
     
-    walkman::drc::yarp_custom_command_interface<fs_planner_msg> *command_interface;
+    walkman::drc::yarp_custom_command_interface<fs_planner_msg> command_interface;
     fs_planner_msg msg;
-    walkman::drc::yarp_status_interface* status_interface;
+    walkman::drc::yarp_status_interface status_interface;
     
   public:
     //------------------ Callbacks -------------------

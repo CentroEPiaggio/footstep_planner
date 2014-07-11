@@ -9,7 +9,9 @@ using namespace planner;
 
 extern volatile bool quit;
 
-rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period):RateThread(period), nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"))
+rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period)
+:RateThread(period), nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link")),
+command_interface("footstep_planner"),status_interface("footstep_planner")
 {
     // init publishers and subscribers
     
@@ -34,8 +36,6 @@ rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double perio
     filename="pointcloud.xml";
     priv_nh_.param<std::string>("filename", filename, "pointcloud.xml");
 
-    command_interface = new walkman::drc::yarp_custom_command_interface<fs_planner_msg>("footstep_planner");
-    status_interface = new walkman::drc::yarp_status_interface("footstep_planner");
 }
 
 
@@ -51,9 +51,9 @@ void rosServer::run()
 {
     int seq_num;
     std::string state="ready";
-    status_interface->setStatus(state);
+    status_interface.setStatus(state);
     
-    if(command_interface->getCommand(msg,seq_num))
+    if(command_interface.getCommand(msg,seq_num))
     {
      
         std::cout<<" - YARP: Command ["<<seq_num<<"] received: "<<msg.command<<std::endl;
