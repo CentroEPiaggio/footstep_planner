@@ -55,6 +55,8 @@ private:
     tilt_filter* filter_by_tilt;
     std::vector<coordinate_filter*> filter_by_coordinates;
     
+    KDL::Vector World_CurrentDirection;
+    
 public:
     footstepPlanner();
     gram_schmidt gs_utils;
@@ -75,6 +77,7 @@ public:
     //Camera Link Frame
     void setCurrentDirection(KDL::Vector direction);
     
+    void setDirectionVector(double x, double y, double z);
     
     // robot area for the footstep planner
     double feasible_area_;

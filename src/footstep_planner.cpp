@@ -10,7 +10,7 @@ using namespace planner;
 
 #define DISTANCE_THRESHOLD 0.02*0.02 //We work with squares of distances, so this threshould is the square of 2cm!
 
-footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics) //TODO:remove kinematics from here
+footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
     left_joints.resize(kinematics.left_leg.getNrOfJoints());
     right_joints.resize(kinematics.right_leg.getNrOfJoints());
@@ -28,6 +28,7 @@ footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics) //TODO
     filter_by_coordinates.push_back(temp_filter);
     
     filter_by_tilt = new tilt_filter();
+    
 }
 
 void footstepPlanner::setCurrentSupportFoot(KDL::Frame foot_position)
@@ -51,6 +52,13 @@ void footstepPlanner::setWorldTransform(KDL::Frame transform)
 KDL::Frame footstepPlanner::createFramesFromNormal(pcl::PointXYZRGBNormal normal)
 {
     return gs_utils.createFramesFromNormal(normal);
+}
+
+void footstepPlanner::setDirectionVector(double x, double y, double z)
+{
+    World_CurrentDirection.data[0] = x;
+    World_CurrentDirection.data[1] = y;
+    World_CurrentDirection.data[2] = z;
 }
 
 //Camera link frame
@@ -137,7 +145,7 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     {
         throw "camera - world transformation was not set";
     }
-    auto World_CurrentDirection=KDL::Vector(1,-0.5,0); //TODO receive from the operator?
+    
     setCurrentDirection(World_Camera.Inverse()*World_CurrentDirection); //TODO
     
     static tf::TransformBroadcaster br;

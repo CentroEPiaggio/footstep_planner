@@ -36,6 +36,7 @@ command_interface("footstep_planner"),status_interface("footstep_planner")
     filename="pointcloud.xml";
     priv_nh_.param<std::string>("filename", filename, "pointcloud.xml");
 
+    save_to_file = false;
 }
 
 
@@ -52,27 +53,34 @@ void rosServer::run()
     int seq_num;
     std::string state="ready";
     status_interface.setStatus(state);
+    std_srvs::Empty::Request req;
+    std_srvs::Empty::Response res;
     
     if(command_interface.getCommand(msg,seq_num))
     {
-     
-        std::cout<<" - YARP: Command ["<<seq_num<<"] received: "<<msg.command<<std::endl;
+        std::string command = msg.command;
+        std::cout<<" - YARP: Command ["<<seq_num<<"] received: "<<command<<std::endl;
 	
-	if(msg.command=="cap_plan")
+	if(command=="cap_plan")
 	{
-	  
+	    save_to_file = false;
+	    if(filterByCurvature(req,res))
+	    {
+		planFootsteps(req,res);
+	    }
 	}
-	if(msg.command=="cap_save")
+	if(command=="cap_save")
 	{
-
+	    save_to_file = true;
+	    filterByCurvature(req,res);
 	}
-	if(msg.command=="load_plan")
+	if(command=="load_plan")
 	{
-
+	    planFootsteps(req,res);
 	}
-	if(msg.command=="direction")
+	if(command=="direction")
 	{
-
+            footstep_planner.setDirectionVector(msg.x,msg.y,msg.z);
 	}
     }
 }
@@ -84,9 +92,14 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
     int i=0;
     for (auto polygon:polygons)
         publisher.publish_normal_cloud(polygon.normals,i++);
-    std::cout<<"saving your extracted borders and planes on an xml file so that you will not need to call filter_by_curvature anylonger"<<std::endl;
-    xml_pcl_io file_manager;
-    file_manager.write_to_file(filename,polygons);
+    
+    if(save_to_file)
+    {
+	std::cout<<"saving your extracted borders and planes on an xml file so that you will not need to call filter_by_curvature anylonger"<<std::endl;
+	xml_pcl_io file_manager;
+	file_manager.write_to_file(filename,polygons);
+    }
+    
     return true;
 }
 

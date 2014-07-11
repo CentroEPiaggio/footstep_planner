@@ -79,6 +79,8 @@ public:
     fs_planner_msg msg;
     walkman::drc::yarp_status_interface status_interface;
     
+    bool save_to_file;
+    
   public:
     //------------------ Callbacks -------------------
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
