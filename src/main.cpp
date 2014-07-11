@@ -7,22 +7,30 @@ class fs_planner_module: public yarp::os::RFModule
 {
 protected:
     rosServer* thr;
+    ros::NodeHandle* nh;
+    yarp::os::Network* yarp;
     bool Alive;
     double period;
 public:
-    fs_planner_module(ros::NodeHandle* nh, yarp::os::Network* yarp,double period_):period(period_)
+    fs_planner_module(ros::NodeHandle* nh_, yarp::os::Network* yarp_, double period_):nh(nh_),yarp(yarp_),period(period_)
     {
-        thr = new rosServer(nh,yarp,period);
 	Alive=false;
+    }
+    
+    bool my_configure()
+    {
+	thr = new rosServer(nh,yarp,period);
 	
         if(!thr->start())
         {
             delete thr;
+	    return false;
         }
         thr->init();
 	
         std::cout<<"Starting Module"<<std::endl;
 	Alive=true;
+	return true;
     }
 
     virtual bool close()
@@ -94,9 +102,13 @@ int main(int argc, char **argv)
 	    {
 		if(node.isAlive())
 		{
-		    std::cout<<"Starting thread"<<std::endl;
 		    node.close();
 		}
+		std::cout<<"Starting thread"<<std::endl;
+		
+		bool ok=node.my_configure();
+		if(ok) std::cout<<"Footstep Planner is started"<<std::endl;
+		else   std::cout<<"Error starting Footstep Planner Module"<<std::endl;
 	    }
 	}
 

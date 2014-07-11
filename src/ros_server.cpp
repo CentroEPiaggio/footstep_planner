@@ -55,8 +55,8 @@ void rosServer::run()
     
     if(command_interface->getCommand(msg,seq_num))
     {
-
-        std::cout<<" - YARP: Command ["<<seq_num<<"]received: "<<msg.command<<std::endl;
+     
+        std::cout<<" - YARP: Command ["<<seq_num<<"] received: "<<msg.command<<std::endl;
 	
 	if(msg.command=="cap_plan")
 	{
