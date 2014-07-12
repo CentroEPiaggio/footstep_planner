@@ -37,6 +37,7 @@ command_interface("footstep_planner"),status_interface("footstep_planner")
     priv_nh_.param<std::string>("filename", filename, "pointcloud.xml");
 
     save_to_file = false;
+    status_interface.start();
 }
 
 
@@ -51,8 +52,7 @@ bool rosServer::threadInit()
 void rosServer::run()
 {
     int seq_num;
-    std::string state="ready";
-    status_interface.setStatus(state);
+    status_interface.setStatus("ready");
     std_srvs::Empty::Request req;
     std_srvs::Empty::Response res;
     
@@ -64,19 +64,25 @@ void rosServer::run()
 	if(command=="cap_plan")
 	{
 	    save_to_file = false;
+	    
+	    status_interface.setStatus("capture");
+	    
 	    if(filterByCurvature(req,res))
 	    {
+	        status_interface.setStatus("planning");
 		planFootsteps(req,res);
 	    }
 	}
 	if(command=="cap_save")
 	{
+	    status_interface.setStatus("capture");
 	    save_to_file = true;
 	    filterByCurvature(req,res);
 	}
 	if(command=="load_plan")
 	{
-	    planFootsteps(req,res);
+	        status_interface.setStatus("planning");
+		planFootsteps(req,res);
 	}
 	if(command=="direction")
 	{
