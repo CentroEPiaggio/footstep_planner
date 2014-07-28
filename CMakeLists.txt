@@ -41,9 +41,9 @@ FIND_PACKAGE(message_generation REQUIRED)
 
 FIND_PACKAGE(catkin REQUIRED)
 
-SET(ROS_HYDRO_LIB_FOLDER /opt/ros/hydro/lib/)
+set(ROS_LIB_FOLDER $ENV{ROS_LIB_FOLDER} CACHE STRING "ros lib folder")
 
-LINK_DIRECTORIES(${ROS_HYDRO_LIB_FOLDER} )
+LINK_DIRECTORIES(${ROS_LIB_FOLDER} )
 add_service_files(
         FILES
         PlaneDetection.srv
