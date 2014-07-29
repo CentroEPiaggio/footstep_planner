@@ -72,7 +72,7 @@ link_directories(
         )
 
 add_definitions(
-        ${PCL_DEFINITIONS}
+        ${PCL_DEFINITIONS} -DBOOST_NO_CXX11_EXPLICIT_CONVERSION_OPERATORS
         )
 
 FILE(GLOB HEADER_FILES include/*.h)
