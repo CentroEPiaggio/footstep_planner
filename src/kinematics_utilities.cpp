@@ -50,6 +50,18 @@ kinematics_utilities::kinematics_utilities():coman_model()
         j++;
     }
     ikLRsolver= new KDL::ChainIkSolverPos_NR_JL(LR_legs,q_min,q_max,*fkLRsolver,*ikLRvelsolver);
+    
+    q_min.resize(left_leg.getNrOfJoints());
+    q_max.resize(left_leg.getNrOfJoints());
+
+    j=0;
+    for (auto joint_name:left_leg_names)
+    {
+        q_max(j)=coman_urdf_model.joints_[joint_name]->limits->upper;
+        q_min(j)=coman_urdf_model.joints_[joint_name]->limits->lower;
+        j++;
+    }
+    ikLsolver= new KDL::ChainIkSolverPos_NR_JL(left_leg,q_min,q_max,*fkLsolver,*ikLvelsolver);
 
 
     j=0;
@@ -61,6 +73,19 @@ kinematics_utilities::kinematics_utilities():coman_model()
     }
 
     ikRLsolver= new KDL::ChainIkSolverPos_NR_JL(RL_legs,q_min,q_max,*fkRLsolver,*ikRLvelsolver);
+    
+    
+    q_min.resize(right_leg.getNrOfJoints());
+    q_max.resize(right_leg.getNrOfJoints());
+
+    j=0;
+    for (auto joint_name:right_leg_names)
+    {
+        q_max(j)=coman_urdf_model.joints_[joint_name]->limits->upper;
+        q_min(j)=coman_urdf_model.joints_[joint_name]->limits->lower;
+        j++;
+    }
+    ikRsolver= new KDL::ChainIkSolverPos_NR_JL(right_leg,q_min,q_max,*fkRsolver,*ikRvelsolver);
 
 }
 

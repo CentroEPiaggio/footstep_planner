@@ -26,9 +26,14 @@ public:
     KDL::ChainFkSolverPos_recursive* fkRLsolver;
     KDL::ChainFkSolverPos_recursive* fkLRsolver;
     
+    KDL::ChainIkSolverPos_NR_JL* ikRsolver;
+    KDL::ChainIkSolverPos_NR_JL* ikLsolver;    
+    KDL::ChainIkSolverVel_pinv* ikRvelsolver;
+    KDL::ChainIkSolverVel_pinv* ikLvelsolver;
+
+    
     KDL::ChainIkSolverPos_NR_JL* ikRLsolver;
     KDL::ChainIkSolverPos_NR_JL* ikLRsolver;
-    
     KDL::ChainIkSolverVel_pinv* ikRLvelsolver;
     KDL::ChainIkSolverVel_pinv* ikLRvelsolver;
     

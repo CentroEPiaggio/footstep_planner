@@ -19,7 +19,7 @@ footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics), World
     SetToZero(right_joints);
     SetToZero(leg_joints);
     kinematics.fkLsolver->JntToCart(left_joints,World_StanceFoot);   
-    
+    comFilter.setZeroWaistHeight(World_StanceFoot.p[2]);
     coordinate_filter* temp_filter = new coordinate_filter(0,-0.5,1);
     filter_by_coordinates.push_back(temp_filter);
     temp_filter = new coordinate_filter(1,-0.5,0.8);
