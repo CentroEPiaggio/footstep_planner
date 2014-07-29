@@ -27,7 +27,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Mo
 find_package(Boost REQUIRED COMPONENTS system)
 find_package(YARP REQUIRED)
 find_package(ICUB REQUIRED)
-find_package(Eigen REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 find_package(iDynTree REQUIRED)
 find_package(drc_shared REQUIRED)
