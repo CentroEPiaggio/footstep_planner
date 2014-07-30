@@ -93,10 +93,11 @@ void com_filter::setZeroWaistHeight ( double hip_height )
 std::list< KDL::Frame > com_filter::generateWaistPositions ( KDL::Frame StanceFoot_MovingFoot )
 {
     std::list<KDL::Frame> temp;
-    for (double angle=-M_PI;angle<M_PI;angle=angle+M_PI/10.0)
-	for (double height=-10.0;height<10.0;height=height+1.0)
+    double angle_ref=atan2(StanceFoot_MovingFoot.p[0],-StanceFoot_MovingFoot.p[1]);
+    for (double angle=-M_PI/6.0;angle<M_PI/5.9;angle=angle+M_PI/30.0)
+	for (double height=-15.0;height<-5.0;height=height+1.0)
 	{
-	    KDL::Frame DesiredWaist_StanceFoot=computeWaistPosition(StanceFoot_MovingFoot,angle,desired_hip_height+height).Inverse();
+	    KDL::Frame DesiredWaist_StanceFoot=computeWaistPosition(StanceFoot_MovingFoot,angle+angle_ref,desired_hip_height+height).Inverse();
 	    temp.push_back(DesiredWaist_StanceFoot);
 	}
     return temp;
@@ -105,8 +106,12 @@ std::list< KDL::Frame > com_filter::generateWaistPositions ( KDL::Frame StanceFo
 
 KDL::Frame com_filter::computeWaistPosition(const KDL::Frame& StanceFoot_MovingFoot,double rot_angle,double hip_height)
 {
-//TODO
     KDL::Frame temp;
+    KDL::Vector World_GravityFromIMU(0,0,-1);
+    KDL::Vector StanceFoot_GravityFromIMU = World_StanceFoot.Inverse()*World_GravityFromIMU;
+    StanceFoot_GravityFromIMU.Normalize();
+    temp.M=KDL::Rotation::Rot2(StanceFoot_GravityFromIMU,rot_angle);
+    temp.p=KDL::Vector(StanceFoot_GravityFromIMU*hip_height);
     return temp;
 }
 
