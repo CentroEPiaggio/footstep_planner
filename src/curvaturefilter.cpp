@@ -1,4 +1,4 @@
-#include "../include/curvaturefilter.h"
+#include "curvaturefilter.h"
 #include <ros/ros.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/filters/filter.h>
