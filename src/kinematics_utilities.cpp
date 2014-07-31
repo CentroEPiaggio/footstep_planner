@@ -63,7 +63,9 @@ kinematics_utilities::kinematics_utilities():coman_model()
     }
     ikLsolver= new KDL::ChainIkSolverPos_NR_JL(left_leg,q_min,q_max,*fkLsolver,*ikLvelsolver);
 
-
+    q_min.resize(num_joints);
+    q_max.resize(num_joints);
+    
     j=0;
     for (auto joint_name:joint_names_RL)
     {
