@@ -1,6 +1,8 @@
 #include "com_filter.h"
 #include <iCub/iDynTree/iDyn2KDL.h>
 #include <eigen3/Eigen/Dense>
+#include <tf_conversions/tf_kdl.h>
+#include <tf/transform_broadcaster.h>
 com_filter::com_filter()
 {
     left_joints.resize(kinematics.left_leg.getNrOfJoints());
@@ -22,28 +24,28 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
         std::cout<<"percentage: "<<counter<<" / "<<total<<" examined:"<<total_num_examined<<std::endl;
         auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
-	auto waistPositions=generateWaistPositions(StanceFoot_MovingFoot);
+	auto StanceFoot_WaistPositions=generateWaistPositions(StanceFoot_MovingFoot);
 	int num_inserted=0;
-	for (auto waistPosition:waistPositions)
+	for (auto StanceFoot_WaistPosition:StanceFoot_WaistPositions)
 	{
             total_num_examined++;
 	    KDL::JntArray jnt_temp;
 	    jnt_temp.resize(kinematics.num_joints);
-	    if (frame_is_stable(StanceFoot_MovingFoot,waistPosition,jnt_temp))
+	    if (frame_is_stable(StanceFoot_MovingFoot,StanceFoot_WaistPosition,jnt_temp))
 	    {
 		planner::foot_with_joints temp;
 		temp.joints=jnt_temp;
 		temp.World_MovingFoot=single_step->World_MovingFoot;
 		temp.World_StanceFoot=single_step->World_StanceFoot;
-		temp.World_Waist=single_step->World_Waist;
+		temp.World_Waist=single_step->World_StanceFoot*StanceFoot_WaistPosition;
 		data.insert(single_step,temp);
 		num_inserted++;
 	    }
 	}
-	if (num_inserted==0)
+	//if (num_inserted==0)
 	    single_step=data.erase(single_step);
-	else
-	    single_step++;	
+	//else
+	//    single_step++;	
     }
     return true;
 }
@@ -74,13 +76,13 @@ bool com_filter::frame_is_stable(const KDL::Frame& StanceFoot_MovingFoot,const K
     stance_jnts_in.resize(kinematics.left_leg.getNrOfJoints());
     SetToZero(stance_jnts_in);
     stance_jnts.resize(kinematics.left_leg.getNrOfJoints());
-    bool result=current_stance_ik_solver->CartToJnt(stance_jnts_in,DesiredWaist_StanceFoot,stance_jnts);
-    if (!result) return false;
+    int result=current_stance_ik_solver->CartToJnt(stance_jnts_in,DesiredWaist_StanceFoot,stance_jnts);
+    if (result<0) return false;
 
     KDL::JntArray moving_jnts;
     moving_jnts.resize(kinematics.left_leg.getNrOfJoints());
     result=current_moving_ik_solver->CartToJnt(moving_jnts,DesiredWaist_StanceFoot*StanceFoot_MovingFoot,moving_jnts);
-    if (!result) return false;
+    //if (result<0) return false;
 
     auto stance_leg_size=kinematics.left_leg.getNrOfJoints();
     for (int j=0;j<stance_leg_size;j++)
@@ -114,13 +116,20 @@ std::list< KDL::Frame > com_filter::generateWaistPositions ( KDL::Frame StanceFo
 
 KDL::Frame com_filter::computeWaistPosition(const KDL::Frame& StanceFoot_MovingFoot,double rot_angle,double hip_height)
 {
-    KDL::Frame temp;
+    KDL::Frame StanceFoot_WaistPosition;
     KDL::Vector World_GravityFromIMU(0,0,-1);
-    KDL::Vector StanceFoot_GravityFromIMU = World_StanceFoot.Inverse()*World_GravityFromIMU;
+    std::cout<<"World_StanceFoot.inverse"<<World_StanceFoot.Inverse()<<std::endl;
+    KDL::Vector StanceFoot_GravityFromIMU = World_StanceFoot.Inverse().M*World_GravityFromIMU;
     StanceFoot_GravityFromIMU.Normalize();
-    temp.M=KDL::Rotation::Rot2(StanceFoot_GravityFromIMU,rot_angle);
-    temp.p=KDL::Vector(StanceFoot_GravityFromIMU*hip_height);
-    return temp;
+    StanceFoot_WaistPosition.M=KDL::Rotation::Rot2(StanceFoot_GravityFromIMU,rot_angle);
+    StanceFoot_WaistPosition.p=KDL::Vector(StanceFoot_GravityFromIMU*(-hip_height));
+    tf::Transform current_robot_transform;
+    tf::transformKDLToTF(World_StanceFoot*StanceFoot_WaistPosition,current_robot_transform);
+    static tf::TransformBroadcaster br;
+    br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(),  "world","NEW_WAIST"));
+    ros::Duration sleep_time(3);
+    sleep_time.sleep();
+    return StanceFoot_WaistPosition;
 }
 
 

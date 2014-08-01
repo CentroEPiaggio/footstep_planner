@@ -18,8 +18,10 @@ footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics), World
     SetToZero(left_joints);
     SetToZero(right_joints);
     SetToZero(leg_joints);
-    kinematics.fkLsolver->JntToCart(left_joints,World_StanceFoot);   
-    comFilter.setZeroWaistHeight(World_StanceFoot.p[2]);
+    KDL::Frame Waist_StanceFoot;
+    kinematics.fkLsolver->JntToCart(left_joints,Waist_StanceFoot);
+    World_StanceFoot=Waist_StanceFoot;//TODO: get external World_Waist
+    comFilter.setZeroWaistHeight(-Waist_StanceFoot.p[2]);
     coordinate_filter* temp_filter = new coordinate_filter(0,-0.5,1);
     filter_by_coordinates.push_back(temp_filter);
     temp_filter = new coordinate_filter(1,-0.5,0.8);
@@ -135,6 +137,7 @@ void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bo
 void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool left)
 {
     comFilter.setLeftRightFoot(left);
+    comFilter.setWorld_StanceFoot(World_StanceFoot);
     comFilter.filter(steps);
 }
 
