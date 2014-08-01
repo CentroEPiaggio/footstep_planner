@@ -53,10 +53,10 @@ bool kinematic_filter::filter(std::list<foot_with_joints> &data)
 bool kinematic_filter::frame_is_reachable(const KDL::Frame& StanceFoot_MovingFoot, KDL::JntArray& jnt_pos)
 {
     KDL::JntArray jnt_pos_in;
-    jnt_pos_in.resize(kinematics.q_min.rows());
+    jnt_pos_in.resize(kinematics.num_joints);
     SetToZero(jnt_pos_in);
     KDL::JntArray jnt_pos_out;
-    jnt_pos_out.resize(kinematics.q_min.rows());
+    jnt_pos_out.resize(kinematics.num_joints);
     int ik_valid = current_ik_solver->CartToJnt(jnt_pos_in, StanceFoot_MovingFoot, jnt_pos_out);
     if (ik_valid>=0)
     {

@@ -18,7 +18,6 @@
 namespace planner
 {
 
-//typedef std::tuple<KDL::Frame,KDL::JntArray, KDL::Frame> foot_with_joints;
     
 class footstepPlanner
 {

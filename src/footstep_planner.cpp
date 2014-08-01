@@ -45,7 +45,6 @@ void footstepPlanner::setWorldTransform(KDL::Frame transform)
 {
     this->World_Camera=transform;
     world_camera_set=true;
-    //current_foot_W=World_Camera*current_foot_W;
 }
 
 //Camera link
@@ -135,6 +134,7 @@ void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bo
 
 void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool left)
 {
+    comFilter.setLeftRightFoot(left);
     comFilter.filter(steps);
 }
 

@@ -13,14 +13,20 @@ com_filter::com_filter()
 
 bool com_filter::filter(std::list<planner::foot_with_joints> &data)
 {
+    int total=data.size();
+    int counter=0;
+    int total_num_examined=0;
     for (auto single_step=data.begin();single_step!=data.end();)
     {
+        counter++;
+        std::cout<<"percentage: "<<counter<<" / "<<total<<" examined:"<<total_num_examined<<std::endl;
         auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
 	auto waistPositions=generateWaistPositions(StanceFoot_MovingFoot);
 	int num_inserted=0;
 	for (auto waistPosition:waistPositions)
 	{
+            total_num_examined++;
 	    KDL::JntArray jnt_temp;
 	    jnt_temp.resize(kinematics.num_joints);
 	    if (frame_is_stable(StanceFoot_MovingFoot,waistPosition,jnt_temp))
@@ -30,7 +36,7 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
 		temp.World_MovingFoot=single_step->World_MovingFoot;
 		temp.World_StanceFoot=single_step->World_StanceFoot;
 		temp.World_Waist=single_step->World_Waist;
-		single_step=data.insert(single_step,temp);
+		data.insert(single_step,temp);
 		num_inserted++;
 	    }
 	}
@@ -64,9 +70,11 @@ void com_filter::setLeftRightFoot(bool left)
 
 bool com_filter::frame_is_stable(const KDL::Frame& StanceFoot_MovingFoot,const KDL::Frame& DesiredWaist_StanceFoot, KDL::JntArray& jnt_pos)
 {
-    KDL::JntArray stance_jnts;
+    KDL::JntArray stance_jnts_in, stance_jnts;
+    stance_jnts_in.resize(kinematics.left_leg.getNrOfJoints());
+    SetToZero(stance_jnts_in);
     stance_jnts.resize(kinematics.left_leg.getNrOfJoints());
-    bool result=current_stance_ik_solver->CartToJnt(stance_jnts,DesiredWaist_StanceFoot,stance_jnts);
+    bool result=current_stance_ik_solver->CartToJnt(stance_jnts_in,DesiredWaist_StanceFoot,stance_jnts);
     if (!result) return false;
 
     KDL::JntArray moving_jnts;
@@ -94,8 +102,8 @@ std::list< KDL::Frame > com_filter::generateWaistPositions ( KDL::Frame StanceFo
 {
     std::list<KDL::Frame> temp;
     double angle_ref=atan2(StanceFoot_MovingFoot.p[0],-StanceFoot_MovingFoot.p[1]);
-    for (double angle=-M_PI/6.0;angle<M_PI/5.9;angle=angle+M_PI/30.0)
-	for (double height=-15.0;height<-5.0;height=height+1.0)
+    for (double angle=-M_PI/6.0;angle<M_PI/5.9;angle=angle+M_PI/3.0)
+	for (double height=-15.0;height<-5.0;height=height+5.0)
 	{
 	    KDL::Frame DesiredWaist_StanceFoot=computeWaistPosition(StanceFoot_MovingFoot,angle+angle_ref,desired_hip_height+height).Inverse();
 	    temp.push_back(DesiredWaist_StanceFoot);

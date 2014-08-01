@@ -21,6 +21,8 @@ kinematics_utilities::kinematics_utilities():coman_model()
     fkLRsolver = new KDL::ChainFkSolverPos_recursive(LR_legs);
     fkRLsolver = new KDL::ChainFkSolverPos_recursive(RL_legs);
     
+    ikLvelsolver = new KDL::ChainIkSolverVel_pinv(left_leg);
+    ikRvelsolver = new KDL::ChainIkSolverVel_pinv(right_leg);
     ikLRvelsolver = new KDL::ChainIkSolverVel_pinv(LR_legs);
     ikRLvelsolver = new KDL::ChainIkSolverVel_pinv(RL_legs);
     
