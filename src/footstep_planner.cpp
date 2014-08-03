@@ -57,6 +57,12 @@ void footstepPlanner::setDirectionVector(double x, double y, double z)
     World_CurrentDirection.data[2] = z;
 }
 
+const std::vector< std::string >& footstepPlanner::getLastUsedChain()
+{
+        return last_used_joint_names;
+}
+
+
 //Camera link frame
 void footstepPlanner::setCurrentDirection(KDL::Vector direction)
 {
@@ -127,6 +133,7 @@ void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& aff
 void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bool left)
 {
     kinematicFilter.filter(steps);
+    last_used_joint_names=kinematicFilter.getJointOrder();
 }
 
 void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool left)
@@ -134,6 +141,7 @@ void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool
     comFilter.setLeftRightFoot(left);
     comFilter.setWorld_StanceFoot(World_StanceFoot);
     comFilter.filter(steps);
+    last_used_joint_names=comFilter.getJointOrder();
 }
 
 
@@ -183,31 +191,31 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
 
 bool footstepPlanner::prepareForROSVisualization(std::list<foot_with_joints>& steps)
 {
-    for (auto& step:steps)
-    {
-        KDL::Frame Waist_StanceFoot;
-        KDL::JntArray single_leg;
-        auto single_leg_size=left_joints.rows();
-        single_leg.resize(single_leg_size);
-        auto& joints_position=step.joints;
-        for (int k=0; k<single_leg_size; k++)
-        {
-//            single_leg(k)=joints_position(k); //Joints after com_filter are in the same order as joints in the forward kinematics
-//            single_leg(single_leg_size-k-1)=joints_position(k);//
-        }
-
-//      kinematicFilter.current_fk_solver->JntToCart(single_leg,Waist_StanceFoot);
-
-        //Swap joint indexes because ROS and KDL have different chain order (our fault, but we had to cause of left/right chains)
-        auto temp_pos=joints_position; //We HAVE to copy the vector since we are swapping joint indexes
-        auto legs_size=joints_position.rows();
-        for (int i=0; i<single_leg_size; i++)
-        {
-            joints_position(i+single_leg_size)=temp_pos(legs_size-i-1);
-            //joints_position(i+single_leg_size)=temp_pos(i+single_leg_size);
-        }
-//        step.World_Waist=World_StanceFoot*(Waist_StanceFoot.Inverse());
-    }
+//     for (auto& step:steps)
+//     {
+//         KDL::Frame Waist_StanceFoot;
+//         KDL::JntArray single_leg;
+//         auto single_leg_size=left_joints.rows();
+//         single_leg.resize(single_leg_size);
+//         auto& joints_position=step.joints;
+//         for (int k=0; k<single_leg_size; k++)
+//         {
+// //            single_leg(k)=joints_position(k); //Joints after com_filter are in the same order as joints in the forward kinematics
+// //            single_leg(single_leg_size-k-1)=joints_position(k);//
+//         }
+// 
+// //      kinematicFilter.current_fk_solver->JntToCart(single_leg,Waist_StanceFoot);
+// 
+//         //Swap joint indexes because ROS and KDL have different chain order (our fault, but we had to cause of left/right chains)
+//         auto temp_pos=joints_position; //We HAVE to copy the vector since we are swapping joint indexes
+//         auto legs_size=joints_position.rows();
+//         for (int i=0; i<single_leg_size; i++)
+//         {
+//             joints_position(i+single_leg_size)=temp_pos(legs_size-i-1);
+//             //joints_position(i+single_leg_size)=temp_pos(i+single_leg_size);
+//         }
+// //        step.World_Waist=World_StanceFoot*(Waist_StanceFoot.Inverse());
+//     }
     return true;
 }
 

@@ -55,6 +55,7 @@ private:
     std::vector<coordinate_filter*> filter_by_coordinates;
     
     KDL::Vector World_CurrentDirection;
+    std::vector< std::string > last_used_joint_names;
     
 public:
     footstepPlanner();
@@ -77,6 +78,7 @@ public:
     void setCurrentDirection(KDL::Vector direction);
     
     void setDirectionVector(double x, double y, double z);
+    const std::vector<std::string>& getLastUsedChain();
     
     // robot area for the footstep planner
     double feasible_area_;

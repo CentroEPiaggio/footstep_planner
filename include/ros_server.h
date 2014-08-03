@@ -71,7 +71,7 @@ public:
     std::string camera_link_name;
     std::string filename;
     //WORLD Reference Frame
-    std::vector<foot_with_joints> path;
+    std::vector<std::pair<foot_with_joints,std::vector<std::string>>> path;
     
     bool singleFoot(bool left);
     

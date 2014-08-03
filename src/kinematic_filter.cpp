@@ -24,16 +24,24 @@ void kinematic_filter::setLeftRightFoot(bool left)
     {
 //         current_joints=left_joints;
         current_ik_solver=kinematics.lwr_legs.iksolver;
+        current_chain_names=kinematics.lwr_legs.joint_names;
 //         current_fk_solver=kinematics.fkLsolver;
     }
     else
     {
 //         current_joints=right_joints;
         current_ik_solver=kinematics.rwl_legs.iksolver;
+        current_chain_names=kinematics.rwl_legs.joint_names;
 //         current_fk_solver=kinematics.fkRsolver;
 
     }
 }
+
+std::vector< std::string > kinematic_filter::getJointOrder()
+{
+    return current_chain_names;
+}
+
 
 bool kinematic_filter::filter(std::list<foot_with_joints> &data)
 {

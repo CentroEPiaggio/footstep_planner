@@ -5,6 +5,7 @@
 #include <tf/transform_broadcaster.h>
 com_filter::com_filter()
 {
+    stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
 }
 
 bool com_filter::filter(std::list<planner::foot_with_joints> &data)
@@ -41,6 +42,9 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
 	//else
 	//    single_step++;	
     }
+    current_chain_names=current_stance_chain_and_solver->joint_names;
+    current_chain_names.insert(current_chain_names.end(),current_moving_chain_and_solver->joint_names.begin(),current_moving_chain_and_solver->joint_names.end());
+    
     return true;
 }
 
@@ -54,40 +58,43 @@ void com_filter::setLeftRightFoot(bool left)
 {
     if (left)
     {
-        current_stance_ik_solver=kinematics.wl_leg.iksolver;
-        current_moving_ik_solver=kinematics.wr_leg.iksolver;
+        current_stance_chain_and_solver=&kinematics.wl_leg;
+        current_moving_chain_and_solver=&kinematics.wr_leg;
     }
     else
     {
-        current_stance_ik_solver=kinematics.wr_leg.iksolver;
-        current_moving_ik_solver=kinematics.wl_leg.iksolver;
+        current_stance_chain_and_solver=&kinematics.wr_leg;
+        current_moving_chain_and_solver=&kinematics.wl_leg;
     }
     this->left=left;
 }
 
 bool com_filter::frame_is_stable(const KDL::Frame& StanceFoot_MovingFoot,const KDL::Frame& DesiredWaist_StanceFoot, KDL::JntArray& jnt_pos)
 {
-    KDL::JntArray stance_jnts_in, stance_jnts;
-    stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
+    auto stance_leg_size=kinematics.wl_leg.chain.getNrOfJoints();
+    KDL::JntArray stance_jnts(stance_leg_size);
     SetToZero(stance_jnts_in);
-    stance_jnts.resize(kinematics.wl_leg.chain.getNrOfJoints());
-    int result=current_stance_ik_solver->CartToJnt(stance_jnts_in,DesiredWaist_StanceFoot,stance_jnts);
+    int result=current_stance_chain_and_solver->iksolver->CartToJnt(stance_jnts_in,DesiredWaist_StanceFoot,stance_jnts);
     if (result<0) return false;
 
-    KDL::JntArray moving_jnts;
-    moving_jnts.resize(kinematics.wl_leg.chain.getNrOfJoints());
-    result=current_moving_ik_solver->CartToJnt(moving_jnts,DesiredWaist_StanceFoot*StanceFoot_MovingFoot,moving_jnts);
-    //if (result<0) return false;
+    SetToZero(stance_jnts_in);
+    KDL::JntArray moving_jnts(stance_leg_size);
+    result=current_moving_chain_and_solver->iksolver->CartToJnt(stance_jnts_in,DesiredWaist_StanceFoot*StanceFoot_MovingFoot,moving_jnts);
+    if (result<0) return false;
 
-    auto stance_leg_size=kinematics.wl_leg.chain.getNrOfJoints();
     for (int j=0;j<stance_leg_size;j++)
     {
         jnt_pos(j)=stance_jnts(j);
         jnt_pos(j+stance_leg_size)=moving_jnts(j);
     }
-
     return true;
 }
+
+std::vector< std::string > com_filter::getJointOrder()
+{
+    return current_chain_names;
+}
+
 
 void com_filter::setZeroWaistHeight ( double hip_height )
 {

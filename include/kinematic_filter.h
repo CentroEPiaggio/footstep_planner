@@ -18,6 +18,7 @@ public:
     bool filter(std::list<planner::foot_with_joints>& data);
     void setWorld_StanceFoot(const KDL::Frame& World_StanceFoot);
     void setLeftRightFoot(bool left);
+    std::vector< std::string > getJointOrder();
 public:
     kinematics_utilities kinematics;
 
@@ -27,6 +28,7 @@ private:
     KDL::Frame StanceFoot_World;
     KDL::Frame World_StanceFoot;
     JointsLeftFootWaistRightFoot jnt_pos_in;
+    std::vector< std::string > current_chain_names;
 
 };
 

@@ -128,10 +128,7 @@ bool rosServer::singleFoot(bool left)
         else
         {
             k=0;
-            if (left)
-                publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.lwr_legs.joint_names);
-            else
-                publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.rwl_legs.joint_names);
+            publisher.publish_robot_joints(centroid.joints,footstep_planner.getLastUsedChain());
             tf::transformKDLToTF(centroid.World_Waist,current_robot_transform);
             static tf::TransformBroadcaster br;
             br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "Waist"));
@@ -144,7 +141,7 @@ bool rosServer::singleFoot(bool left)
     publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
     footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot); //Finally we make the step
     
-    path.push_back(final_centroid);
+    path.push_back(std::make_pair(final_centroid,footstep_planner.getLastUsedChain()));
     
 }
 
@@ -173,12 +170,8 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     left=false;
      for (auto centroid:path)
     {
-        left=!left;
-        if (left)
-            publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.lwr_legs.joint_names);
-        else
-            publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.rwl_legs.joint_names);
-        tf::transformKDLToTF(centroid.World_Waist,current_robot_transform);
+        publisher.publish_robot_joints(centroid.first.joints,centroid.second);
+        tf::transformKDLToTF(centroid.first.World_Waist,current_robot_transform);
         static tf::TransformBroadcaster br;
         br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
         ros::Duration sleep_time(3);
