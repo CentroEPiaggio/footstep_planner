@@ -27,6 +27,7 @@ private:
     kinematics_utilities kinematics;
     KDL::Frame World_StanceFoot;
     double desired_hip_height;
+    bool left;
 };
 
 #endif // COM_FILTER_H

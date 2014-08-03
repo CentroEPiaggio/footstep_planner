@@ -129,12 +129,12 @@ bool rosServer::singleFoot(bool left)
         {
             k=0;
             if (left)
-                publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.joint_names_LR);
+                publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.lwr_legs.joint_names);
             else
-                publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.joint_names_RL);
+                publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.rwl_legs.joint_names);
             tf::transformKDLToTF(centroid.World_Waist,current_robot_transform);
             static tf::TransformBroadcaster br;
-            br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
+            br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "Waist"));
             
             ros::Duration sleep_time(0.2);
             sleep_time.sleep();
@@ -167,17 +167,17 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     bool left=true;
     bool right=false;
     singleFoot(left);
-    singleFoot(right);
-    singleFoot(left);
+//     singleFoot(right);
+//     singleFoot(left);
     
     left=false;
      for (auto centroid:path)
     {
         left=!left;
         if (left)
-            publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.joint_names_LR);
+            publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.lwr_legs.joint_names);
         else
-            publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.joint_names_RL);
+            publisher.publish_robot_joints(centroid.joints,footstep_planner.kinematics.rwl_legs.joint_names);
         tf::transformKDLToTF(centroid.World_Waist,current_robot_transform);
         static tf::TransformBroadcaster br;
         br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));

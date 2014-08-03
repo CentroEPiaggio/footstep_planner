@@ -12,14 +12,9 @@ using namespace planner;
 
 footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
-    left_joints.resize(kinematics.left_leg.getNrOfJoints());
-    right_joints.resize(kinematics.right_leg.getNrOfJoints());
-    leg_joints.resize(kinematics.RL_legs.getNrOfJoints());
-    SetToZero(left_joints);
-    SetToZero(right_joints);
-    SetToZero(leg_joints);
     KDL::Frame Waist_StanceFoot;
-    kinematics.fkLsolver->JntToCart(left_joints,Waist_StanceFoot);
+    left_joints.resize(kinematics.wl_leg.chain.getNrOfJoints());
+    kinematics.wl_leg.fksolver->JntToCart(left_joints,Waist_StanceFoot);
     World_StanceFoot=Waist_StanceFoot;//TODO: get external World_Waist
     comFilter.setZeroWaistHeight(-Waist_StanceFoot.p[2]);
     coordinate_filter* temp_filter = new coordinate_filter(0,-0.5,1);
@@ -197,18 +192,21 @@ bool footstepPlanner::prepareForROSVisualization(std::list<foot_with_joints>& st
         auto& joints_position=step.joints;
         for (int k=0; k<single_leg_size; k++)
         {
-            single_leg(single_leg_size-k-1)=joints_position(k); //Swap joint indexes because ROS and KDL have different chain order (our fault, but we had to cause of left/right chains)
+//            single_leg(k)=joints_position(k); //Joints after com_filter are in the same order as joints in the forward kinematics
+//            single_leg(single_leg_size-k-1)=joints_position(k);//
         }
 
-        kinematicFilter.current_fk_solver->JntToCart(single_leg,Waist_StanceFoot);
+//      kinematicFilter.current_fk_solver->JntToCart(single_leg,Waist_StanceFoot);
 
+        //Swap joint indexes because ROS and KDL have different chain order (our fault, but we had to cause of left/right chains)
         auto temp_pos=joints_position; //We HAVE to copy the vector since we are swapping joint indexes
         auto legs_size=joints_position.rows();
         for (int i=0; i<single_leg_size; i++)
         {
             joints_position(i+single_leg_size)=temp_pos(legs_size-i-1);
+            //joints_position(i+single_leg_size)=temp_pos(i+single_leg_size);
         }
-        step.World_Waist=World_StanceFoot*(Waist_StanceFoot.Inverse());
+//        step.World_Waist=World_StanceFoot*(Waist_StanceFoot.Inverse());
     }
     return true;
 }
