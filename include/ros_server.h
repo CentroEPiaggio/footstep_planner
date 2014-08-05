@@ -78,7 +78,7 @@ public:
     walkman::drc::yarp_custom_command_interface<fs_planner_msg> command_interface;
     fs_planner_msg msg;
     walkman::drc::yarp_status_interface status_interface;
-    
+    bool left;
     bool save_to_file;
     
   public:

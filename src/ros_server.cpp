@@ -40,6 +40,8 @@ command_interface("footstep_planner"),status_interface("footstep_planner")
 
     save_to_file = false;
     status_interface.start();
+    
+    left=true;
 }
 
 
@@ -106,14 +108,14 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
     int i=0;
     for (auto polygon:polygons)
         publisher.publish_normal_cloud(polygon.normals,i++);
-    
+
     if(save_to_file)
     {
 	std::cout<<"saving your extracted borders and planes on an xml file so that you will not need to call filter_by_curvature anylonger"<<std::endl;
 	xml_pcl_io file_manager;
 	file_manager.write_to_file(filename,polygons);
     }
-    
+
     return true;
 }
 
@@ -130,7 +132,7 @@ bool rosServer::singleFoot(bool left)
         std::cout<<"no valid plans found"<<std::endl;
         return false;
     }
-
+#ifdef SINGLE_FOOT_OUTPUT
     int k=0;
     for (auto centroid:World_centroids)
     {
@@ -144,16 +146,17 @@ bool rosServer::singleFoot(bool left)
             publisher.publish_robot_joints(centroid.joints,footstep_planner.getLastUsedChain());
             tf::transformKDLToTF(centroid.World_Waist,current_robot_transform);
             static tf::TransformBroadcaster br;
-            br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "Waist"));
-            
+            br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
             ros::Duration sleep_time(0.2);
             sleep_time.sleep();
         }
     }
+#endif
     auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left);  
     publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
+
     footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot); //Finally we make the step
-    
+
     path.push_back(std::make_pair(final_centroid,footstep_planner.getLastUsedChain()));
     return true;
 }
@@ -174,21 +177,34 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     }
     std::cout<<std::endl<<"> Number of polygons: "<<polygons.size()<<std::endl;
     
-    bool left=true;
-    bool right=false;
+//    bool left=true;
+//    bool right=false;
     bool result=singleFoot(left);
     if (!result) return false;
 //     singleFoot(right);
 //     singleFoot(left);
-    
-    left=false;
-     for (auto centroid:path)
+
+    left=!left;
+    ros::Duration sleep_time(2);
+    static tf::TransformBroadcaster br;
+    for (auto centroid:path)
     {
+        /*
+        tf::Transform current_robot_transform;
+        tf::transformKDLToTF(centroid.first.World_Waist,current_robot_transform);
+        br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(),  "world","FNEW_WAIST"));
+        tf::Transform current_moving_foot_transform;
+        tf::transformKDLToTF(centroid.first.World_MovingFoot,current_moving_foot_transform);
+        br.sendTransform(tf::StampedTransform(current_moving_foot_transform, ros::Time::now(),  "world","Fmoving_foot"));
+        tf::Transform fucking_transform;
+        tf::transformKDLToTF(centroid.first.World_StanceFoot,fucking_transform);
+        br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "Fstance_foot"));
+        sleep_time.sleep();
+        */
+
         publisher.publish_robot_joints(centroid.first.joints,centroid.second);
         tf::transformKDLToTF(centroid.first.World_Waist,current_robot_transform);
-        static tf::TransformBroadcaster br;
         br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
-        ros::Duration sleep_time(3);
         sleep_time.sleep();
     }
     std::cout<<"planning completed"<<std::endl;
