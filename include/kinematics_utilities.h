@@ -14,6 +14,8 @@
 
 typedef safe_ordered_chain<JointsWaistLeftFoot> ChainWaistLeftFoot;
 typedef safe_ordered_chain<JointsWaistRightFoot> ChainWaistRightFoot;
+typedef safe_ordered_chain<JointsLeftFootWaist> ChainLeftFootWaist;
+typedef safe_ordered_chain<JointsRightFootWaist> ChainRightFootWaist;
 typedef safe_ordered_chain<JointsLeftFootWaistRightFoot> ChainLeftFootWaistRightFoot;
 typedef safe_ordered_chain<JointsRightFootWaistLeftFoot> ChainRightFootWaistLeftFoot;
 
@@ -55,6 +57,8 @@ public:
 
     ChainWaistLeftFoot wl_leg;
     ChainWaistRightFoot wr_leg;
+    ChainLeftFootWaist lw_leg;
+    ChainRightFootWaist rw_leg;
     ChainLeftFootWaistRightFoot lwr_legs;
     ChainRightFootWaistLeftFoot rwl_legs;
     unsigned int num_joints;

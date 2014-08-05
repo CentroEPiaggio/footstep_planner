@@ -43,6 +43,8 @@ kinematics_utilities::kinematics_utilities():coman_model()
     coman= coman_model.coman_iDyn3.getKDLTree();
     coman.getChain("Waist","l_sole",wl_leg.chain);
     coman.getChain("Waist","r_sole",wr_leg.chain);
+    coman.getChain("l_sole","Waist",lw_leg.chain);
+    coman.getChain("r_sole","Waist",rw_leg.chain);
     num_joints=wl_leg.chain.getNrOfJoints()+wr_leg.chain.getNrOfJoints();
     coman.getChain("l_sole","Waist",lwr_legs.chain);
     lwr_legs.chain.addChain(wr_leg.chain);
@@ -54,6 +56,8 @@ kinematics_utilities::kinematics_utilities():coman_model()
 
     initialize_solvers(&wl_leg,wl_leg.joints_value,wl_leg.q_max,wl_leg.q_min);
     initialize_solvers(&wr_leg,wr_leg.joints_value,wr_leg.q_max,wr_leg.q_min);
+    initialize_solvers(&lw_leg,lw_leg.joints_value,lw_leg.q_max,lw_leg.q_min);
+    initialize_solvers(&rw_leg,rw_leg.joints_value,rw_leg.q_max,rw_leg.q_min);
     initialize_solvers(&lwr_legs,lwr_legs.joints_value,lwr_legs.q_max,lwr_legs.q_min);
     initialize_solvers(&rwl_legs,rwl_legs.joints_value,rwl_legs.q_max,rwl_legs.q_min);
 }

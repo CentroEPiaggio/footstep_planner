@@ -13,6 +13,14 @@ class JointsWaistRightFoot: public KDL::JntArray
 {
 };
 
+class JointsLeftFootWaist: public KDL::JntArray
+{
+};
+
+class JointsRightFootWaist: public KDL::JntArray
+{
+};
+
 class JointsLeftFootWaistRightFoot: public KDL::JntArray
 {
 };
