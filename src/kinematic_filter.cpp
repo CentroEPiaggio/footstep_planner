@@ -1,5 +1,8 @@
 #include "kinematic_filter.h"
-
+#ifdef KINEMATICS_OUTPUT
+#include <tf_conversions/tf_kdl.h>
+#include <tf/transform_broadcaster.h>
+#endif
 using namespace planner;
 
 kinematic_filter::kinematic_filter()
@@ -25,7 +28,6 @@ void kinematic_filter::setLeftRightFoot(bool left)
         current_ik_solver=kinematics.rwl_legs.iksolver;
         current_chain_names=kinematics.rwl_legs.joint_names;
         current_fk_solver=kinematics.rw_leg.fksolver;
-
     }
 }
 
@@ -53,6 +55,18 @@ bool kinematic_filter::filter(std::list<foot_with_joints> &data)
                 temp(i)=single_step->joints(i);
             current_fk_solver->JntToCart(temp,StanceFoot_Waist);
             single_step->World_Waist=World_StanceFoot*StanceFoot_Waist;
+#ifdef KINEMATICS_OUTPUT
+            tf::Transform current_robot_transform;
+            tf::transformKDLToTF(single_step->World_Waist,current_robot_transform);
+            static tf::TransformBroadcaster br;
+            br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(),  "world","KNEW_WAIST"));
+            tf::Transform current_moving_foot_transform;
+            tf::transformKDLToTF(World_StanceFoot*StanceFoot_MovingFoot,current_moving_foot_transform);
+            br.sendTransform(tf::StampedTransform(current_moving_foot_transform, ros::Time::now(),  "world","Kmoving_foot"));
+            tf::Transform fucking_transform;
+            tf::transformKDLToTF(World_StanceFoot,fucking_transform);
+            br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "Kstance_foot"));
+#endif
             single_step++;
         }
     }
