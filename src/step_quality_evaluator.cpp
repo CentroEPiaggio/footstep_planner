@@ -4,7 +4,7 @@
 step_quality_evaluator::step_quality_evaluator()
 {
     left_refy=-0.15;
-    refx=0.20;
+    refx=0.15;
 }
 
 
