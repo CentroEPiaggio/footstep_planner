@@ -20,6 +20,8 @@ command_interface("footstep_planner"),status_interface("footstep_planner")
     srv_border_extraction = nh->advertiseService(nh->resolveName("border_extraction"), &rosServer::extractBorders, this);
     srv_footstep_placer = nh->advertiseService(nh->resolveName("footstep_placer"),&rosServer::planFootsteps, this);
     
+    publisher.setRobotJoints(footstep_planner.kinematics.coman_urdf_model.joints_);
+    
     double curvature_threshold_,voxel_size_,normal_radius_,cluster_tolerance_;
     int min_cluster_size_;
     priv_nh_.param<double>("voxel_size", voxel_size_, 0.01);
@@ -55,6 +57,8 @@ void rosServer::run()
     status_interface.setStatus("ready");
     std_srvs::Empty::Request req;
     std_srvs::Empty::Response res;
+    
+    publisher.publish_last_joints_position();
     
     if(command_interface.getCommand(msg,seq_num))
     {
@@ -118,7 +122,7 @@ bool rosServer::singleFoot(bool left)
 {
     auto poly=polygons;
     auto World_centroids=footstep_planner.getFeasibleCentroids(poly,left);
-    publisher.publish_plane_borders(poly);
+    publisher.publish_plane_borders(polygons);
     ros::Duration sleep_time(0.2);
     sleep_time.sleep();
 

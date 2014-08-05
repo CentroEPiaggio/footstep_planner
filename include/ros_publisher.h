@@ -3,8 +3,10 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <kdl/jntarray.hpp>
+#include <sensor_msgs/JointState.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <urdf_model/joint.h>
 #include "borderextraction.h"
 
 namespace planner
@@ -19,6 +21,8 @@ public:
     void publish_foot_position(KDL::Frame World_MovingFoot, int centroid_id, bool left);
     void publish_robot_joints(const KDL::JntArray& joints, std::vector< std::string > joint_names);
     void publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal >::Ptr normals,int i);
+    void publish_last_joints_position();
+    void setRobotJoints(std::map< std::string, boost::shared_ptr< urdf::Joint > > joints_);
     
 private:
     ros::NodeHandle node;
@@ -26,12 +30,14 @@ private:
     ros::Publisher pub_border_poly_marker;
     ros::Publisher pub_ik_joints;
     ros::Publisher pub_footstep;
-    
+    ros::Publisher pub_normal_cloud_;
+
     std::string camera_link_name;
     visualization_msgs::Marker borders_marker;
     visualization_msgs::Marker foot_marker;
-    ros::Publisher pub_normal_cloud_;
-    
+    sensor_msgs::JointState last_joint_states;
+    std::map< std::string, int > joints_name_to_index;
+
 };
 
 }
