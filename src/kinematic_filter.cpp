@@ -1,15 +1,12 @@
 #include "kinematic_filter.h"
-
+#ifdef KINEMATICS_OUTPUT
+#include <tf_conversions/tf_kdl.h>
+#include <tf/transform_broadcaster.h>
+#endif
 using namespace planner;
 
 kinematic_filter::kinematic_filter()
 {
-    left_joints.resize(kinematics.left_leg.getNrOfJoints());
-    right_joints.resize(kinematics.right_leg.getNrOfJoints());
-    leg_joints.resize(kinematics.RL_legs.getNrOfJoints());
-    SetToZero(left_joints);
-    SetToZero(right_joints);
-    SetToZero(leg_joints);
 }
 
 void kinematic_filter::setWorld_StanceFoot(const KDL::Frame& World_StanceFoot)
@@ -22,41 +19,64 @@ void kinematic_filter::setLeftRightFoot(bool left)
 {
     if (left)
     {
-        current_joints=left_joints;
-        current_ik_solver=kinematics.ikLRsolver;
-        current_fk_solver=kinematics.fkLsolver;
+        current_ik_solver=kinematics.lwr_legs.iksolver;
+        current_chain_names=kinematics.lwr_legs.joint_names;
+        current_fk_solver=kinematics.lw_leg.fksolver;
     }
     else
     {
-        current_joints=right_joints;
-        current_ik_solver=kinematics.ikRLsolver;
-        current_fk_solver=kinematics.fkRsolver;
-
+        current_ik_solver=kinematics.rwl_legs.iksolver;
+        current_chain_names=kinematics.rwl_legs.joint_names;
+        current_fk_solver=kinematics.rw_leg.fksolver;
     }
 }
 
+std::vector< std::string > kinematic_filter::getJointOrder()
+{
+    return current_chain_names;
+}
+
+
 bool kinematic_filter::filter(std::list<foot_with_joints> &data)
 {
-
+    jnt_pos_in=kinematics.lwr_legs.joints_value;
+    
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
-        single_step->World_StanceFoot=World_StanceFoot;
         if (!frame_is_reachable(StanceFoot_MovingFoot,single_step->joints))
             single_step=data.erase(single_step);
         else
+        {
+            single_step->World_StanceFoot=World_StanceFoot;
+            KDL::Frame StanceFoot_Waist;
+            KDL::JntArray temp(kinematics.wl_leg.chain.getNrOfJoints());
+            for (int i=0;i<temp.rows();i++)
+                temp(i)=single_step->joints(i);
+            current_fk_solver->JntToCart(temp,StanceFoot_Waist);
+            single_step->World_Waist=World_StanceFoot*StanceFoot_Waist;
+#ifdef KINEMATICS_OUTPUT
+            tf::Transform current_robot_transform;
+            tf::transformKDLToTF(single_step->World_Waist,current_robot_transform);
+            static tf::TransformBroadcaster br;
+            br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(),  "world","KNEW_WAIST"));
+            tf::Transform current_moving_foot_transform;
+            tf::transformKDLToTF(World_StanceFoot*StanceFoot_MovingFoot,current_moving_foot_transform);
+            br.sendTransform(tf::StampedTransform(current_moving_foot_transform, ros::Time::now(),  "world","Kmoving_foot"));
+            tf::Transform fucking_transform;
+            tf::transformKDLToTF(World_StanceFoot,fucking_transform);
+            br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "Kstance_foot"));
+#endif
             single_step++;
+        }
     }
     return true;
 }
 
 bool kinematic_filter::frame_is_reachable(const KDL::Frame& StanceFoot_MovingFoot, KDL::JntArray& jnt_pos)
 {
-    KDL::JntArray jnt_pos_in;
-    jnt_pos_in.resize(kinematics.num_joints);
     SetToZero(jnt_pos_in);
-    KDL::JntArray jnt_pos_out;
-    jnt_pos_out.resize(kinematics.num_joints);
+    KDL::JntArray jnt_pos_out(kinematics.rwl_legs.chain.getNrOfJoints());
     int ik_valid = current_ik_solver->CartToJnt(jnt_pos_in, StanceFoot_MovingFoot, jnt_pos_out);
     if (ik_valid>=0)
     {

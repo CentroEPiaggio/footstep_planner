@@ -18,17 +18,18 @@ public:
     bool filter(std::list<planner::foot_with_joints>& data);
     void setWorld_StanceFoot(const KDL::Frame& World_StanceFoot);
     void setLeftRightFoot(bool left);
-public: //TODO: make private
-    KDL::ChainFkSolverPos_recursive* current_fk_solver;
+    std::vector< std::string > getJointOrder();
+public:
     kinematics_utilities kinematics;
 
 private:
     inline bool frame_is_reachable(const KDL::Frame& World_MovingFoot, KDL::JntArray& jnt_pos);
     KDL::ChainIkSolverPos_NR_JL* current_ik_solver;
+    KDL::ChainFkSolverPos* current_fk_solver;
     KDL::Frame StanceFoot_World;
     KDL::Frame World_StanceFoot;
-    KDL::JntArray current_joints;
-    KDL::JntArray left_joints,right_joints,leg_joints;
+    JointsLeftFootWaistRightFoot jnt_pos_in;
+    std::vector< std::string > current_chain_names;
 
 };
 

@@ -4,7 +4,7 @@
 step_quality_evaluator::step_quality_evaluator()
 {
     left_refy=-0.15;
-    refx=0.20;
+    refx=0.15;
 }
 
 
@@ -17,7 +17,7 @@ double step_quality_evaluator::distance_from_reference_step(const planner::foot_
         return distance;
 }
 
-double step_quality_evaluator::angle_from_reference_direction(planner::foot_with_joints& centroid, KDL::Vector World_DesiredDirection)
+double step_quality_evaluator::angle_from_reference_direction(planner::foot_with_joints const& centroid, KDL::Vector World_DesiredDirection)
 {
         KDL::Vector World_FootDirection = centroid.World_StanceFoot*KDL::Vector(1,0,0);
         auto filter=World_DesiredDirection+World_FootDirection;

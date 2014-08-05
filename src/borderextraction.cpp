@@ -116,7 +116,7 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
         temp.normals=temp_cloud.makeShared();
         pcl::SamplingSurfaceNormal<pcl::PointXYZRGBNormal> sampler;
         sampler.setSample(100);
-        sampler.setRatio(0.02*3000/clusters[i]->size());
+        sampler.setRatio(0.04*3000/clusters[i]->size());
         sampler.setInputCloud(clusters[i]);
         sampler.setSeed(time(NULL));
         sampler.filter(*temp.normals);

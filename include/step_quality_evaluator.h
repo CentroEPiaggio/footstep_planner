@@ -9,7 +9,7 @@ public:
     step_quality_evaluator();
     double evaluate();
     double distance_from_reference_step(const planner::foot_with_joints &centroid, bool left, KDL::Frame &StanceFoot_MovingFoot);
-    double angle_from_reference_direction(planner::foot_with_joints& centroid, KDL::Vector World_DesiredDirection);
+    double angle_from_reference_direction(planner::foot_with_joints const& centroid, KDL::Vector World_DesiredDirection);
 private:
     double left_refy;
     double refx;

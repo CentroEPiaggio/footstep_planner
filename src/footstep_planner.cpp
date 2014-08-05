@@ -12,17 +12,16 @@ using namespace planner;
 
 footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
-    left_joints.resize(kinematics.left_leg.getNrOfJoints());
-    right_joints.resize(kinematics.right_leg.getNrOfJoints());
-    leg_joints.resize(kinematics.RL_legs.getNrOfJoints());
+    KDL::Frame Waist_StanceFoot;
+    left_joints.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(left_joints);
-    SetToZero(right_joints);
-    SetToZero(leg_joints);
-    kinematics.fkLsolver->JntToCart(left_joints,World_StanceFoot);   
-    comFilter.setZeroWaistHeight(World_StanceFoot.p[2]);
-    coordinate_filter* temp_filter = new coordinate_filter(0,-0.5,1);
+    kinematics.wl_leg.fksolver->JntToCart(left_joints,Waist_StanceFoot);
+    World_StanceFoot=Waist_StanceFoot;//TODO: get external World_Waist
+    std::cout<<"starting World_StanceFoot"<<World_StanceFoot<<std::endl;
+    comFilter.setZeroWaistHeight(-Waist_StanceFoot.p[2]);
+    coordinate_filter* temp_filter = new coordinate_filter(0,0.0,0.6);
     filter_by_coordinates.push_back(temp_filter);
-    temp_filter = new coordinate_filter(1,-0.5,0.8);
+    temp_filter = new coordinate_filter(1,-0.6,0.1);
     filter_by_coordinates.push_back(temp_filter);
     temp_filter = new coordinate_filter(2,-0.5,0.5);
     filter_by_coordinates.push_back(temp_filter);
@@ -60,6 +59,12 @@ void footstepPlanner::setDirectionVector(double x, double y, double z)
     World_CurrentDirection.data[2] = z;
 }
 
+const std::vector< std::string >& footstepPlanner::getLastUsedChain()
+{
+        return last_used_joint_names;
+}
+
+
 //Camera link frame
 void footstepPlanner::setCurrentDirection(KDL::Vector direction)
 {
@@ -67,11 +72,11 @@ void footstepPlanner::setCurrentDirection(KDL::Vector direction)
     gs_utils.setCurrentDirection(direction);
 }
 
-void footstepPlanner::generate_frames_from_normals(std::list< polygon_with_normals >& affordances, std::list< foot_with_joints >& steps)
+void footstepPlanner::generate_frames_from_normals(const std::list< polygon_with_normals >& affordances, std::list< foot_with_joints >& steps)
 {
     int j=-1;
 
-    for(auto item:affordances)
+    for(auto const& item:affordances)
     {
         j++;
         ROS_INFO("Polygon %d number of normals : %lu ",j,item.normals->size());
@@ -129,93 +134,63 @@ void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& aff
 
 void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bool left)
 {
+    kinematicFilter.setLeftRightFoot(left);
+    kinematicFilter.setWorld_StanceFoot(World_StanceFoot);
     kinematicFilter.filter(steps);
+    last_used_joint_names=kinematicFilter.getJointOrder();
 }
 
 void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool left)
 {
     comFilter.setLeftRightFoot(left);
+    comFilter.setWorld_StanceFoot(World_StanceFoot);
     comFilter.filter(steps);
+    last_used_joint_names=comFilter.getJointOrder();
 }
 
 
-std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals >&    affordances, bool left)
+std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left)
 {
     if (!world_camera_set)
     {
         throw "camera - world transformation was not set";
     }
-    
+
     setCurrentDirection(World_Camera.Inverse()*World_CurrentDirection); //TODO
-    
-    static tf::TransformBroadcaster br;
-    tf::Transform fucking_transform;
-    tf::transformKDLToTF(World_StanceFoot,fucking_transform);
-    br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
-    br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
-    ros::Duration sleep_time(0.5);
-    sleep_time.sleep();
-    kinematicFilter.setLeftRightFoot(left);
-    kinematicFilter.setWorld_StanceFoot(World_StanceFoot);
-        
-    
+
+//     static tf::TransformBroadcaster br;
+//     tf::Transform fucking_transform;
+//     tf::transformKDLToTF(World_StanceFoot,fucking_transform);
+//     br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
+//     br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
+//     ros::Duration sleep_time(0.5);
+//     sleep_time.sleep();
+
     geometric_filtering(affordances,left); //GEOMETRIC FILTER
-    
+
     std::list<foot_with_joints> steps;
-    
+
     generate_frames_from_normals(affordances,steps); //generating kdl frames to place foot
 
     ROS_INFO("Number of steps after geometric filter: %lu ",steps.size()); 
-    
-        
+
     kinematic_filtering(steps,left); //KINEMATIC FILTER
-    
+
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
-    
-    
+
     dynamic_filtering(steps,left); //DYNAMIC FILTER
-    
+
     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());  
-    
-    
-    prepareForROSVisualization(steps);
     return steps;
 }
 
 
-bool footstepPlanner::prepareForROSVisualization(std::list<foot_with_joints>& steps)
+foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints >const& centroids, bool left)
 {
-    for (auto& step:steps)
-    {
-        KDL::Frame Waist_StanceFoot;
-        KDL::JntArray single_leg;
-        auto single_leg_size=left_joints.rows();
-        single_leg.resize(single_leg_size);
-        auto& joints_position=step.joints;
-        for (int k=0; k<single_leg_size; k++)
-        {
-            single_leg(single_leg_size-k-1)=joints_position(k); //Swap joint indexes because ROS and KDL have different chain order (our fault, but we had to cause of left/right chains)
-        }
-
-        kinematicFilter.current_fk_solver->JntToCart(single_leg,Waist_StanceFoot);
-
-        auto temp_pos=joints_position; //We HAVE to copy the vector since we are swapping joint indexes
-        auto legs_size=joints_position.rows();
-        for (int i=0; i<single_leg_size; i++)
-        {
-            joints_position(i+single_leg_size)=temp_pos(legs_size-i-1);
-        }
-        step.World_Waist=World_StanceFoot*(Waist_StanceFoot.Inverse());
-    }
-    return true;
-}
-
-foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints > centroids, bool left)
-{
-    std::vector<foot_with_joints*> minimum_steps;
+    std::vector<foot_with_joints const*> minimum_steps;
     double min=100000000000000;
-    foot_with_joints* result=&(*centroids.begin());
-    for (auto& centroid:centroids)
+    foot_with_joints const* result=&(*centroids.begin());
+    for (auto const& centroid:centroids)
     {
         KDL::Frame StanceFoot_MovingFoot;
         auto distance=stepQualityEvaluator.distance_from_reference_step(centroid,left,StanceFoot_MovingFoot);

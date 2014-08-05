@@ -71,14 +71,14 @@ public:
     std::string camera_link_name;
     std::string filename;
     //WORLD Reference Frame
-    std::vector<foot_with_joints> path;
+    std::vector<std::pair<foot_with_joints,std::vector<std::string>>> path;
     
     bool singleFoot(bool left);
     
     walkman::drc::yarp_custom_command_interface<fs_planner_msg> command_interface;
     fs_planner_msg msg;
     walkman::drc::yarp_status_interface status_interface;
-    
+    bool left;
     bool save_to_file;
     
   public:
@@ -86,6 +86,7 @@ public:
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    bool sendPathToRviz();
     void init();
     
     virtual bool threadInit();

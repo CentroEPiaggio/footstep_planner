@@ -4,6 +4,7 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <sensor_msgs/JointState.h>
+#include <urdf_model/joint.h>
 using namespace planner;
 
 ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name)
@@ -13,7 +14,7 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     pub_cluster_cloud_ = node.advertise<sensor_msgs::PointCloud2>(node.resolveName("cluster_cloud"), 3000);
     pub_border_poly_marker = node.advertise<visualization_msgs::Marker>("/border_poly_marker",1,true);
     pub_footstep = node.advertise<visualization_msgs::Marker>("/footstep_marker",1,true);
-    pub_ik_joints = node.advertise<sensor_msgs::JointState>("/footstep/joint_states",1,true);
+    pub_ik_joints = node.advertise<sensor_msgs::JointState>("/joint_states",1,true);
     pub_normal_cloud_ = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("normal_cloud"), 1);
     
     borders_marker.header.frame_id=camera_link_name;
@@ -66,14 +67,14 @@ void ros_publisher::publish_plane_clusters(std::vector< boost::shared_ptr< pcl::
     }
 }
 
-void ros_publisher::publish_plane_borders(std::list<polygon_with_normals> borders)
+void ros_publisher::publish_plane_borders(const std::list<polygon_with_normals>& borders)
 {
     geometry_msgs::Point point;    
     std_msgs::ColorRGBA color;
     uint8_t r, g, b;
     int32_t rgb; 
     int i=0;
-    for (polygon_with_normals& border_polygon:borders)
+    for (polygon_with_normals const& border_polygon:borders)
     {
         r = 255*((double)rand()/(double)RAND_MAX);
         g = 255*((double)rand()/(double)RAND_MAX);
@@ -154,23 +155,47 @@ void ros_publisher::publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal
     pub_normal_cloud_.publish(msg);
 }
 
-void ros_publisher::publish_robot_joints(KDL::JntArray joints, std::vector<std::string> joint_names)
+void ros_publisher::publish_last_joints_position()
 {
-    sensor_msgs::JointState temp;
-    temp.header.stamp=ros::Time::now();
-    for (int i=0;i<joints.rows();i++)
+    last_joint_states.header.stamp=ros::Time::now();
+    pub_ik_joints.publish(last_joint_states);
+}
+
+void ros_publisher::setRobotJoints(std::map< std::string, boost::shared_ptr< urdf::Joint > > joints_)
+{
+    last_joint_states.position.resize(joints_.size());
+    last_joint_states.name.resize(joints_.size());
+    int j=0;
+    for (auto joint:joints_)
     {
-        temp.position.push_back(joints(i));
+        last_joint_states.name[j]=joint.first;
+        last_joint_states.position[j]=0;
+        joints_name_to_index[joint.first]=j;
+        std::cout<<joint.first<<joints_name_to_index[joint.first]<<"=="<<j<<std::endl;
+        j++;
     }
-    temp.name=joint_names;
-    
-//     pub_ik_joints.publish(temp);
-//     pub_ik_joints.publish(temp);
-//     ros::Duration sleep_time(0.5);
-//     sleep_time.sleep();
-//     pub_ik_joints.publish(temp);
-    pub_ik_joints.publish(temp);
-//     sleep_time.sleep();
-//     ros::Duration two_sec(2);
-//     two_sec.sleep();  
+}
+
+void ros_publisher::publish_starting_position()
+{
+    last_joint_states.header.stamp=ros::Time::now();
+    for (int i=0;i<last_joint_states.name.size();i++)
+    {
+        last_joint_states.position[i]=0;
+    }
+    pub_ik_joints.publish(last_joint_states);
+}
+
+void ros_publisher::publish_robot_joints(KDL::JntArray const& joints, std::vector<std::string> joint_names)
+{
+    last_joint_states.header.stamp=ros::Time::now();
+    int i=0;
+    for (auto joint:joint_names)
+    {
+        //std::cout<<joints_name_to_index[joint]<<joint<<joints(i)<<" ";
+        last_joint_states.position[joints_name_to_index[joint]]=joints(i);
+        i++;
+    }
+    //std::cout<<std::endl;
+    pub_ik_joints.publish(last_joint_states);
 }

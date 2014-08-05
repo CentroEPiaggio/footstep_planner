@@ -84,7 +84,11 @@ int main(int argc, char **argv)
     
     ros::Rate freq ( 1 );
     freq.sleep();
+    std::cout<<"Starting thread"<<std::endl;
     
+    bool ok=node.my_configure();
+    if(ok) std::cout<<"Footstep Planner is started"<<std::endl;
+    else   std::cout<<"Error starting Footstep Planner Module"<<std::endl;
     while(!quit)
     {
 	if(switch_interface.getCommand(sCommand))
