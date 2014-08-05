@@ -88,6 +88,10 @@ void rosServer::run()
 	{
             footstep_planner.setDirectionVector(msg.x,msg.y,msg.z);
 	}
+	if(command=="exit")
+        {
+            abort();
+        }
     }
 }
 
