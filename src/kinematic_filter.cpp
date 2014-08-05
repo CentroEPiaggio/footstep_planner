@@ -4,12 +4,6 @@ using namespace planner;
 
 kinematic_filter::kinematic_filter()
 {
-//     left_joints.resize(kinematics.left_leg.getNrOfJoints());
-//     right_joints.resize(kinematics.right_leg.getNrOfJoints());
-//     leg_joints.resize(kinematics.RL_legs.getNrOfJoints());
-//     SetToZero(left_joints);
-//     SetToZero(right_joints);
-//     SetToZero(leg_joints);
 }
 
 void kinematic_filter::setWorld_StanceFoot(const KDL::Frame& World_StanceFoot)
@@ -25,14 +19,14 @@ void kinematic_filter::setLeftRightFoot(bool left)
 //         current_joints=left_joints;
         current_ik_solver=kinematics.lwr_legs.iksolver;
         current_chain_names=kinematics.lwr_legs.joint_names;
-//         current_fk_solver=kinematics.fkLsolver;
+        current_fk_solver=kinematics.lw_leg.fksolver;
     }
     else
     {
 //         current_joints=right_joints;
         current_ik_solver=kinematics.rwl_legs.iksolver;
         current_chain_names=kinematics.rwl_legs.joint_names;
-//         current_fk_solver=kinematics.fkRsolver;
+        current_fk_solver=kinematics.rw_leg.fksolver;
 
     }
 }
@@ -50,11 +44,19 @@ bool kinematic_filter::filter(std::list<foot_with_joints> &data)
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
-        single_step->World_StanceFoot=World_StanceFoot;
         if (!frame_is_reachable(StanceFoot_MovingFoot,single_step->joints))
             single_step=data.erase(single_step);
         else
+        {
+            single_step->World_StanceFoot=World_StanceFoot;
+            KDL::Frame StanceFoot_Waist;
+            KDL::JntArray temp(kinematics.wl_leg.chain.getNrOfJoints());
+            for (int i=0;i<temp.rows();i++)
+                temp(i)=single_step->joints(i);
+            current_fk_solver->JntToCart(temp,StanceFoot_Waist);
+            single_step->World_Waist=World_StanceFoot*StanceFoot_Waist;
             single_step++;
+        }
     }
     return true;
 }
