@@ -125,6 +125,11 @@ bool rosServer::singleFoot(bool left)
     publisher.publish_plane_borders(polygons);
     ros::Duration sleep_time(0.2);
     sleep_time.sleep();
+    if (World_centroids.size()==0)
+    {
+        std::cout<<"no valid plans found"<<std::endl;
+        return false;
+    }
 
     int k=0;
     for (auto centroid:World_centroids)
@@ -150,7 +155,7 @@ bool rosServer::singleFoot(bool left)
     footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot); //Finally we make the step
     
     path.push_back(std::make_pair(final_centroid,footstep_planner.getLastUsedChain()));
-    
+    return true;
 }
 
 
@@ -171,7 +176,8 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     
     bool left=true;
     bool right=false;
-    singleFoot(left);
+    bool result=singleFoot(left);
+    if (!result) return false;
 //     singleFoot(right);
 //     singleFoot(left);
     
@@ -185,6 +191,7 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
         ros::Duration sleep_time(3);
         sleep_time.sleep();
     }
+    std::cout<<"planning completed"<<std::endl;
     return true;
 }
 
