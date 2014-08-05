@@ -154,7 +154,7 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     {
         throw "camera - world transformation was not set";
     }
-    
+
     setCurrentDirection(World_Camera.Inverse()*World_CurrentDirection); //TODO
     
     static tf::TransformBroadcaster br;
@@ -167,21 +167,19 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
         
     
     geometric_filtering(affordances,left); //GEOMETRIC FILTER
-    
+
     std::list<foot_with_joints> steps;
-    
+
     generate_frames_from_normals(affordances,steps); //generating kdl frames to place foot
 
     ROS_INFO("Number of steps after geometric filter: %lu ",steps.size()); 
-    
-        
+
     kinematic_filtering(steps,left); //KINEMATIC FILTER
-    
+
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
-    
-    
+
     dynamic_filtering(steps,left); //DYNAMIC FILTER
-    
+
     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());  
     return steps;
 }

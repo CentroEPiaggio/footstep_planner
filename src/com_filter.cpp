@@ -16,7 +16,6 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         counter++;
-        std::cout<<"percentage: "<<counter<<" / "<<total<<" examined:"<<total_num_examined<<std::endl;
         auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
         auto WaistPositions_StanceFoot=generateWaistPositions_StanceFoot(StanceFoot_MovingFoot);
@@ -36,10 +35,7 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
 		num_inserted++;
 	    }
 	}
-	//if (num_inserted==0)
-	    single_step=data.erase(single_step);
-	//else
-	//    single_step++;	
+	single_step=data.erase(single_step);
     }
     current_chain_names=current_stance_chain_and_solver->joint_names;
     current_chain_names.insert(current_chain_names.end(),current_moving_chain_and_solver->joint_names.begin(),current_moving_chain_and_solver->joint_names.end());
@@ -124,15 +120,17 @@ KDL::Frame com_filter::computeWaistPosition(const KDL::Frame& StanceFoot_MovingF
     StanceFoot_GravityFromIMU.Normalize();
     StanceFoot_WaistPosition.M=KDL::Rotation::Rot2(StanceFoot_GravityFromIMU,rot_angle);
     StanceFoot_WaistPosition.p=KDL::Vector(StanceFoot_GravityFromIMU*(-hip_height));
-//     if (hip_height<=desired_hip_height-0.11)
-//     {
-//     tf::Transform current_robot_transform;
-//     tf::transformKDLToTF(World_StanceFoot*StanceFoot_WaistPosition,current_robot_transform);
-//     static tf::TransformBroadcaster br;
-//     br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(),  "world","NEW_WAIST"));
-//     ros::Duration sleep_time(0.1);
-//     sleep_time.sleep();
-//     }
+/*     if (hip_height<=desired_hip_height-0.11)
+    {
+    tf::Transform current_robot_transform;
+    tf::transformKDLToTF(World_StanceFoot*StanceFoot_WaistPosition,current_robot_transform);
+    static tf::TransformBroadcaster br;
+    br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(),  "world","NEW_WAIST"));
+    ros::Duration sleep_time(0.4);
+    sleep_time.sleep();
+    }
+*/
+//     std::cout<<"desired position"<<StanceFoot_WaistPosition<<std::endl;
     return StanceFoot_WaistPosition;
 }
 

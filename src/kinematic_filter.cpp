@@ -16,14 +16,12 @@ void kinematic_filter::setLeftRightFoot(bool left)
 {
     if (left)
     {
-//         current_joints=left_joints;
         current_ik_solver=kinematics.lwr_legs.iksolver;
         current_chain_names=kinematics.lwr_legs.joint_names;
         current_fk_solver=kinematics.lw_leg.fksolver;
     }
     else
     {
-//         current_joints=right_joints;
         current_ik_solver=kinematics.rwl_legs.iksolver;
         current_chain_names=kinematics.rwl_legs.joint_names;
         current_fk_solver=kinematics.rw_leg.fksolver;

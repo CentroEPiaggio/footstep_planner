@@ -231,8 +231,4 @@ void rosServer::init()
     KDL::Frame World_Camera;
     tf::transformTFToKDL(transform,World_Camera);
     footstep_planner.setWorldTransform(World_Camera);
-//     static tf::TransformBroadcaster br;
-//     static tf::TransformListener lr;
-//     br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
-//     std::cout<<"transform sent"<<std::endl;
 }

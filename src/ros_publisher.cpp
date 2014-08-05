@@ -182,10 +182,10 @@ void ros_publisher::publish_robot_joints(KDL::JntArray const& joints, std::vecto
     int i=0;
     for (auto joint:joint_names)
     {
-        std::cout<<joints_name_to_index[joint]<<joint<<joints(i)<<" ";
+        //std::cout<<joints_name_to_index[joint]<<joint<<joints(i)<<" ";
         last_joint_states.position[joints_name_to_index[joint]]=joints(i);
         i++;
     }
-    std::cout<<std::endl;
+    //std::cout<<std::endl;
     pub_ik_joints.publish(last_joint_states);
 }

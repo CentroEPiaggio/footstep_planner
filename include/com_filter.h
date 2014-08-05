@@ -24,8 +24,6 @@ private:
     KDL::Frame StanceFoot_World;
     chain_and_solvers* current_stance_chain_and_solver;
     chain_and_solvers* current_moving_chain_and_solver;
-//     KDL::JntArray current_joints;
-//     KDL::JntArray left_joints,right_joints,legs_joints;
     kinematics_utilities kinematics;
     KDL::Frame World_StanceFoot;
     double desired_hip_height;
