@@ -19,7 +19,7 @@ public:
 private:
     bool frame_is_stable(const KDL::Frame& StanceFoot_MovingFoot,const KDL::Frame& DesiredWaist_StanceFoot, KDL::JntArray& jnt_pos);
     KDL::Frame computeWaistPosition( const KDL::Frame& StanceFoot_MovingFoot, double rot_angle, double hip_height );
-    std::list<KDL::Frame> generateWaistPositions ( KDL::Frame StanceFoot_MovingFoot );
+    std::list<KDL::Frame> generateWaistPositions_StanceFoot ( KDL::Frame StanceFoot_MovingFoot );
     KDL::JntArray stance_jnts_in;
     KDL::Frame StanceFoot_World;
     chain_and_solvers* current_stance_chain_and_solver;

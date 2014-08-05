@@ -19,20 +19,19 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
         std::cout<<"percentage: "<<counter<<" / "<<total<<" examined:"<<total_num_examined<<std::endl;
         auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
-	auto StanceFoot_WaistPositions=generateWaistPositions(StanceFoot_MovingFoot);
+        auto WaistPositions_StanceFoot=generateWaistPositions_StanceFoot(StanceFoot_MovingFoot);
 	int num_inserted=0;
-	for (auto StanceFoot_WaistPosition:StanceFoot_WaistPositions)
+        for (auto WaistPosition_StanceFoot:WaistPositions_StanceFoot)
 	{
             total_num_examined++;
-	    KDL::JntArray jnt_temp;
-	    jnt_temp.resize(kinematics.num_joints);
-	    if (frame_is_stable(StanceFoot_MovingFoot,StanceFoot_WaistPosition,jnt_temp))
+	    KDL::JntArray jnt_temp(kinematics.num_joints);
+	    if (frame_is_stable(StanceFoot_MovingFoot,WaistPosition_StanceFoot,jnt_temp))
 	    {
 		planner::foot_with_joints temp;
 		temp.joints=jnt_temp;
 		temp.World_MovingFoot=single_step->World_MovingFoot;
 		temp.World_StanceFoot=single_step->World_StanceFoot;
-		temp.World_Waist=single_step->World_StanceFoot*StanceFoot_WaistPosition;
+		temp.World_Waist=single_step->World_StanceFoot*WaistPosition_StanceFoot.Inverse();
 		data.insert(single_step,temp);
 		num_inserted++;
 	    }
@@ -102,18 +101,18 @@ void com_filter::setZeroWaistHeight ( double hip_height )
 }
 
 
-std::list< KDL::Frame > com_filter::generateWaistPositions ( KDL::Frame StanceFoot_MovingFoot )
+std::list< KDL::Frame > com_filter::generateWaistPositions_StanceFoot ( KDL::Frame StanceFoot_MovingFoot )
 {
-    std::list<KDL::Frame> temp;
+    std::list<KDL::Frame> DesiredWaist_StanceFoot_list;
     //double angle_ref=atan2(StanceFoot_MovingFoot.p[0],-StanceFoot_MovingFoot.p[1]);//+M_PI*left;
     double angle_ref=0;
     for (double angle=-M_PI/6.0;angle<M_PI/6.1;angle=angle+M_PI/3.0)
 	for (double height=-0.15;height<-0.049;height=height+0.05)
 	{
 	    KDL::Frame DesiredWaist_StanceFoot=computeWaistPosition(StanceFoot_MovingFoot,angle+angle_ref,desired_hip_height+height).Inverse();
-	    temp.push_back(DesiredWaist_StanceFoot);
+	    DesiredWaist_StanceFoot_list.push_back(DesiredWaist_StanceFoot);
 	}
-    return temp;
+    return DesiredWaist_StanceFoot_list;
 }
 
 
@@ -121,7 +120,7 @@ KDL::Frame com_filter::computeWaistPosition(const KDL::Frame& StanceFoot_MovingF
 {
     KDL::Frame StanceFoot_WaistPosition;
     KDL::Vector World_GravityFromIMU(0,0,-1);
-    KDL::Vector StanceFoot_GravityFromIMU = World_StanceFoot.Inverse().M*World_GravityFromIMU;
+    KDL::Vector StanceFoot_GravityFromIMU = StanceFoot_World.M*World_GravityFromIMU;
     StanceFoot_GravityFromIMU.Normalize();
     StanceFoot_WaistPosition.M=KDL::Rotation::Rot2(StanceFoot_GravityFromIMU,rot_angle);
     StanceFoot_WaistPosition.p=KDL::Vector(StanceFoot_GravityFromIMU*(-hip_height));
