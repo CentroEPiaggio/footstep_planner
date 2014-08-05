@@ -38,7 +38,6 @@ private:
     
     //Camera Link frame
     KDL::Frame createFramesFromNormal(pcl::PointXYZRGBNormal normal);
-    bool prepareForROSVisualization(std::list<foot_with_joints>& steps);
 
     //World frame
     bool centroid_is_reachable(KDL::Frame World_MovingFoot, KDL::JntArray& jnt_pos);
