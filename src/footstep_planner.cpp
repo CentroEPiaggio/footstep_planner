@@ -14,6 +14,7 @@ footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics), World
 {
     KDL::Frame Waist_StanceFoot;
     left_joints.resize(kinematics.wl_leg.chain.getNrOfJoints());
+    SetToZero(left_joints);
     kinematics.wl_leg.fksolver->JntToCart(left_joints,Waist_StanceFoot);
     World_StanceFoot=Waist_StanceFoot;//TODO: get external World_Waist
     comFilter.setZeroWaistHeight(-Waist_StanceFoot.p[2]);
@@ -132,6 +133,8 @@ void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& aff
 
 void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bool left)
 {
+    kinematicFilter.setLeftRightFoot(left);
+    kinematicFilter.setWorld_StanceFoot(World_StanceFoot);
     kinematicFilter.filter(steps);
     last_used_joint_names=kinematicFilter.getJointOrder();
 }
@@ -161,8 +164,6 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
     ros::Duration sleep_time(0.5);
     sleep_time.sleep();
-    kinematicFilter.setLeftRightFoot(left);
-    kinematicFilter.setWorld_StanceFoot(World_StanceFoot);
         
     
     geometric_filtering(affordances,left); //GEOMETRIC FILTER
