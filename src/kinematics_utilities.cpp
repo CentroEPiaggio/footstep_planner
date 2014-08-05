@@ -13,11 +13,15 @@ const std::string coman_model_folder = std::string(getenv("YARP_WORKSPACE")) + "
 //NEVER call this without setting the container chain!!
 void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL::JntArray& joints_value,KDL::JntArray& q_max, KDL::JntArray& q_min)
 {
-    for (auto& segment: container->chain.segments)
+    for (KDL::Segment& segment: container->chain.segments)
     {
-        container->joint_names.push_back(segment.getName());
+        if (segment.getJoint().getType()==KDL::Joint::None) continue;
+        std::cout<<segment.getJoint().getName()<<std::endl;
+        container->joint_names.push_back(segment.getJoint().getName());
     }
+    assert(container->joint_names.size()==container->chain.getNrOfJoints());
     joints_value.resize(container->chain.getNrOfJoints());
+    SetToZero(joints_value);
     q_max.resize(container->chain.getNrOfJoints());
     q_min.resize(container->chain.getNrOfJoints());
     container->fksolver=new KDL::ChainFkSolverPos_recursive(container->chain);
