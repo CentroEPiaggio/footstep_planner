@@ -6,6 +6,7 @@
 com_filter::com_filter()
 {
     stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
+    SetToZero(stance_jnts_in);
 }
 
 bool com_filter::filter(std::list<planner::foot_with_joints> &data)
@@ -13,6 +14,10 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
     int total=data.size();
     int counter=0;
     int total_num_examined=0;
+    int total_num_inserted=0;
+    int total_num_failed=0;
+    //HACK
+    std::list<planner::foot_with_joints> temp_list;
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         counter++;
@@ -32,14 +37,34 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
 		temp.World_StanceFoot=single_step->World_StanceFoot;
 		temp.World_Waist=single_step->World_StanceFoot*WaistPosition_StanceFoot.Inverse();
 		data.insert(single_step,temp);
-		num_inserted++;
+		temp_list.push_back(temp);
+                num_inserted++;
+                total_num_inserted++;
+                {
+                    tf::Transform current_robot_transform;
+                    tf::transformKDLToTF(World_StanceFoot*WaistPosition_StanceFoot.Inverse(),current_robot_transform);
+                    static tf::TransformBroadcaster br;
+                    br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(),  "world","C_Waist"));
+                    tf::Transform current_moving_foot_transform;
+                    tf::transformKDLToTF(World_StanceFoot*StanceFoot_MovingFoot,current_moving_foot_transform);
+                    br.sendTransform(tf::StampedTransform(current_moving_foot_transform, ros::Time::now(),  "world","C_moving_foot"));
+                    tf::Transform fucking_transform;
+                    tf::transformKDLToTF(World_StanceFoot,fucking_transform);
+                    br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "C_stance_foot"));
+                    //ros::Duration sleep_time(0.02);
+                    //sleep_time.sleep();
+                }
 	    }
+	    else
+                total_num_failed++;
 	}
 	single_step=data.erase(single_step);
+        std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<std::endl;
     }
     current_chain_names=current_stance_chain_and_solver->joint_names;
     current_chain_names.insert(current_chain_names.end(),current_moving_chain_and_solver->joint_names.begin(),current_moving_chain_and_solver->joint_names.end());
-    
+    //HACK:
+    data.swap(temp_list);
     return true;
 }
 
@@ -47,6 +72,7 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
 void com_filter::setWorld_StanceFoot(const KDL::Frame& World_StanceFoot)
 {
     this->World_StanceFoot=World_StanceFoot;
+    this->StanceFoot_World=World_StanceFoot.Inverse();
 }
 
 void com_filter::setLeftRightFoot(bool left)
@@ -100,14 +126,17 @@ void com_filter::setZeroWaistHeight ( double hip_height )
 std::list< KDL::Frame > com_filter::generateWaistPositions_StanceFoot ( KDL::Frame StanceFoot_MovingFoot )
 {
     std::list<KDL::Frame> DesiredWaist_StanceFoot_list;
-    //double angle_ref=atan2(StanceFoot_MovingFoot.p[0],-StanceFoot_MovingFoot.p[1]);//+M_PI*left;
+    //double angle_ref=atan2(StanceFoot_MovingFoot.p[0],-StanceFoot_MovingFoot.p[1])+M_PI*left;
     double angle_ref=0;
-    for (double angle=-M_PI/6.0;angle<M_PI/6.1;angle=angle+M_PI/3.0)
-	for (double height=-0.15;height<-0.049;height=height+0.05)
+    //double angle=0;
+    for (double angle=-M_PI/6.0;angle<M_PI/6.1;angle=angle+M_PI/30.0)
+    {//double height=-0.01;
+        for (double height=-0.05;height<-0.0;height=height+0.02)
 	{
 	    KDL::Frame DesiredWaist_StanceFoot=computeWaistPosition(StanceFoot_MovingFoot,angle+angle_ref,desired_hip_height+height).Inverse();
 	    DesiredWaist_StanceFoot_list.push_back(DesiredWaist_StanceFoot);
-	}
+        }
+    }
     return DesiredWaist_StanceFoot_list;
 }
 
@@ -120,17 +149,6 @@ KDL::Frame com_filter::computeWaistPosition(const KDL::Frame& StanceFoot_MovingF
     StanceFoot_GravityFromIMU.Normalize();
     StanceFoot_WaistPosition.M=KDL::Rotation::Rot2(StanceFoot_GravityFromIMU,rot_angle);
     StanceFoot_WaistPosition.p=KDL::Vector(StanceFoot_GravityFromIMU*(-hip_height));
-/*     if (hip_height<=desired_hip_height-0.11)
-    {
-    tf::Transform current_robot_transform;
-    tf::transformKDLToTF(World_StanceFoot*StanceFoot_WaistPosition,current_robot_transform);
-    static tf::TransformBroadcaster br;
-    br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(),  "world","NEW_WAIST"));
-    ros::Duration sleep_time(0.4);
-    sleep_time.sleep();
-    }
-*/
-//     std::cout<<"desired position"<<StanceFoot_WaistPosition<<std::endl;
     return StanceFoot_WaistPosition;
 }
 
