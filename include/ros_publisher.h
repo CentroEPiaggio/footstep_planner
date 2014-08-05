@@ -23,6 +23,7 @@ public:
     void publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal >::Ptr normals,int i);
     void publish_last_joints_position();
     void setRobotJoints(std::map< std::string, boost::shared_ptr< urdf::Joint > > joints_);
+    void publish_starting_position();
     
 private:
     ros::NodeHandle node;

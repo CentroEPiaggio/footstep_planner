@@ -86,6 +86,7 @@ public:
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    bool sendPathToRviz();
     void init();
     
     virtual bool threadInit();

@@ -126,6 +126,7 @@ void com_filter::setZeroWaistHeight ( double hip_height )
 std::list< KDL::Frame > com_filter::generateWaistPositions_StanceFoot ( KDL::Frame StanceFoot_MovingFoot )
 {
     std::list<KDL::Frame> DesiredWaist_StanceFoot_list;
+    //TODO this is still a problem
     //double angle_ref=atan2(StanceFoot_MovingFoot.p[0],-StanceFoot_MovingFoot.p[1])+M_PI*left;
     double angle_ref=0;
     //double angle=0;

@@ -87,9 +87,20 @@ void rosServer::run()
 	}
 	if(command=="load_plan")
 	{
-	        status_interface.setStatus("planning");
+	        status_interface.setStatus("planning one step");
 		planFootsteps(req,res);
 	}
+	if (command=="plan_all")
+        {
+            status_interface.setStatus("planning until possible");
+            bool ok=true;
+            while (ok)
+                ok=planFootsteps(req,res);
+        }
+	if (command=="draw_path")
+        {
+            sendPathToRviz();
+        }
 	if(command=="direction")
 	{
             footstep_planner.setDirectionVector(msg.x,msg.y,msg.z);
@@ -161,6 +172,36 @@ bool rosServer::singleFoot(bool left)
     return true;
 }
 
+bool rosServer::sendPathToRviz()
+{
+    ros::Duration sleep_time(2);
+    static tf::TransformBroadcaster br;
+    publisher.publish_starting_position();
+    tf::transformKDLToTF(KDL::Frame::Identity(),current_robot_transform);
+    br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
+    sleep_time.sleep();
+    for (auto centroid:path)
+    {
+        /*
+         *        tf::Transform current_robot_transform;
+         *        tf::transformKDLToTF(centroid.first.World_Waist,current_robot_transform);
+         *        br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(),  "world","FNEW_WAIST"));
+         *        tf::Transform current_moving_foot_transform;
+         *        tf::transformKDLToTF(centroid.first.World_MovingFoot,current_moving_foot_transform);
+         *        br.sendTransform(tf::StampedTransform(current_moving_foot_transform, ros::Time::now(),  "world","Fmoving_foot"));
+         *        tf::Transform fucking_transform;
+         *        tf::transformKDLToTF(centroid.first.World_StanceFoot,fucking_transform);
+         *        br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "Fstance_foot"));
+         *        sleep_time.sleep();
+         */
+        
+        publisher.publish_robot_joints(centroid.first.joints,centroid.second);
+        tf::transformKDLToTF(centroid.first.World_Waist,current_robot_transform);
+        br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
+        sleep_time.sleep();
+    }
+}
+
 
 bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
@@ -185,28 +226,7 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
 //     singleFoot(left);
 
     left=!left;
-    ros::Duration sleep_time(2);
-    static tf::TransformBroadcaster br;
-    for (auto centroid:path)
-    {
-        /*
-        tf::Transform current_robot_transform;
-        tf::transformKDLToTF(centroid.first.World_Waist,current_robot_transform);
-        br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(),  "world","FNEW_WAIST"));
-        tf::Transform current_moving_foot_transform;
-        tf::transformKDLToTF(centroid.first.World_MovingFoot,current_moving_foot_transform);
-        br.sendTransform(tf::StampedTransform(current_moving_foot_transform, ros::Time::now(),  "world","Fmoving_foot"));
-        tf::Transform fucking_transform;
-        tf::transformKDLToTF(centroid.first.World_StanceFoot,fucking_transform);
-        br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "Fstance_foot"));
-        sleep_time.sleep();
-        */
-
-        publisher.publish_robot_joints(centroid.first.joints,centroid.second);
-        tf::transformKDLToTF(centroid.first.World_Waist,current_robot_transform);
-        br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
-        sleep_time.sleep();
-    }
+    sendPathToRviz();
     std::cout<<"planning completed"<<std::endl;
     return true;
 }

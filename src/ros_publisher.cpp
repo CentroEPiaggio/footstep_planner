@@ -176,6 +176,16 @@ void ros_publisher::setRobotJoints(std::map< std::string, boost::shared_ptr< urd
     }
 }
 
+void ros_publisher::publish_starting_position()
+{
+    last_joint_states.header.stamp=ros::Time::now();
+    for (int i=0;i<last_joint_states.name.size();i++)
+    {
+        last_joint_states.position[i]=0;
+    }
+    pub_ik_joints.publish(last_joint_states);
+}
+
 void ros_publisher::publish_robot_joints(KDL::JntArray const& joints, std::vector<std::string> joint_names)
 {
     last_joint_states.header.stamp=ros::Time::now();
