@@ -17,10 +17,11 @@ footstepPlanner::footstepPlanner():kinematics(kinematicFilter.kinematics), World
     SetToZero(left_joints);
     kinematics.wl_leg.fksolver->JntToCart(left_joints,Waist_StanceFoot);
     World_StanceFoot=Waist_StanceFoot;//TODO: get external World_Waist
+    std::cout<<"starting World_StanceFoot"<<World_StanceFoot<<std::endl;
     comFilter.setZeroWaistHeight(-Waist_StanceFoot.p[2]);
-    coordinate_filter* temp_filter = new coordinate_filter(0,-0.5,1);
+    coordinate_filter* temp_filter = new coordinate_filter(0,0.0,0.6);
     filter_by_coordinates.push_back(temp_filter);
-    temp_filter = new coordinate_filter(1,-0.5,0.8);
+    temp_filter = new coordinate_filter(1,-0.6,0.1);
     filter_by_coordinates.push_back(temp_filter);
     temp_filter = new coordinate_filter(2,-0.5,0.5);
     filter_by_coordinates.push_back(temp_filter);
@@ -156,16 +157,15 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     }
 
     setCurrentDirection(World_Camera.Inverse()*World_CurrentDirection); //TODO
-    
-    static tf::TransformBroadcaster br;
-    tf::Transform fucking_transform;
-    tf::transformKDLToTF(World_StanceFoot,fucking_transform);
-    br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
-    br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
-    ros::Duration sleep_time(0.5);
-    sleep_time.sleep();
-        
-    
+
+//     static tf::TransformBroadcaster br;
+//     tf::Transform fucking_transform;
+//     tf::transformKDLToTF(World_StanceFoot,fucking_transform);
+//     br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
+//     br.sendTransform(tf::StampedTransform(fucking_transform, ros::Time::now(), "world", "stance_foot"));
+//     ros::Duration sleep_time(0.5);
+//     sleep_time.sleep();
+
     geometric_filtering(affordances,left); //GEOMETRIC FILTER
 
     std::list<foot_with_joints> steps;
