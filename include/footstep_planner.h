@@ -43,7 +43,7 @@ private:
     //World frame
     bool centroid_is_reachable(KDL::Frame World_MovingFoot, KDL::JntArray& jnt_pos);
             
-    void generate_frames_from_normals(std::list< polygon_with_normals >& affordances, std::list< foot_with_joints >& steps);
+    void generate_frames_from_normals(std::list< polygon_with_normals >const& affordances, std::list< foot_with_joints >& steps);
     
     void geometric_filtering(std::list< polygon_with_normals >& affordances, bool left);
     
@@ -63,7 +63,7 @@ public:
     kinematics_utilities kinematics; //TODO: remove!!
 
     //Camera link frame
-    std::list<foot_with_joints> getFeasibleCentroids(std::list<polygon_with_normals> &polygons, bool left);
+    std::list<foot_with_joints> getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left);
     void setParams(double feasible_area_);
     
     //World frame
@@ -71,7 +71,7 @@ public:
     
     
     void setWorldTransform(KDL::Frame transform);
-    foot_with_joints selectBestCentroid(std::list<foot_with_joints> centroids, bool left);
+    foot_with_joints selectBestCentroid(std::list<foot_with_joints>const& centroids, bool left);
     inline KDL::Frame getWorldTransform(){return World_Camera;}
     
     //Camera Link Frame

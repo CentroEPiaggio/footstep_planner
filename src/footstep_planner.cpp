@@ -70,11 +70,11 @@ void footstepPlanner::setCurrentDirection(KDL::Vector direction)
     gs_utils.setCurrentDirection(direction);
 }
 
-void footstepPlanner::generate_frames_from_normals(std::list< polygon_with_normals >& affordances, std::list< foot_with_joints >& steps)
+void footstepPlanner::generate_frames_from_normals(const std::list< polygon_with_normals >& affordances, std::list< foot_with_joints >& steps)
 {
     int j=-1;
 
-    for(auto item:affordances)
+    for(auto const& item:affordances)
     {
         j++;
         ROS_INFO("Polygon %d number of normals : %lu ",j,item.normals->size());
@@ -145,7 +145,7 @@ void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool
 }
 
 
-std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals >&    affordances, bool left)
+std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left)
 {
     if (!world_camera_set)
     {
@@ -219,12 +219,12 @@ bool footstepPlanner::prepareForROSVisualization(std::list<foot_with_joints>& st
     return true;
 }
 
-foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints > centroids, bool left)
+foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints >const& centroids, bool left)
 {
-    std::vector<foot_with_joints*> minimum_steps;
+    std::vector<foot_with_joints const*> minimum_steps;
     double min=100000000000000;
-    foot_with_joints* result=&(*centroids.begin());
-    for (auto& centroid:centroids)
+    foot_with_joints const* result=&(*centroids.begin());
+    for (auto const& centroid:centroids)
     {
         KDL::Frame StanceFoot_MovingFoot;
         auto distance=stepQualityEvaluator.distance_from_reference_step(centroid,left,StanceFoot_MovingFoot);
