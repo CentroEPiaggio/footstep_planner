@@ -8,7 +8,7 @@
 
 const std::string coman_model_folder = std::string(getenv("YARP_WORKSPACE")) + "/coman_yarp_apps/coman_urdf/coman.urdf";
 
-#define IGNORE_JOINT_LIMITS 1
+#define IGNORE_JOINT_LIMITS 0
 
 //NEVER call this without setting the container chain!!
 void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL::JntArray& joints_value,KDL::JntArray& q_max, KDL::JntArray& q_min)
