@@ -16,14 +16,14 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
     int total_num_examined=0;
     int total_num_inserted=0;
     int total_num_failed=0;
-    //HACK
+    //HACK temp_list
     std::list<planner::foot_with_joints> temp_list;
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         counter++;
         auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
-        auto WaistPositions_StanceFoot=generateWaistPositions_StanceFoot(StanceFoot_MovingFoot);
+        auto WaistPositions_StanceFoot=generateWaistPositions_StanceFoot(StanceFoot_MovingFoot,StanceFoot_World);
 	int num_inserted=0;
         for (auto WaistPosition_StanceFoot:WaistPositions_StanceFoot)
 	{
@@ -37,6 +37,7 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
 		temp.World_StanceFoot=single_step->World_StanceFoot;
 		temp.World_Waist=single_step->World_StanceFoot*WaistPosition_StanceFoot.Inverse();
 		data.insert(single_step,temp);
+                //HACK temp_list
 		temp_list.push_back(temp);
                 num_inserted++;
                 total_num_inserted++;
@@ -61,9 +62,54 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
 	single_step=data.erase(single_step);
         std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<std::endl;
     }
+    //HACK temp_list
+    temp_list.clear();
+    std::cout<<"Checking for the second foot configurations: "<<data.size()<<std::endl;
+    //TODO:check for the second foot, i.e. moving foot becomes stable and stance becomes moving
+    this->setLeftRightFoot(!left);
+    total=total_num_inserted;
+    counter=0;
+    total_num_examined=0;
+    total_num_inserted=0;
+    total_num_failed=0;
+    for (auto single_step=data.begin();single_step!=data.end();)
+    {
+        counter++;
+        auto MovingFoot_StanceFoot=(StanceFoot_World*single_step->World_MovingFoot).Inverse();
+        single_step->World_StanceFoot=World_StanceFoot;
+        auto WaistPositions_MovingFoot=generateWaistPositions_StanceFoot(MovingFoot_StanceFoot,single_step->World_MovingFoot.Inverse(),2);
+        int num_inserted=0;
+        for (auto WaistPosition_MovingFoot:WaistPositions_MovingFoot)
+        {
+            total_num_examined++;
+            KDL::JntArray jnt_temp(kinematics.num_joints);
+            if (frame_is_stable(MovingFoot_StanceFoot,WaistPosition_MovingFoot,jnt_temp))
+            {
+                planner::foot_with_joints temp;
+                temp.start_joints=single_step->start_joints;
+                temp.end_joints=jnt_temp;
+                temp.joints=jnt_temp;
+                temp.World_Waist=single_step->World_MovingFoot*WaistPosition_MovingFoot.Inverse();
+                temp.World_MovingFoot=single_step->World_MovingFoot;
+                temp.World_StanceFoot=single_step->World_StanceFoot;
+                temp.World_StartWaist=single_step->World_StartWaist;
+                temp.World_EndWaist=single_step->World_MovingFoot*WaistPosition_MovingFoot.Inverse();
+                data.insert(single_step,temp);
+                //HACK temp_list
+                temp_list.push_back(temp);
+                num_inserted++;
+                total_num_inserted++;
+            }
+            else
+                total_num_failed++;
+        }
+        single_step=data.erase(single_step);
+        std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<std::endl;
+    }
     current_chain_names=current_stance_chain_and_solver->joint_names;
     current_chain_names.insert(current_chain_names.end(),current_moving_chain_and_solver->joint_names.begin(),current_moving_chain_and_solver->joint_names.end());
-    //HACK:
+    this->setLeftRightFoot(!left);
+    //HACK: temp_list
     data.swap(temp_list);
     return true;
 }
@@ -123,7 +169,7 @@ void com_filter::setZeroWaistHeight ( double hip_height )
 }
 
 
-std::list< KDL::Frame > com_filter::generateWaistPositions_StanceFoot ( KDL::Frame StanceFoot_MovingFoot )
+std::list< KDL::Frame > com_filter::generateWaistPositions_StanceFoot ( const KDL::Frame& StanceFoot_MovingFoot, const KDL::Frame& StanceFoot_World, int level_of_details)
 {
     std::list<KDL::Frame> DesiredWaist_StanceFoot_list;
     //TODO this is still a problem
@@ -132,9 +178,9 @@ std::list< KDL::Frame > com_filter::generateWaistPositions_StanceFoot ( KDL::Fra
     //double angle=0;
     for (double angle=-M_PI/6.0;angle<M_PI/6.1;angle=angle+M_PI/30.0)
     {//double height=-0.01;
-        for (double height=-0.05;height<-0.0;height=height+0.02)
+        for (double height=-0.05-0.01*level_of_details;height<-0.0;height=height+0.02/(1+level_of_details/2.0))
 	{
-	    KDL::Frame DesiredWaist_StanceFoot=computeWaistPosition(StanceFoot_MovingFoot,angle+angle_ref,desired_hip_height+height).Inverse();
+	    KDL::Frame DesiredWaist_StanceFoot=computeStanceFoot_WaistPosition(StanceFoot_World,angle+angle_ref,desired_hip_height+height).Inverse();
 	    DesiredWaist_StanceFoot_list.push_back(DesiredWaist_StanceFoot);
         }
     }
@@ -142,7 +188,7 @@ std::list< KDL::Frame > com_filter::generateWaistPositions_StanceFoot ( KDL::Fra
 }
 
 
-KDL::Frame com_filter::computeWaistPosition(const KDL::Frame& StanceFoot_MovingFoot,double rot_angle,double hip_height)
+KDL::Frame com_filter::computeStanceFoot_WaistPosition(const KDL::Frame& StanceFoot_World,double rot_angle,double hip_height)
 {
     KDL::Frame StanceFoot_WaistPosition;
     KDL::Vector World_GravityFromIMU(0,0,-1);
