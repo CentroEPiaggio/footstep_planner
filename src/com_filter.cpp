@@ -86,10 +86,18 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
             if (frame_is_stable(MovingFoot_StanceFoot,WaistPosition_MovingFoot,jnt_temp))
             {
                 planner::foot_with_joints temp;
-                temp.start_joints=single_step->start_joints;
+                temp.start_joints=single_step->joints;
+                //We are going to swap stance and moving foot joints in order to give back to the planner the same order for start and end joints
+                KDL::JntArray swap_jnt=jnt_temp;
+                auto leg_size=swap_jnt.rows()/2;
+                for (int i=0;i<leg_size;i++)
+                {
+                    jnt_temp(i)=swap_jnt(i+leg_size);
+                    jnt_temp(i+leg_size)=swap_jnt(i);
+                }
                 temp.end_joints=jnt_temp;
-                temp.joints=jnt_temp;
-                temp.World_Waist=single_step->World_MovingFoot*WaistPosition_MovingFoot.Inverse();
+                temp.joints=single_step->joints;
+                temp.World_Waist=single_step->World_Waist;
                 temp.World_MovingFoot=single_step->World_MovingFoot;
                 temp.World_StanceFoot=single_step->World_StanceFoot;
                 temp.World_StartWaist=single_step->World_StartWaist;
@@ -106,9 +114,9 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
         single_step=data.erase(single_step);
         std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<std::endl;
     }
+    this->setLeftRightFoot(!left);
     current_chain_names=current_stance_chain_and_solver->joint_names;
     current_chain_names.insert(current_chain_names.end(),current_moving_chain_and_solver->joint_names.begin(),current_moving_chain_and_solver->joint_names.end());
-    this->setLeftRightFoot(!left);
     //HACK: temp_list
     data.swap(temp_list);
     return true;

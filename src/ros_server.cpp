@@ -199,6 +199,13 @@ bool rosServer::sendPathToRviz()
         tf::transformKDLToTF(centroid.first.World_Waist,current_robot_transform);
         br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
         sleep_time.sleep();
+        if (centroid.first.end_joints.rows()==centroid.first.joints.rows()) //both initial and final configuration are set
+        {
+            publisher.publish_robot_joints(centroid.first.end_joints,centroid.second);
+            tf::transformKDLToTF(centroid.first.World_EndWaist,current_robot_transform);
+            br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
+            sleep_time.sleep();
+        }
     }
 }
 
