@@ -6,7 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /PointCloud21
         - /TF1
+        - /MarkerArray1
+        - /MarkerArray1/Status1
       Splitter Ratio: 0.648294
     Tree Height: 663
   - Class: rviz/Selection
@@ -58,8 +61,8 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color: 0; 0; 0
+      Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -156,7 +159,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 100
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -172,7 +175,7 @@ Visualization Manager:
       Topic: /cluster_cloud
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /border_marker
@@ -186,7 +189,7 @@ Visualization Manager:
       Marker Topic: /border_poly_marker
       Name: Marker
       Namespaces:
-        {}
+        border_poly: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -194,7 +197,7 @@ Visualization Manager:
       Marker Topic: /footstep_marker
       Name: Marker
       Namespaces:
-        {}
+        feet: true
       Queue Size: 100
       Value: true
     - Class: rviz/TF
@@ -202,6 +205,12 @@ Visualization Manager:
       Frame Timeout: 150
       Frames:
         All Enabled: true
+        C_Waist:
+          Value: true
+        C_moving_foot:
+          Value: true
+        C_stance_foot:
+          Value: true
         DWL:
           Value: true
         DWS:
@@ -322,7 +331,85 @@ Visualization Manager:
       Tree:
         camera_link:
           world:
-            {}
+            C_Waist:
+              {}
+            C_moving_foot:
+              {}
+            C_stance_foot:
+              {}
+            base_link:
+              Waist:
+                DWL:
+                  DWS:
+                    DWYTorso:
+                      LShp:
+                        LShr:
+                          LShy:
+                            LElb:
+                              LForearm:
+                                LWrMot2:
+                                  LWrMot3:
+                                    LSoftHand:
+                                      {}
+                                    l_wrist:
+                                      {}
+                      RShp:
+                        RShr:
+                          RShy:
+                            RElb:
+                              RForearm:
+                                RWrMot2:
+                                  RWrMot3:
+                                    RSoftHand:
+                                      {}
+                                    r_wrist:
+                                      {}
+                      Xtion_body:
+                        Xtion_cam_body:
+                          gaze:
+                            {}
+                      torso:
+                        {}
+                LHipMot:
+                  LThighUpLeg:
+                    LThighLowLeg:
+                      LLowLeg:
+                        LFootmot:
+                          LFoot:
+                            l_ankle:
+                              {}
+                            l_sole:
+                              l_foot_lower_left_link:
+                                {}
+                              l_foot_lower_right_link:
+                                {}
+                              l_foot_upper_left_link:
+                                {}
+                              l_foot_upper_right_link:
+                                {}
+                              l_toe:
+                                {}
+                RHipMot:
+                  RThighUpLeg:
+                    RThighLowLeg:
+                      RLowLeg:
+                        RFootmot:
+                          RFoot:
+                            r_ankle:
+                              {}
+                            r_sole:
+                              r_foot_lower_left_link:
+                                {}
+                              r_foot_lower_right_link:
+                                {}
+                              r_foot_upper_left_link:
+                                {}
+                              r_foot_upper_right_link:
+                                {}
+                              r_toe:
+                                {}
+                imu_link:
+                  {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -592,9 +679,17 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /normal_cloud
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 255; 255; 255
     Fixed Frame: world
     Frame Rate: 30
   Name: root
@@ -616,22 +711,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.89652
+      Distance: 2.31138
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.388616
-        Y: -0.83076
-        Z: 0.620806
+        X: 0.974324
+        Y: -0.202541
+        Z: 0.0266423
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: -0.284798
+      Pitch: 0.00979675
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.13856
+      Yaw: 2.78831
     Saved: ~
 Window Geometry:
   Displays:
