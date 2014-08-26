@@ -60,8 +60,9 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
                 total_num_failed++;
 	}
 	single_step=data.erase(single_step);
-        std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<std::endl;
+        std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<"\r";std::cout.flush();//std::endl;
     }
+    std::cout<<std::endl;
     //HACK temp_list
     temp_list.clear();
     std::cout<<"Checking for the second foot configurations: "<<data.size()<<std::endl;
@@ -112,8 +113,9 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
                 total_num_failed++;
         }
         single_step=data.erase(single_step);
-        std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<std::endl;
+        std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<"\r";std::cout.flush();//std::endl;
     }
+    std::cout<<std::endl;
     this->setLeftRightFoot(!left);
     current_chain_names=current_stance_chain_and_solver->joint_names;
     current_chain_names.insert(current_chain_names.end(),current_moving_chain_and_solver->joint_names.begin(),current_moving_chain_and_solver->joint_names.end());
