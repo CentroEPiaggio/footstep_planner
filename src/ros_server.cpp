@@ -97,6 +97,19 @@ void rosServer::run()
             while (ok)
                 ok=planFootsteps(req,res);
         }
+        if (command=="plan_num")
+        {
+            std::string temp;
+            temp="planning for "+std::to_string(msg.num_steps)+" steps";
+            status_interface.setStatus(temp);
+            int i=0;
+            bool ok=true;
+            while (i<msg.num_steps && ok)
+            {
+                ok=planFootsteps(req,res);
+                i++;
+            }
+        }
 	if (command=="draw_path")
         {
             sendPathToRviz();
