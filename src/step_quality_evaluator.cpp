@@ -5,6 +5,13 @@ step_quality_evaluator::step_quality_evaluator()
 {
     left_refy=-0.15;
     refx=0.15;
+    
+    joint_costs.push_back(0.1);
+    joint_costs.push_back(0.1);
+    joint_costs.push_back(0.1);
+    joint_costs.push_back(0.3);
+    joint_costs.push_back(0.2);
+    joint_costs.push_back(0.2);
 }
 
 
@@ -24,4 +31,17 @@ double step_quality_evaluator::angle_from_reference_direction(planner::foot_with
         auto moving_foot=centroid.World_MovingFoot*KDL::Vector(1,0,0);
         double scalar=dot(filter,moving_foot);
         return scalar;
+}
+
+double step_quality_evaluator::energy_consumption(planner::foot_with_joints const& state)
+{
+	auto left_joints = state.start_joints;
+	auto right_joints = state.end_joints;
+
+	double cost=0;
+	
+	if ( joint_costs.size() != left_joints.rows() ) return 0;
+	
+	for(int i=0; i<joint_costs.size(); i++)
+		cost += joint_costs.at(i)*(fabs(left_joints(i))+fabs(right_joints(i)));
 }

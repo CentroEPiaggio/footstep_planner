@@ -185,44 +185,64 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
 }
 
 
-foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints >const& centroids, bool left)
+foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints >const& centroids, bool left, int loss_function_type=0)
 {
-    std::vector<foot_with_joints const*> minimum_steps;
-    double min=100000000000000;
-    foot_with_joints const* result=&(*centroids.begin());
-    for (auto const& centroid:centroids)
+    if(loss_function_type==1)
     {
-        KDL::Frame StanceFoot_MovingFoot;
-        auto distance=stepQualityEvaluator.distance_from_reference_step(centroid,left,StanceFoot_MovingFoot);
-        if (distance-min>DISTANCE_THRESHOLD) //If it is too big, keep the old min
-            continue;
-        if (min-distance>DISTANCE_THRESHOLD) //New minimum
-        {
-            min=distance;
-            //std::cout<<"new min: "<<min<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
-            minimum_steps.clear();
-            minimum_steps.push_back(&(centroid)); //TODO: any better idea?
-            continue;
-        }
-        if (distance-min<DISTANCE_THRESHOLD && min-distance>-DISTANCE_THRESHOLD) //If near, keep them both
-        {
-            minimum_steps.push_back(&(centroid));
-            //std::cout<<"another min: "<<distance<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
-        }
+	double min=100000000000000;
+	foot_with_joints result;
+	for (auto centroid:centroids)
+	{
+	    auto scalar=stepQualityEvaluator.energy_consumption(centroid);
+	    if (scalar<min)
+	    {
+		min=scalar;
+		result=centroid;
+		
+		std::cout<<"||New Best Step for energy consumption: "<<min<<std::endl;
+	    }
+	}
+        return result;
     }
-    
-    double maximum=0;
-    int maximum_index=(*minimum_steps.begin())->index;
-    KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
+    else
+    {
+	std::vector<foot_with_joints const*> minimum_steps;
+	double min=100000000000000;
+	foot_with_joints const* result=&(*centroids.begin());
+	for (auto const& centroid:centroids)
+	{
+	    KDL::Frame StanceFoot_MovingFoot;
+	    auto distance=stepQualityEvaluator.distance_from_reference_step(centroid,left,StanceFoot_MovingFoot);
+	    if (distance-min>DISTANCE_THRESHOLD) //If it is too big, keep the old min
+		continue;
+	    if (min-distance>DISTANCE_THRESHOLD) //New minimum
+	    {
+		min=distance;
+		//std::cout<<"new min: "<<min<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
+		minimum_steps.clear();
+		minimum_steps.push_back(&(centroid)); //TODO: any better idea?
+		continue;
+	    }
+	    if (distance-min<DISTANCE_THRESHOLD && min-distance>-DISTANCE_THRESHOLD) //If near, keep them both
+	    {
+		minimum_steps.push_back(&(centroid));
+		//std::cout<<"another min: "<<distance<<" "<<StanceFoot_MovingFoot.p.x()<<" "<<StanceFoot_MovingFoot.p.y()<<" "<<std::endl;
+	    }
+	}
+	
+	double maximum=0;
+	int maximum_index=(*minimum_steps.begin())->index;
+	KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
 
-    for (auto centroid:minimum_steps)
-    {
-        auto scalar=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);
-        if (scalar>maximum)
-        {
-            maximum=scalar;
-            result=centroid;
-        }
+	for (auto centroid:minimum_steps)
+	{
+	    auto scalar=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);
+	    if (scalar>maximum)
+	    {
+		maximum=scalar;
+		result=centroid;
+	    }
+	}
+        return *result;
     }
-    return *result;
 }
