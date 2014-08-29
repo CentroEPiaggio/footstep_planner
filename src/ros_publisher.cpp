@@ -174,6 +174,16 @@ void ros_publisher::setRobotJoints(std::map< std::string, boost::shared_ptr< urd
         std::cout<<joint.first<<joints_name_to_index[joint.first]<<"=="<<j<<std::endl;
         j++;
     }
+    
+    //HACK for visualization_msgs
+    
+    last_joint_states.position[22]=0.7;
+    last_joint_states.position[21]=-0.25;
+    last_joint_states.position[15]=-1.8;
+    last_joint_states.position[9]=0.7;
+    last_joint_states.position[8]=0.25;
+    last_joint_states.position[2]=-1.8;
+    
 }
 
 void ros_publisher::publish_starting_position()

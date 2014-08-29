@@ -39,9 +39,9 @@ double step_quality_evaluator::energy_consumption(planner::foot_with_joints cons
 	auto right_joints = state.end_joints;
 
 	double cost=0;
-	
-	if ( joint_costs.size() != left_joints.rows() ) return 0;
-	
+		
 	for(int i=0; i<joint_costs.size(); i++)
 		cost += joint_costs.at(i)*(fabs(left_joints(i))+fabs(right_joints(i)));
+	
+	return cost;
 }

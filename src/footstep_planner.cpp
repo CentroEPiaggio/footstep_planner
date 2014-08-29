@@ -185,7 +185,7 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
 }
 
 
-foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints >const& centroids, bool left, int loss_function_type=0)
+foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints >const& centroids, bool left, int loss_function_type)
 {
     if(loss_function_type==1)
     {
