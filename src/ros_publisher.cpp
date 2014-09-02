@@ -5,6 +5,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <sensor_msgs/JointState.h>
 #include <urdf_model/joint.h>
+#include <Eigen/src/Eigenvalues/RealQZ.h>
 using namespace planner;
 
 ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name)
@@ -16,6 +17,7 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     pub_footstep = node.advertise<visualization_msgs::Marker>("/footstep_marker",1,true);
     pub_ik_joints = node.advertise<sensor_msgs::JointState>("/joint_states",1,true);
     pub_normal_cloud_ = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("normal_cloud"), 1);
+    pub_filtered_frames = node.advertise<visualization_msgs::Marker>(node.resolveName("filtered_frames"), 1);
     
     borders_marker.header.frame_id=camera_link_name;
     borders_marker.ns="border_poly";
@@ -209,3 +211,37 @@ void ros_publisher::publish_robot_joints(KDL::JntArray const& joints, std::vecto
     //std::cout<<std::endl;
     pub_ik_joints.publish(last_joint_states);
 }
+
+void ros_publisher::publish_filtered_frames(std::list< foot_with_joints > steps, KDL::Frame World_Camera, int color)
+{
+//     visualization_msgs::MarkerArray msg;
+    
+    visualization_msgs::Marker marker;
+    marker.header.stamp=ros::Time::now();
+    marker.header.frame_id=camera_link_name;
+    marker.scale.x=0.05;
+    marker.scale.y=0.05;
+    marker.scale.z=0.05;
+    marker.ns="samples";
+    marker.lifetime=ros::Duration(600);
+    marker.color.a=1;
+    marker.type=visualization_msgs::Marker::SPHERE_LIST;
+    if (color==1) marker.color.r=1;
+    if (color==2) { marker.color.r=1; marker.color.g=1; }
+    if (color==3) marker.color.g=1;
+    
+    for (auto step:steps)
+    {	
+	KDL::Frame temp = World_Camera.Inverse()*step.World_MovingFoot;
+	geometry_msgs::Point point;
+	point.x=temp.p.x();
+	point.y=temp.p.y();
+	point.z=temp.p.z();
+	marker.points.push_back(point);
+        marker.id=(long long unsigned int)&step;
+	
+//         msg.markers.push_back(marker);
+    }
+    pub_filtered_frames.publish(marker);
+}
+

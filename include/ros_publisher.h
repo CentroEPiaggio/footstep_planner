@@ -8,6 +8,7 @@
 #include <pcl/point_types.h>
 #include <urdf_model/joint.h>
 #include "borderextraction.h"
+#include "data_types.h"
 
 namespace planner
 {
@@ -24,6 +25,7 @@ public:
     void publish_last_joints_position();
     void setRobotJoints(std::map< std::string, boost::shared_ptr< urdf::Joint > > joints_);
     void publish_starting_position();
+    void publish_filtered_frames(std::list<foot_with_joints> steps, KDL::Frame World_Camera, int color);
     
 private:
     ros::NodeHandle node;
@@ -32,6 +34,7 @@ private:
     ros::Publisher pub_ik_joints;
     ros::Publisher pub_footstep;
     ros::Publisher pub_normal_cloud_;
+    ros::Publisher pub_filtered_frames;
 
     std::string camera_link_name;
     visualization_msgs::Marker borders_marker;

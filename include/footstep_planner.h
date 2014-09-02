@@ -14,6 +14,7 @@
 #include <data_types.h>
 #include "coordinate_filter.h"
 #include "tilt_filter.h"
+#include "ros_publisher.h"
 
 namespace planner
 {
@@ -56,11 +57,14 @@ private:
     KDL::Vector World_CurrentDirection;
     std::vector< std::string > last_used_joint_names;
     
+    ros_publisher* ros_pub;
+    int color_filtered;
+    
 public:
-    footstepPlanner();
+    footstepPlanner(ros_publisher* ros_pub);
     gram_schmidt gs_utils;
     kinematics_utilities kinematics; //TODO: remove!!
-
+    
     //Camera link frame
     std::list<foot_with_joints> getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left);
     void setParams(double feasible_area_);
