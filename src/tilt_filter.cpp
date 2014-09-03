@@ -18,7 +18,9 @@ bool tilt_filter::normal_is_in_bounds(pcl::PointXYZRGBNormal& normal)
       
 	value = dot(ground_normal,n);
 
-	if(value > max_tilt) return false;
+// 	std::cout<<"||TILT: "<<n.x()<<' '<<n.y()<<' '<<n.z()<<" => "<<value<<std::endl;
+	
+	if(fabs(value) < max_tilt) return false;
     
 	return true;
 }
