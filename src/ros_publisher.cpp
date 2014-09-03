@@ -173,7 +173,7 @@ void ros_publisher::setRobotJoints(std::map< std::string, boost::shared_ptr< urd
         last_joint_states.name[j]=joint.first;
         last_joint_states.position[j]=0;
         joints_name_to_index[joint.first]=j;
-        std::cout<<joint.first<<joints_name_to_index[joint.first]<<"=="<<j<<std::endl;
+        //std::cout<<joint.first<<joints_name_to_index[joint.first]<<"=="<<j<<std::endl;
         j++;
     }
     

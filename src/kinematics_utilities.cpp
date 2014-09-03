@@ -16,7 +16,7 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
     for (KDL::Segment& segment: container->chain.segments)
     {
         if (segment.getJoint().getType()==KDL::Joint::None) continue;
-        std::cout<<segment.getJoint().getName()<<std::endl;
+        //std::cout<<segment.getJoint().getName()<<std::endl;
         container->joint_names.push_back(segment.getJoint().getName());
     }
     assert(container->joint_names.size()==container->chain.getNrOfJoints());
