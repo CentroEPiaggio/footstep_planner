@@ -54,6 +54,7 @@ public:
     KDL::ChainIkSolverPos_NR_JL* iksolver;
     KDL::ChainIkSolverVel_pinv* ikvelsolver;
     std::vector<std::string> joint_names;
+    KDL::JntArray average_joints;
 };
 
 

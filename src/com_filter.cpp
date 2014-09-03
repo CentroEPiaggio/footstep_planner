@@ -150,13 +150,11 @@ bool com_filter::frame_is_stable(const KDL::Frame& StanceFoot_MovingFoot,const K
 {
     auto stance_leg_size=kinematics.wl_leg.chain.getNrOfJoints();
     KDL::JntArray stance_jnts(stance_leg_size);
-    SetToZero(stance_jnts_in);
-    int result=current_stance_chain_and_solver->iksolver->CartToJnt(stance_jnts_in,DesiredWaist_StanceFoot,stance_jnts);
+    int result=current_stance_chain_and_solver->iksolver->CartToJnt(current_moving_chain_and_solver->average_joints,DesiredWaist_StanceFoot,stance_jnts);
     if (result<0) return false;
-
-    SetToZero(stance_jnts_in);
+    
     KDL::JntArray moving_jnts(stance_leg_size);
-    result=current_moving_chain_and_solver->iksolver->CartToJnt(stance_jnts_in,DesiredWaist_StanceFoot*StanceFoot_MovingFoot,moving_jnts);
+    result=current_moving_chain_and_solver->iksolver->CartToJnt(current_moving_chain_and_solver->average_joints,DesiredWaist_StanceFoot*StanceFoot_MovingFoot,moving_jnts);
     if (result<0) return false;
 
     for (int j=0;j<stance_leg_size;j++)

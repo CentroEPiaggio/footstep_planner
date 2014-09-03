@@ -24,6 +24,7 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
     SetToZero(joints_value);
     q_max.resize(container->chain.getNrOfJoints());
     q_min.resize(container->chain.getNrOfJoints());
+    container->average_joints.resize(container->chain.getNrOfJoints());
     container->fksolver=new KDL::ChainFkSolverPos_recursive(container->chain);
     container->ikvelsolver = new KDL::ChainIkSolverVel_pinv(container->chain);
     int j=0;
@@ -36,6 +37,7 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
         q_max(j)=coman_urdf_model.joints_[joint_name]->limits->upper;
         q_min(j)=coman_urdf_model.joints_[joint_name]->limits->lower;
         #endif
+	container->average_joints(j)=(q_max(j)+q_min(j))/2.0;
         j++;
     }
     container->iksolver= new KDL::ChainIkSolverPos_NR_JL(container->chain,q_min,q_max,*container->fksolver,*container->ikvelsolver);
