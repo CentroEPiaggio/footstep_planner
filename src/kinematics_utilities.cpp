@@ -43,6 +43,7 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
 
 
 kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(robot_name_)
+//,coman_model(robot_name_)
 {
     coman= coman_model.coman_iDyn3.getKDLTree();
     coman_urdf_model = *coman_model.coman_model;

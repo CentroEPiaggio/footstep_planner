@@ -10,7 +10,7 @@ using namespace planner;
 
 #define DISTANCE_THRESHOLD 0.02*0.02 //We work with squares of distances, so this threshould is the square of 2cm!
 
-footstepPlanner::footstepPlanner():kinematicFilter("coman"),comFilter("coman"),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
+footstepPlanner::footstepPlanner(ros_publisher* ros_pub_):kinematicFilter("coman"),comFilter("coman"),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
     KDL::Frame Waist_StanceFoot;
     left_joints.resize(kinematics.wl_leg.chain.getNrOfJoints());
@@ -178,19 +178,19 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     
     
     generate_frames_from_normals(affordances,steps); //generating kdl frames to place foot
-    color_filtered=2;
+    color_filtered=1;
     ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after geometric filter: %lu ",steps.size()); 
 
     kinematic_filtering(steps,left); //KINEMATIC FILTER
-    color_filtered=3;
+    color_filtered=2;
     ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
 
-//     dynamic_filtering(steps,left); //DYNAMIC FILTER
-//     color_filtered=3;
-//     ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
-//     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());  
+    dynamic_filtering(steps,left); //DYNAMIC FILTER
+    color_filtered=3;
+    ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
+    ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());  
     return steps;
 }
 

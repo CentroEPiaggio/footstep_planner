@@ -186,7 +186,7 @@ std::list< KDL::Frame > com_filter::generateWaistPositions_StanceFoot ( const KD
     //double angle=0;
     for (double angle=-M_PI/6.0;angle<M_PI/6.1;angle=angle+M_PI/30.0)
     {//double height=-0.01;
-        for (double height=-desired_hip_height*0.2-0.01*level_of_details;height<-0.0;height=height+0.01/(1+level_of_details/2.0))
+        for (double height=-desired_hip_height*0.2-0.01*level_of_details;height<-0.0;height=height+(desired_hip_height*0.05)/(1+level_of_details/2.0))
 	{
 	    KDL::Frame DesiredWaist_StanceFoot=computeStanceFoot_WaistPosition(StanceFoot_World,angle+angle_ref,desired_hip_height+height).Inverse();
 	    DesiredWaist_StanceFoot_list.push_back(DesiredWaist_StanceFoot);
