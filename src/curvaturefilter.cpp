@@ -1,4 +1,5 @@
 #include "curvaturefilter.h"
+#include <ros_publisher.h>
 #include <ros/ros.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/filters/filter.h>
@@ -35,7 +36,7 @@ bool enforceCurvature (const pcl::PointXYZRGBNormal& point_a, const pcl::PointXY
 }
 
 //void CurvatureFilter::filterByCurvature(const sensor_msgs::PointCloud2 & input)
-std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::filterByCurvature(pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_ptr)
+std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::filterByCurvature(ros_publisher* publish,pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_ptr)
 {
     ros::Time start_time = ros::Time::now();
     
@@ -65,14 +66,47 @@ std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::fi
     
     ne.setInputCloud (cloud_downsampled_ptr);
     ne.setSearchMethod (tree);
+    ne.setViewPoint(10,0,10);
     ne.setRadiusSearch (normal_radius_);
     ne.compute (*cloud_normals_ptr);
+    publish->publish_normal_cloud(cloud_normals_ptr,cloud_downsampled_ptr,0);
     
+    int Normals = (int) cloud_normals_ptr->points.size();
+
+    for (int i=0;i<Normals;i++)
+    {
+//      Eigen::Matrix<uint8_t,3,1> temp=cloud_normals_ptr->at(i).getNormalVector3fMap();ù
+//      std::cout<<cloud_downsampled_ptr->at(i).x<<" "<<cloud_downsampled_ptr->at(i).y<<" "<<cloud_downsampled_ptr->at(i).z<<" "<<
+//      cloud_normals_ptr->at(i).normal_x<<" "<<cloud_normals_ptr->at(i).normal_y<<" "<<cloud_normals_ptr->at(i).normal_z
+//      <<" ";
+      //pcl::flipNormalTowardsViewpoint(cloud_downsampled_ptr->at(i),0.0,0.0,0.0,cloud_normals_ptr->at(i).normal_x,cloud_normals_ptr->at(i).normal_y,cloud_normals_ptr->at(i).normal_z);
+      if (cloud_normals_ptr->at(i).normal_x*(10-cloud_downsampled_ptr->at(i).x)+
+	cloud_normals_ptr->at(i).normal_y*(0-cloud_downsampled_ptr->at(i).y)+
+	cloud_normals_ptr->at(i).normal_z*(10-cloud_downsampled_ptr->at(i).z)
+      <0){
+	std::cout<<"a normal is not coherent"<<std::endl;
+	abort();}
+      //      cloud_normals_ptr->at(i).normal
+//      std::cout
+//      <<cloud_normals_ptr->at(i).normal_x<<" "<<cloud_normals_ptr->at(i).normal_y<<" "<<cloud_normals_ptr->at(i).normal_z
+ //     <<" "<<std::endl;
+      
+    }
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_with_normals_ptr (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
     pcl::concatenateFields( *cloud_downsampled_ptr, *cloud_normals_ptr, *cloud_with_normals_ptr );
     pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_with_normals;
     cloud_with_normals = *cloud_with_normals_ptr;
+        ros::NodeHandle node;
+
+    auto static pub_total_cloud_ = node.advertise<sensor_msgs::PointCloud2>(node.resolveName("total_cloud"), 3000);
+;
     
+   
+    // publish the cloud with planar regions only
+    sensor_msgs::PointCloud2 another_cloud_msg;
+    pcl::toROSMsg(cloud_with_normals, another_cloud_msg);
+    another_cloud_msg.header = another_cloud_msg.header;
+    pub_total_cloud_.publish(another_cloud_msg);
     // // write file to check normals
     // pcl::io::savePCDFileBinaryCompressed("scene_with_normals.pcd", cloud_with_normals);
     // // write file to check normals
@@ -105,22 +139,21 @@ std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::fi
     {
         c = cloud_with_normals.points[i].curvature;
         //ROS_INFO("Curvature %f", c);
-        if (c > curvature_threshold_)
+//         if (c > curvature_threshold_)
+//         {
+//             r = 255;//*(c*c_max);
+//             g = 0;//255*(1 - c*c_max);
+//             b = 0;
+//             rgb = (r << 16) | (g << 8) | b; 
+//             cloud_with_normals.points[i].rgb = *(float *)(&rgb);
+//         }
+//         else
         {
-            r = 255;//*(c*c_max);
-            g = 0;//255*(1 - c*c_max);
-            b = 0;
+            r =cloud_with_normals.at(i).normal_x*127.0+127;//255*(c*c_max);
+            g = cloud_with_normals.at(i).normal_y*127.0+127;//*(1 - c*c_max);
+            b = cloud_with_normals.at(i).normal_z*127.0+127;
             rgb = (r << 16) | (g << 8) | b; 
-            cloud_with_normals.points[i].rgb = *(float *)(&rgb);
-        }
-        else
-        {
-            r = 0;//255*(c*c_max);
-            g = 255;//*(1 - c*c_max);
-            b = 0;
-            rgb = (r << 16) | (g << 8) | b; 
-            cloud_with_normals.points[i].rgb = *(float *)(&rgb);
-            
+            cloud_with_normals.at(i).rgb = rgb;//*(float *)(&rgb);
             // keep this ones in a separate cloud
             cloud_with_low_curvature_ptr->points.push_back(cloud_with_normals.points[i]);
             
@@ -128,17 +161,18 @@ std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::fi
         }
     }
     
-/*     // publish the colored cloud
-//     sensor_msgs::PointCloud2 cloud_msg;
-//     pcl::toROSMsg(cloud_with_normals, cloud_msg);
-//     pub_colored_cloud_.publish(cloud_msg);
-//     
-//     cloud_with_low_curvature = *cloud_with_low_curvature_ptr;
-//     // publish the cloud with planar regions only
-//     sensor_msgs::PointCloud2 another_cloud_msg;
-//     pcl::toROSMsg(cloud_with_low_curvature, another_cloud_msg);
-//     another_cloud_msg.header = cloud_msg.header;
-//     pub_filtered_cloud_.publish(another_cloud_msg);*/
+//      publish the colored cloud
+    sensor_msgs::PointCloud2 cloud_msg;
+    pcl::toROSMsg(cloud_with_normals, cloud_msg);
+    auto static pub_cluster_cloud_ = node.advertise<sensor_msgs::PointCloud2>(node.resolveName("new_total_cloud"), 3000);
+;
+    
+    cloud_with_low_curvature = *cloud_with_low_curvature_ptr;
+    // publish the cloud with planar regions only
+    //sensor_msgs::PointCloud2 another_cloud_msg;
+    pcl::toROSMsg(cloud_with_low_curvature, another_cloud_msg);
+    another_cloud_msg.header = cloud_msg.header;
+    pub_cluster_cloud_.publish(another_cloud_msg);
     
     
     // perform conditional euclidean clustering on the cloud with planar areas only

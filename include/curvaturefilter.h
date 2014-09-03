@@ -3,6 +3,7 @@
 #include <vector>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include "ros_publisher.h"
 
 namespace planner
 {
@@ -10,7 +11,7 @@ namespace planner
 class curvatureFilter
 {
 public:
-    std::vector< boost::shared_ptr< pcl::PointCloud< pcl::PointXYZRGBNormal > > > filterByCurvature(pcl::PointCloud< pcl::PointXYZRGB >::Ptr input_cloud_ptr);
+    std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  filterByCurvature(ros_publisher* publish,pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_ptr);
     void setParams(double curvature_threshold_,double voxel_size_, double normal_radius_, int min_cluster_size_, double cluster_tolerance_);
 private:
     // normal estimator radius

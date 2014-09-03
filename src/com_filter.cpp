@@ -209,4 +209,3 @@ KDL::Frame com_filter::computeStanceFoot_WaistPosition(const KDL::Frame& StanceF
     return StanceFoot_WaistPosition;
 }
 
-

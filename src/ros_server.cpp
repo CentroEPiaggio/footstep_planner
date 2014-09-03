@@ -276,7 +276,7 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
     // convert from sensor_msgs to a tractable PCL object
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::fromROSMsg(*input, *input_cloud_ptr);
-    clusters=curvature_filter.filterByCurvature(input_cloud_ptr);
+    clusters=curvature_filter.filterByCurvature(&publisher,input_cloud_ptr);
     publisher.publish_plane_clusters(clusters);
     return extractBorders(request,response);
 }

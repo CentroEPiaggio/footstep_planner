@@ -129,9 +129,9 @@ void ros_publisher::publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal
     marker.header.stamp=ros::Time::now();
     marker.header.frame_id=camera_link_name;
     marker.ns="normals"+std::to_string(i);
-    marker.scale.x=0.005;
-    marker.scale.y=0.002;
-    marker.scale.z=0.005;
+    marker.scale.x=0.003;
+    marker.scale.y=0.005;
+    marker.scale.z=0.003;
     marker.lifetime=ros::Duration(600);
     marker.color.r=1;
     marker.color.a=1;
@@ -156,6 +156,43 @@ void ros_publisher::publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal
     }
     pub_normal_cloud_.publish(msg);
 }
+
+void ros_publisher::publish_normal_cloud(pcl::PointCloud< pcl::Normal >::Ptr normals, pcl::PointCloud< pcl::PointXYZRGB >::Ptr points, int i)
+{
+    visualization_msgs::MarkerArray msg;
+    
+    visualization_msgs::Marker marker;
+    marker.header.stamp=ros::Time::now();
+    marker.header.frame_id=camera_link_name;
+    marker.ns="normals"+std::to_string(i);
+    marker.scale.x=0.003;
+    marker.scale.y=0.005;
+    marker.scale.z=0.003;
+    marker.lifetime=ros::Duration(600);
+    marker.color.r=1;
+    marker.color.a=1;
+    marker.type=visualization_msgs::Marker::ARROW;
+    geometry_msgs::Point point1,point2;
+    
+    for (int i=0;i<normals->size();i++)
+    {
+        point1.x=(*points)[i].x;
+        point1.y=(*points)[i].y;
+        point1.z=(*points)[i].z;
+        point2.x=(*normals)[i].normal_x/20.0+point1.x;
+        point2.y=(*normals)[i].normal_y/20.0+point1.y;
+        point2.z=(*normals)[i].normal_z/20.0+point1.z;
+        
+        marker.points.clear();
+        marker.id=i;
+        marker.points.push_back(point1);
+        marker.points.push_back(point2);
+        
+        msg.markers.push_back(marker);
+    }
+    pub_normal_cloud_.publish(msg);
+}
+
 
 void ros_publisher::publish_last_joints_position()
 {
