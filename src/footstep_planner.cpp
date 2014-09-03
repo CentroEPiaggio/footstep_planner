@@ -156,7 +156,10 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     {
         throw "camera - world transformation was not set";
     }
-
+    int i=0;
+    for (auto polygon:affordances)
+        ros_pub->publish_normal_cloud(polygon.normals,i++); 
+    
     setCurrentDirection(World_Camera.Inverse()*World_CurrentDirection); //TODO
 
 //     static tf::TransformBroadcaster br;
@@ -170,21 +173,22 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     geometric_filtering(affordances,left); //GEOMETRIC FILTER
 
     std::list<foot_with_joints> steps;
-
+    
+    
     generate_frames_from_normals(affordances,steps); //generating kdl frames to place foot
-    color_filtered=1;
+    color_filtered=2;
     ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after geometric filter: %lu ",steps.size()); 
 
     kinematic_filtering(steps,left); //KINEMATIC FILTER
-    color_filtered=2;
+    color_filtered=3;
     ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
 
-    dynamic_filtering(steps,left); //DYNAMIC FILTER
-    color_filtered=3;
-    ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
-    ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());  
+//     dynamic_filtering(steps,left); //DYNAMIC FILTER
+//     color_filtered=3;
+//     ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
+//     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());  
     return steps;
 }
 
