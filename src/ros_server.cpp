@@ -146,7 +146,15 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
 
 bool rosServer::singleFoot(bool left)
 {
-    auto poly=polygons;
+    std::list<polygon_with_normals> poly;
+    for (auto polygon:polygons)
+    {
+      polygon_with_normals temp;
+      temp.average_normal=polygon.average_normal;
+      temp.border=polygon.border->makeShared();
+      temp.normals=polygon.normals->makeShared();
+      poly.push_back(temp);
+    }
     auto World_centroids=footstep_planner.getFeasibleCentroids(poly,left);
     publisher.publish_plane_borders(polygons);
     ros::Duration sleep_time(0.2);
