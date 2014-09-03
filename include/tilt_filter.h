@@ -13,6 +13,7 @@ public:
     tilt_filter(double max_tilt_=0.5); //DEFAULT 30°
     ~tilt_filter();
     void filter_normals(std::list<polygon_with_normals>& data);
+    void filter_single_normals(std::list<polygon_with_normals>& data);
 
 private:
     void set_max_tilt(double max_tilt_);

@@ -26,12 +26,33 @@ bool tilt_filter::normal_is_in_bounds(pcl::PointXYZRGBNormal& normal)
 void tilt_filter::filter_normals(std::list<polygon_with_normals>& data)
 {    
     for(std::list<polygon_with_normals>::iterator it=data.begin(); it!=data.end();)
+    {
+	if(!normal_is_in_bounds(it->average_normal))
 	{
-		if(!normal_is_in_bounds(it->average_normal))
-		{
-              it=data.erase(it);
-		}
-        else
-            it++;
+	    it=data.erase(it);
 	}
+	else
+	    it++;
+    }
+}
+
+void tilt_filter::filter_single_normals(std::list< polygon_with_normals >& data)
+{
+    int temp=0;
+    
+    for(auto item:data)
+    {	  
+        pcl::PointCloud<pcl::PointXYZRGBNormal> points;
+
+        for(pcl::PointCloud<pcl::PointXYZRGBNormal>::iterator it=item.normals->begin(); it!=item.normals->end();++it)
+	{
+            if(normal_is_in_bounds(*it))
+	    {
+                points.push_back(*it);
+	    }
+	}
+	
+        *(item.normals) = points;
+
+    }
 }
