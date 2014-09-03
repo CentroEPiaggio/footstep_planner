@@ -47,7 +47,7 @@ public:
 class kinematics_utilities
 {
 public:
-    kinematics_utilities();
+    kinematics_utilities(std::string robot_name);
 //    Eigen::Matrix<double,6,1> left_foot, right_foot;
     
     urdf::Model coman_urdf_model;
@@ -87,6 +87,7 @@ public:
     */
         
 private:
+    std::string robot_name;
   //  bool initJointNames(urdf::Model& robot_model, std::string parent, std::string tip, std::vector< std::string >& joint_names);
     void initialize_solvers(chain_and_solvers* container, KDL::JntArray& joints_value, KDL::JntArray& q_max, KDL::JntArray& q_min);
     

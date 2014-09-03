@@ -5,7 +5,7 @@
 #endif
 using namespace planner;
 
-kinematic_filter::kinematic_filter()
+kinematic_filter::kinematic_filter(std::string robot_name):robot_name(robot_name),kinematics(robot_name)
 {
 }
 

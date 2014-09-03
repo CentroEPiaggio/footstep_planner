@@ -6,8 +6,6 @@
 #include <urdf_model/joint.h>
 #include <joints_ordering.h>
 
-const std::string coman_model_folder = std::string(getenv("YARP_WORKSPACE")) + "/coman_yarp_apps/coman_urdf/coman.urdf";
-
 #define IGNORE_JOINT_LIMITS 0
 
 //NEVER call this without setting the container chain!!
@@ -44,22 +42,37 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
 }
 
 
-kinematics_utilities::kinematics_utilities():coman_model()
+kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(robot_name_)
 {
     coman= coman_model.coman_iDyn3.getKDLTree();
-    coman.getChain("Waist","l_sole",wl_leg.chain);
-    coman.getChain("Waist","r_sole",wr_leg.chain);
-    coman.getChain("l_sole","Waist",lw_leg.chain);
-    coman.getChain("r_sole","Waist",rw_leg.chain);
-    num_joints=wl_leg.chain.getNrOfJoints()+wr_leg.chain.getNrOfJoints();
-    coman.getChain("l_sole","Waist",lwr_legs.chain);
-    lwr_legs.chain.addChain(wr_leg.chain);
-    coman.getChain("r_sole","Waist",rwl_legs.chain);
-    rwl_legs.chain.addChain(wl_leg.chain);
-
-    if (!coman_urdf_model.initFile(coman_model_folder))
-        std::cout<<"Failed to parse urdf robot model"<<std::endl;
-
+    coman_urdf_model = *coman_model.coman_model;
+  
+    if(robot_name=="coman")
+    {
+        coman.getChain("Waist","l_sole",wl_leg.chain);
+	coman.getChain("Waist","r_sole",wr_leg.chain);
+	coman.getChain("l_sole","Waist",lw_leg.chain);
+	coman.getChain("r_sole","Waist",rw_leg.chain);
+	num_joints=wl_leg.chain.getNrOfJoints()+wr_leg.chain.getNrOfJoints();
+	coman.getChain("l_sole","Waist",lwr_legs.chain);
+	lwr_legs.chain.addChain(wr_leg.chain);
+	coman.getChain("r_sole","Waist",rwl_legs.chain);
+	rwl_legs.chain.addChain(wl_leg.chain);
+    }
+    
+    if(robot_name=="atlas")
+    {
+	coman.getChain("pelvis","l_foot",wl_leg.chain);
+	coman.getChain("pelvis","r_foot",wr_leg.chain);
+	coman.getChain("l_foot","pelvis",lw_leg.chain);
+	coman.getChain("r_foot","pelvis",rw_leg.chain);
+	num_joints=wl_leg.chain.getNrOfJoints()+wr_leg.chain.getNrOfJoints();
+	coman.getChain("l_foot","pelvis",lwr_legs.chain);
+	lwr_legs.chain.addChain(wr_leg.chain);
+	coman.getChain("r_foot","pelvis",rwl_legs.chain);
+	rwl_legs.chain.addChain(wl_leg.chain);
+    }
+    
     initialize_solvers(&wl_leg,wl_leg.joints_value,wl_leg.q_max,wl_leg.q_min);
     initialize_solvers(&wr_leg,wr_leg.joints_value,wr_leg.q_max,wr_leg.q_min);
     initialize_solvers(&lw_leg,lw_leg.joints_value,lw_leg.q_max,lw_leg.q_min);

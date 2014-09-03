@@ -3,7 +3,7 @@
 #include <eigen3/Eigen/Dense>
 #include <tf_conversions/tf_kdl.h>
 #include <tf/transform_broadcaster.h>
-com_filter::com_filter()
+com_filter::com_filter(std::string robot_name_):kinematics(robot_name_)
 {
     stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(stance_jnts_in);

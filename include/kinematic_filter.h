@@ -14,7 +14,7 @@
 class kinematic_filter
 {
 public:
-    kinematic_filter();
+    kinematic_filter(std::string robot_name);
     bool filter(std::list<planner::foot_with_joints>& data);
     void setWorld_StanceFoot(const KDL::Frame& World_StanceFoot);
     void setLeftRightFoot(bool left);
@@ -23,6 +23,7 @@ public:
     kinematics_utilities kinematics;
 
 private:
+    std::string robot_name;
     inline bool frame_is_reachable(const KDL::Frame& World_MovingFoot, KDL::JntArray& jnt_pos);
     KDL::ChainIkSolverPos_NR_JL* current_ik_solver;
     KDL::ChainFkSolverPos* current_fk_solver;
