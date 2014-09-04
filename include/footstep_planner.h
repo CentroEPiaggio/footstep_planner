@@ -13,6 +13,7 @@
 #include "step_quality_evaluator.h"
 #include <data_types.h>
 #include "coordinate_filter.h"
+#include "foot_collision_filter.h"
 #include "tilt_filter.h"
 #include "ros_publisher.h"
 
@@ -53,6 +54,7 @@ private:
     
     tilt_filter* filter_by_tilt;
     std::vector<coordinate_filter*> filter_by_coordinates;
+    foot_collision_filter filter_to_avoid_foot;
     
     KDL::Vector World_CurrentDirection;
     std::vector< std::string > last_used_joint_names;

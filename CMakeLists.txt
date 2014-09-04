@@ -89,6 +89,7 @@ add_executable(foot_planner
        src/com_filter.cpp
        src/step_quality_evaluator.cpp
        src/coordinate_filter.cpp
+       src/foot_collision_filter.cpp
        src/tilt_filter.cpp
        src/main.cpp
        src/xml_pcl_io.cpp
@@ -145,6 +146,7 @@ add_executable(affordances
         src/footstep_planner.cpp
         src/kinematics_utilities.cpp
         src/curvaturefilter.cpp
+        src/foot_collision_filter.cpp
         src/borderextraction.cpp
         src/kinematic_filter.cpp
         src/com_filter.cpp

@@ -133,6 +133,9 @@ void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& aff
     filter_by_coordinates.at(2)->filter_points(affordances,left);   //filter on z
     
     filter_by_tilt->filter_single_normals(affordances);
+    
+    filter_to_avoid_foot.set_stance_foot(StanceFoot_Camera);
+    filter_to_avoid_foot.filter_points(affordances,left);
 }
 
 void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bool left)
