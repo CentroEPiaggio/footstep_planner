@@ -129,10 +129,9 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
 {
     polygons=border_extraction.extractBorders(clusters);
     publisher.publish_plane_borders(polygons); 
-    int i=0;
-    for (auto polygon:polygons)
-        publisher.publish_normal_cloud(polygon.normals,i++);
-
+//     int i=0;
+//     for (auto polygon:polygons)
+//         publisher.publish_normal_cloud(polygon.normals,i++);
     if(save_to_file)
     {
 	std::cout<<"saving your extracted borders and planes on an xml file so that you will not need to call filter_by_curvature anylonger"<<std::endl;
@@ -277,7 +276,7 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr input_cloud_ptr (new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::fromROSMsg(*input, *input_cloud_ptr);
     clusters=curvature_filter.filterByCurvature(&publisher,input_cloud_ptr);
-    publisher.publish_plane_clusters(clusters);
+    //publisher.publish_plane_clusters(clusters);
     return extractBorders(request,response);
 }
 

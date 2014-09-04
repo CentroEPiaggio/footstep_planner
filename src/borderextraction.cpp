@@ -138,6 +138,9 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
 
         polygons.push_back(temp);
     }
+//     int i=0;
+//     for (auto polygon:polygons)
+//         publish->publish_normal_cloud(polygon.normals,i++);
     return polygons;
 }
 

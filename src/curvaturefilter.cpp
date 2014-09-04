@@ -228,6 +228,9 @@ std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::fi
 //         if (j>10 ) break; //HACK 
     }
     
+//     int i=0;
+//     for (auto polygon:clusters)
+//         publish->publish_normal_cloud(polygon,i++);
     
     
     ROS_INFO_STREAM("Processing time: " << ros::Time::now() - start_time << " seconds");
