@@ -94,6 +94,7 @@ add_executable(foot_planner
        src/xml_pcl_io.cpp
        src/pcd_io.cpp
        src/joints_ordering.cpp
+       src/sampling_surface.hpp
        ${HEADER_FILES}
        )
 

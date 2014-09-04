@@ -159,8 +159,8 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
         throw "camera - world transformation was not set";
     }
     int i=0;
-    for (auto polygon:affordances)
-        ros_pub->publish_normal_cloud(polygon.normals,i++); 
+    //for (auto polygon:affordances)
+    //    ros_pub->publish_normal_cloud(polygon.normals,i++); 
     
     setCurrentDirection(World_Camera.Inverse()*World_CurrentDirection); //TODO
 

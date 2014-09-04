@@ -5,6 +5,7 @@
 #include <pcl/features/normal_3d.h>
 #include <visualization_msgs/Marker.h>
 #include "psimpl.h"
+#include "sampling_surface.hpp"
 #include <pcl/filters/sampling_surface_normal.h>
 #include <time.h>
 #include <eigen3/Eigen/src/Core/Matrix.h>
@@ -48,11 +49,6 @@ bool neg_compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
     return !(compare_2d(a,b));
 }
 
-// bool atan_compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
-// {
-//     return atan2(a.y,a.x) < atan2(b.y,b.x);
-// }
-
 bool atan_compare_2d(pcl::PointXYZRGBNormal a, pcl::PointXYZRGBNormal b)
 {
     return atan2(a.y,a.x) < atan2(b.y,b.x);
@@ -68,8 +64,6 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
         std::cout<<"No clusters to process, you should call the [/filter_by_curvature] service first"<<std::endl;
         return polygons;
     }
-    //TODO
-//     uniform sampling/voxel grid sui cluster, e per ogni punto restituito, cercare il closest point del cluster e salvarlo (completo di normale)
 
     pcl::PointXYZRGBNormal average_normal;
     Eigen::Vector4f plane;
@@ -113,31 +107,39 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
         temp.border=douglas_peucker_3d(border,0.05);
 	
         pcl::PointCloud<pcl::PointXYZRGBNormal> temp_cloud;
-        temp.normals=temp_cloud.makeShared();
-        pcl::SamplingSurfaceNormal<pcl::PointXYZRGBNormal> sampler;
+        pcl::PointCloud<pcl::PointXYZRGBNormal> final_cloud;
+        temp.normals=final_cloud.makeShared();
+	
+	pcl::SamplingSurface<pcl::PointXYZRGBNormal> sampler;
+        //pcl::SamplingSurfaceNormal<pcl::PointXYZRGBNormal> sampler;
         sampler.setSample(100);
         sampler.setRatio(0.04*3000.0/clusters[i]->size());
         sampler.setInputCloud(clusters[i]);
         sampler.setSeed(time(NULL));
-        sampler.filter(*temp.normals);
+        sampler.filter(temp_cloud);
+	auto indices=sampler.getFilteredIndices();
+
+ 	for (auto j:indices)
+ 	{
+	  temp.normals->push_back(clusters[i]->at(j));
+ 	}
 	
 	pcl::computePointNormal(*(clusters[i]),plane,curv);
 	average_normal.x=0; average_normal.y=0; average_normal.z=0;
         average_normal.normal_x=plane[0]; average_normal.normal_y=plane[1]; average_normal.normal_z=plane[2];
 	temp.average_normal=average_normal;
 	
-        std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
-
         if(!temp.border) {
             std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl;
             return polygons;
-
         }
 
         std::cout<<"- Polygon number of points: "<<temp.border->size()<<std::endl;
-
         polygons.push_back(temp);
     }
+//     int i=0;
+//     for (auto polygon:polygons)
+//         publish->publish_normal_cloud(polygon.normals,i++);
     return polygons;
 }
 
