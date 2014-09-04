@@ -65,7 +65,7 @@ std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::fi
     
     ne.setInputCloud (cloud_downsampled_ptr);
     ne.setSearchMethod (tree);
-    ne.setViewPoint(10,0,10);
+    ne.setViewPoint(0,0,0);
     ne.setRadiusSearch (normal_radius_);
     ne.compute (*cloud_normals_ptr);
     
@@ -100,10 +100,8 @@ std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::fi
     ec.setClusterTolerance (cluster_tolerance_);
     ec.setMinClusterSize (min_cluster_size_);
     ec.setMaxClusterSize (10000000); // a point cloud only has around 300000 so we are safe here
-    //ec.setSearchMethod (another_tree);
-    ec.setInputCloud (cloud_with_low_curvature_ptr);
+    ec.setInputCloud (cloud_with_normals_ptr);
     ec.setConditionFunction(enforceCurvature);
-    // ec.extract (cluster_indices);
     ec.segment (cluster_indices);
     
     printf( "Found %lu clusters", cluster_indices.size() );
@@ -128,18 +126,14 @@ std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >  curvatureFilter::fi
         int i = 0;
         for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
         {
-            cloud_cluster_ptr->points.push_back (cloud_with_low_curvature_ptr->points[*pit]);
+            cloud_cluster_ptr->points.push_back (cloud_with_normals_ptr->points[*pit]);
             cloud_cluster_ptr->points[i].rgb = *(float *)(&rgb);
             i++;
         }
         
         cloud_cluster_ptr->width = cloud_cluster_ptr->points.size();
         cloud_cluster_ptr->height = 1;
-        cloud_cluster_ptr->is_dense = true;
-        
-        //pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_cluster;
-        //cloud_cluster = *cloud_cluster_ptr;
-        
+        cloud_cluster_ptr->is_dense = true;        
         clusters.push_back(cloud_cluster_ptr);
         
         j++;

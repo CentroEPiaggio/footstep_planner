@@ -5,6 +5,7 @@
 #include <pcl/features/normal_3d.h>
 #include <visualization_msgs/Marker.h>
 #include "psimpl.h"
+#include "sampling_surface.hpp"
 #include <pcl/filters/sampling_surface_normal.h>
 #include <time.h>
 #include <eigen3/Eigen/src/Core/Matrix.h>
@@ -106,13 +107,22 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
         temp.border=douglas_peucker_3d(border,0.05);
 	
         pcl::PointCloud<pcl::PointXYZRGBNormal> temp_cloud;
-        temp.normals=temp_cloud.makeShared();
-        pcl::SamplingSurfaceNormal<pcl::PointXYZRGBNormal> sampler;
+        pcl::PointCloud<pcl::PointXYZRGBNormal> final_cloud;
+        temp.normals=final_cloud.makeShared();
+	
+	pcl::SamplingSurface<pcl::PointXYZRGBNormal> sampler;
+        //pcl::SamplingSurfaceNormal<pcl::PointXYZRGBNormal> sampler;
         sampler.setSample(100);
         sampler.setRatio(0.04*3000.0/clusters[i]->size());
         sampler.setInputCloud(clusters[i]);
         sampler.setSeed(time(NULL));
-        sampler.filter(*temp.normals);
+        sampler.filter(temp_cloud);
+	auto indices=sampler.getFilteredIndices();
+
+ 	for (auto j:indices)
+ 	{
+	  temp.normals->push_back(clusters[i]->at(j));
+ 	}
 	
 	pcl::computePointNormal(*(clusters[i]),plane,curv);
 	average_normal.x=0; average_normal.y=0; average_normal.z=0;
