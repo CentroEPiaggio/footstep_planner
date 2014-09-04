@@ -25,7 +25,7 @@ footstepPlanner::footstepPlanner(ros_publisher* ros_pub_):kinematicFilter("coman
     filter_by_coordinates.push_back(temp_filter);
     temp_filter = new coordinate_filter(2,-0.5,0.5);
     filter_by_coordinates.push_back(temp_filter);
-    
+
     filter_by_tilt = new tilt_filter();
     
     ros_pub = ros_pub_;
@@ -182,17 +182,17 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     
     generate_frames_from_normals(affordances,steps); //generating kdl frames to place foot
     color_filtered=1;
-    ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
+    if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after geometric filter: %lu ",steps.size()); 
 
     kinematic_filtering(steps,left); //KINEMATIC FILTER
     color_filtered=2;
-    ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
+    if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
 
     dynamic_filtering(steps,left); //DYNAMIC FILTER
     color_filtered=3;
-    ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
+    if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());  
     return steps;
 }
