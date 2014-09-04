@@ -63,14 +63,14 @@ kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(r
     
     if(robot_name=="atlas")
     {
-	coman.getChain("pelvis","l_foot",wl_leg.chain);
-	coman.getChain("pelvis","r_foot",wr_leg.chain);
-	coman.getChain("l_foot","pelvis",lw_leg.chain);
-	coman.getChain("r_foot","pelvis",rw_leg.chain);
+	coman.getChain("pelvis","l_sole",wl_leg.chain);
+	coman.getChain("pelvis","r_sole",wr_leg.chain);
+	coman.getChain("l_sole","pelvis",lw_leg.chain);
+	coman.getChain("r_sole","pelvis",rw_leg.chain);
 	num_joints=wl_leg.chain.getNrOfJoints()+wr_leg.chain.getNrOfJoints();
-	coman.getChain("l_foot","pelvis",lwr_legs.chain);
+	coman.getChain("l_sole","pelvis",lwr_legs.chain);
 	lwr_legs.chain.addChain(wr_leg.chain);
-	coman.getChain("r_foot","pelvis",rwl_legs.chain);
+	coman.getChain("r_sole","pelvis",rwl_legs.chain);
 	rwl_legs.chain.addChain(wl_leg.chain);
     }
     
