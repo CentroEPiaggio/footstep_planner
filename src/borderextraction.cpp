@@ -48,11 +48,6 @@ bool neg_compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
     return !(compare_2d(a,b));
 }
 
-// bool atan_compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
-// {
-//     return atan2(a.y,a.x) < atan2(b.y,b.x);
-// }
-
 bool atan_compare_2d(pcl::PointXYZRGBNormal a, pcl::PointXYZRGBNormal b)
 {
     return atan2(a.y,a.x) < atan2(b.y,b.x);
@@ -68,8 +63,6 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
         std::cout<<"No clusters to process, you should call the [/filter_by_curvature] service first"<<std::endl;
         return polygons;
     }
-    //TODO
-//     uniform sampling/voxel grid sui cluster, e per ogni punto restituito, cercare il closest point del cluster e salvarlo (completo di normale)
 
     pcl::PointXYZRGBNormal average_normal;
     Eigen::Vector4f plane;
@@ -126,16 +119,12 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
         average_normal.normal_x=plane[0]; average_normal.normal_y=plane[1]; average_normal.normal_z=plane[2];
 	temp.average_normal=average_normal;
 	
-        std::cout<<"- Computing polygon which approximate the border . . ."<<std::endl;
-
         if(!temp.border) {
             std::cout<<"- !! Failed to Compute the polygon to approximate the Border !!"<<std::endl;
             return polygons;
-
         }
 
         std::cout<<"- Polygon number of points: "<<temp.border->size()<<std::endl;
-
         polygons.push_back(temp);
     }
 //     int i=0;
