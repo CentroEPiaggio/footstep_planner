@@ -1,10 +1,18 @@
 #include "step_quality_evaluator.h"
 #include "footstep_planner.h"
 
-step_quality_evaluator::step_quality_evaluator()
+step_quality_evaluator::step_quality_evaluator(std::string robot_name_):robot_name(robot_name_)
 {
-    left_refy=-0.15;
-    refx=0.15;
+    if(robot_name=="coman")
+    {
+	left_refy=-0.15;
+	refx=0.15;
+    }
+    if(robot_name=="atlas")
+    {
+	left_refy=-0.25;
+	refx=0.25;
+    }
     
     joint_costs.push_back(0.1);
     joint_costs.push_back(0.1);
