@@ -14,6 +14,7 @@ public:
     ~tilt_filter();
     void filter_normals(std::list<polygon_with_normals>& data);
     void filter_single_normals(std::list<polygon_with_normals>& data);
+    void set_world(KDL::Frame World_Camera_);
 
 private:
     void set_max_tilt(double max_tilt_);
@@ -21,6 +22,10 @@ private:
 
     double max_tilt;
     double value;
+    
+    KDL::Frame World_Camera;
+    bool world_set;
+    KDL::Vector World_point,World_normal;
 };
 
 #endif //TILT_FILTER_H

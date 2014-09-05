@@ -5,6 +5,12 @@ tilt_filter::tilt_filter(double max_tilt_):max_tilt(max_tilt_)
 
 }
 
+void tilt_filter::set_world(KDL::Frame World_Camera_)
+{
+    World_Camera=World_Camera_;
+    world_set = true;
+}
+
 void tilt_filter::set_max_tilt(double max_tilt_)
 {
 	max_tilt = max_tilt_;
@@ -12,21 +18,39 @@ void tilt_filter::set_max_tilt(double max_tilt_)
 
 bool tilt_filter::normal_is_in_bounds(pcl::PointXYZRGBNormal& normal)
 {
-	KDL::Vector ground_normal(0,0,1);
-	KDL::Vector n(normal.normal_x-normal.x,normal.normal_y-normal.y,normal.normal_z-normal.z);
-	n = n/n.Norm();
-      
-	value = dot(ground_normal,n);
+    KDL::Vector Camera_point;
+    Camera_point.x(normal.x);
+    Camera_point.y(normal.y);
+    Camera_point.z(normal.z);
+    KDL::Vector Camera_normal;
+    Camera_normal.x(normal.normal_x);
+    Camera_normal.y(normal.normal_y);
+    Camera_normal.z(normal.normal_z);
+    
+    World_point = World_Camera*Camera_point;
+    World_normal = World_Camera*Camera_normal;
+    
+    KDL::Vector ground_normal(0,0,1);
+    KDL::Vector n(World_normal.x()-World_point.x(),World_normal.y()-World_point.y(),World_normal.z()-World_point.z());
+    n = n/n.Norm();
+  
+    value = dot(ground_normal,n);
 
 // 	std::cout<<"||TILT: "<<n.x()<<' '<<n.y()<<' '<<n.z()<<" => "<<value<<std::endl;
-	
-	if(fabs(value) < max_tilt) return false;
     
+    if(fabs(value) < max_tilt) return false;
+
 	return true;
 }
 
 void tilt_filter::filter_normals(std::list<polygon_with_normals>& data)
-{    
+{
+    if(!world_set)
+    {
+        std::cout<<"ERROR: STANCE FOOT NOT SET"<<std::endl;
+        return;
+    }
+	
     for(std::list<polygon_with_normals>::iterator it=data.begin(); it!=data.end();)
     {
 	if(!normal_is_in_bounds(it->average_normal))
@@ -40,6 +64,12 @@ void tilt_filter::filter_normals(std::list<polygon_with_normals>& data)
 
 void tilt_filter::filter_single_normals(std::list< polygon_with_normals >& data)
 {
+    if(!world_set)
+    {
+        std::cout<<"ERROR: STANCE FOOT NOT SET"<<std::endl;
+        return;
+    }
+    
     int temp=0;
     
     for(auto item:data)

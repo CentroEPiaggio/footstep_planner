@@ -109,6 +109,7 @@ void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& aff
 {
     ROS_INFO("Number of affordances: %lu ",affordances.size());
     
+    filter_by_tilt->set_world(World_Camera);
     filter_by_tilt->filter_normals(affordances);   //filter on the tilt of the normal
     
     ROS_INFO("Number of affordances after tilt filter : %lu ",affordances.size());    
