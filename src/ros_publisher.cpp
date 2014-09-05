@@ -116,6 +116,7 @@ void ros_publisher::publish_foot_position(KDL::Frame World_MovingFoot,int centro
     foot_marker.color.r=255*left;
     foot_marker.color.g=255*(!left);
     foot_marker.id = centroid_id; //to have a unique id
+    foot_marker.lifetime = ros::Duration(0);
             
     pub_footstep.publish(foot_marker);
     
