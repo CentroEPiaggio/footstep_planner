@@ -11,7 +11,7 @@ extern volatile bool quit;
 
 rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period)
 :RateThread(period), nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link")),
-command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner("atlas",&publisher)
+command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner("coman",&publisher)
 {
     // init publishers and subscribers
     
