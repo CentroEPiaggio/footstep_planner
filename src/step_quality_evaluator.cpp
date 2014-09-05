@@ -20,6 +20,25 @@ step_quality_evaluator::step_quality_evaluator(std::string robot_name_):robot_na
     joint_costs.push_back(0.3);
     joint_costs.push_back(0.2);
     joint_costs.push_back(0.2);
+    joint_costs.push_back(0.1);
+    joint_costs.push_back(0.1);
+    joint_costs.push_back(0.1);
+    joint_costs.push_back(0.3);
+    joint_costs.push_back(0.2);
+    joint_costs.push_back(0.2);
+    
+    joint_center_costs.push_back(0.5);
+    joint_center_costs.push_back(0.25);
+    joint_center_costs.push_back(1.0);
+    joint_center_costs.push_back(1.0);
+    joint_center_costs.push_back(1.0);
+    joint_center_costs.push_back(1.0);
+    joint_center_costs.push_back(0.5);
+    joint_center_costs.push_back(0.25);
+    joint_center_costs.push_back(1.0);
+    joint_center_costs.push_back(1.0);
+    joint_center_costs.push_back(1.0);
+    joint_center_costs.push_back(1.0);
 }
 
 
@@ -42,14 +61,28 @@ double step_quality_evaluator::angle_from_reference_direction(planner::foot_with
 }
 
 double step_quality_evaluator::energy_consumption(planner::foot_with_joints const& state)
-{
-	auto left_joints = state.start_joints;
-	auto right_joints = state.end_joints;
+{	
+	auto joints = state.end_joints; // 	TODO check which joints should be used: start_joints, end_joints or joints 
 
 	double cost=0;
-		
 	for(int i=0; i<joint_costs.size(); i++)
-		cost += joint_costs.at(i)*(fabs(left_joints(i))+fabs(right_joints(i)));
-	
+		cost += joint_costs.at(i)*(fabs(joints(i)));
 	return cost;
 }
+
+double step_quality_evaluator::distance_from_joint_center(const foot_with_joints& state)
+{
+	auto joints = state.end_joints;
+	
+	double cost=0;
+		
+	for(int i=0; i<joint_center_costs.size(); i++)
+		cost += joint_center_costs.at(i)*((joints(i)-(joint_chain->q_max(i)-joint_chain->q_min(i))/2.0)/fabs((joint_chain->q_max(i)-joint_chain->q_min(i))));
+	return cost;
+}
+
+void step_quality_evaluator::set_single_chain(safe_ordered_chain* joint_chain_)
+{
+	joint_chain=joint_chain_;
+}
+

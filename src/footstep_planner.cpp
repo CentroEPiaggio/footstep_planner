@@ -145,6 +145,8 @@ void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bo
     kinematicFilter.setWorld_StanceFoot(World_StanceFoot);
     kinematicFilter.filter(steps);
     last_used_joint_names=kinematicFilter.getJointOrder();
+    joint_chain=kinematicFilter.getJointChain();
+    
 }
 
 void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool left)
@@ -153,6 +155,7 @@ void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool
     comFilter.setWorld_StanceFoot(World_StanceFoot);
     comFilter.filter(steps);
     last_used_joint_names=comFilter.getJointOrder();
+    joint_chain=kinematicFilter.getJointChain();
 }
 
 
@@ -214,6 +217,24 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 		result=centroid;
 		
 		std::cout<<"||New Best Step for energy consumption: "<<min<<std::endl;
+	    }
+	}
+        return result;
+    }
+    else if(loss_function_type==2)
+    {	
+	stepQualityEvaluator.set_single_chain(&joint_chain);
+	double min=100000000000000;
+	foot_with_joints result;
+	for (auto centroid:centroids)
+	{
+	    auto scalar=stepQualityEvaluator.distance_from_joint_center(centroid);
+	    if (scalar<min)
+	    {
+		min=scalar;
+		result=centroid;
+		
+		std::cout<<"||New Best Step for minimum distance from joints center: "<<min<<std::endl;
 	    }
 	}
         return result;

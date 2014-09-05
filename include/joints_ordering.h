@@ -58,10 +58,10 @@ public:
 };
 
 
-template <class chain_order>
+// template <class chain_order>
 class safe_ordered_chain:public chain_and_solvers
 {
 public:
-chain_order joints_value, q_min, q_max;
+    KDL::JntArray joints_value, q_min, q_max;
 };
 #endif // JOINTSWAISTLEFTFOOT_H

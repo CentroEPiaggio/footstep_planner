@@ -61,6 +61,7 @@ private:
     
     ros_publisher* ros_pub;
     int color_filtered;
+    safe_ordered_chain joint_chain;
     
 public:
     footstepPlanner(std::string robot_name_, ros_publisher* ros_pub_);
@@ -76,7 +77,7 @@ public:
     
     
     void setWorldTransform(KDL::Frame transform);
-    foot_with_joints selectBestCentroid(std::list<foot_with_joints>const& centroids, bool left, int loss_function_type=0);
+    foot_with_joints selectBestCentroid(const std::list< foot_with_joints >& centroids, bool left, int loss_function_type = 0);
     inline KDL::Frame getWorldTransform(){return World_Camera;}
     
     //Camera Link Frame

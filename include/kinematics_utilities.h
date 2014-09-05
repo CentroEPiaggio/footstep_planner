@@ -12,12 +12,20 @@
 #include <joints_ordering.h>
 
 
-typedef safe_ordered_chain<JointsWaistLeftFoot> ChainWaistLeftFoot;
-typedef safe_ordered_chain<JointsWaistRightFoot> ChainWaistRightFoot;
-typedef safe_ordered_chain<JointsLeftFootWaist> ChainLeftFootWaist;
-typedef safe_ordered_chain<JointsRightFootWaist> ChainRightFootWaist;
-typedef safe_ordered_chain<JointsLeftFootWaistRightFoot> ChainLeftFootWaistRightFoot;
-typedef safe_ordered_chain<JointsRightFootWaistLeftFoot> ChainRightFootWaistLeftFoot;
+// typedef safe_ordered_chain<JointsWaistLeftFoot> ChainWaistLeftFoot;
+// typedef safe_ordered_chain<JointsWaistRightFoot> ChainWaistRightFoot;
+// typedef safe_ordered_chain<JointsLeftFootWaist> ChainLeftFootWaist;
+// typedef safe_ordered_chain<JointsRightFootWaist> ChainRightFootWaist;
+// typedef safe_ordered_chain<JointsLeftFootWaistRightFoot> ChainLeftFootWaistRightFoot;
+// typedef safe_ordered_chain<JointsRightFootWaistLeftFoot> ChainRightFootWaistLeftFoot;
+
+class ChainWaistLeftFoot : public JointsWaistLeftFoot, public safe_ordered_chain{};
+class ChainWaistRightFoot : public JointsWaistRightFoot, public safe_ordered_chain{};
+class ChainLeftFootWaist : public JointsLeftFootWaist, public safe_ordered_chain{};
+class ChainRightFootWaist : public JointsRightFootWaist, public safe_ordered_chain{};
+class ChainLeftFootWaistRightFoot : public JointsLeftFootWaistRightFoot, public safe_ordered_chain{};
+class ChainRightFootWaistLeftFoot : public JointsRightFootWaistLeftFoot, public safe_ordered_chain{};
+
 
 /*class ChainRightFootWaistLeftFootWaist:public safe_ordered_chain
 {
