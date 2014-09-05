@@ -10,7 +10,7 @@ using namespace planner;
 
 #define DISTANCE_THRESHOLD 0.02*0.02 //We work with squares of distances, so this threshould is the square of 2cm!
 
-footstepPlanner::footstepPlanner(ros_publisher* ros_pub_):kinematicFilter("coman"),comFilter("coman"),stepQualityEvaluator("coman"),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
+footstepPlanner::footstepPlanner(std::string robot_name_, ros_publisher* ros_pub_):kinematicFilter(robot_name_),comFilter(robot_name_),stepQualityEvaluator(robot_name_),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
     KDL::Frame Waist_StanceFoot;
     left_joints.resize(kinematics.wl_leg.chain.getNrOfJoints());

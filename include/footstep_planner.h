@@ -63,7 +63,7 @@ private:
     int color_filtered;
     
 public:
-    footstepPlanner(ros_publisher* ros_pub_);
+    footstepPlanner(std::string robot_name_, ros_publisher* ros_pub_);
     gram_schmidt gs_utils;
     kinematics_utilities kinematics; //TODO: remove!!
     
