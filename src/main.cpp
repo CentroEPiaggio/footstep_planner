@@ -11,15 +11,16 @@ protected:
     yarp::os::Network* yarp;
     bool Alive;
     double period;
+    std::string robot_name;
 public:
-    fs_planner_module(ros::NodeHandle* nh_, yarp::os::Network* yarp_, double period_):nh(nh_),yarp(yarp_),period(period_)
+    fs_planner_module(ros::NodeHandle* nh_, yarp::os::Network* yarp_, double period_,std::string robot_name_):nh(nh_),yarp(yarp_),period(period_),robot_name(robot_name_)
     {
 	Alive=false;
     }
     
     bool my_configure()
     {
-	thr = new rosServer(nh,yarp,period);
+	thr = new rosServer(nh,yarp,period,robot_name);
 	
         if(!thr->start())
         {
@@ -70,13 +71,16 @@ int main(int argc, char **argv)
     yarp.init();
     
     walkman::drc::yarp_switch_interface switch_interface("footstep_planner");
-    std::string sCommand;
+    std::string sCommand, robot_name;
+    
+    if(argc!=0) robot_name=argv[1];
+    else robot_name="coman";
   
     ros::init(argc, argv, "footstep_planner");
     ros::NodeHandle nh;
     
     quit=false;
-    fs_planner_module node(&nh,&yarp,200);
+    fs_planner_module node(&nh,&yarp,200,robot_name);
     
     ros::ServiceServer srv_exit;
     

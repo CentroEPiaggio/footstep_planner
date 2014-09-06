@@ -9,9 +9,9 @@ using namespace planner;
 
 extern volatile bool quit;
 
-rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period)
-:RateThread(period), nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link")),
-command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner("coman",&publisher)
+rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period,std::string robot_name_)
+:RateThread(period), nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"),robot_name_),
+command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner(robot_name_,&publisher)
 {
     // init publishers and subscribers
     

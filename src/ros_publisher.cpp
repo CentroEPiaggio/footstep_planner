@@ -8,7 +8,7 @@
 #include <Eigen/src/Eigenvalues/RealQZ.h>
 using namespace planner;
 
-ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name)
+ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name,std::string robot_name_):robot_name(robot_name_)
 {
     this->node=handle;
     this->camera_link_name=camera_link_name;

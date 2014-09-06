@@ -16,7 +16,7 @@ namespace planner
 class ros_publisher
 {
 public:
-    ros_publisher(ros::NodeHandle handle, std::string camera_link_name);
+    ros_publisher(ros::NodeHandle handle, std::string camera_link_name,std::string robot_name_);
     void publish_plane_clusters(std::vector<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr> clusters);
     void publish_plane_borders(const std::list< polygon_with_normals>& borders);
     void publish_foot_position(KDL::Frame World_MovingFoot, int centroid_id, bool left);
@@ -43,6 +43,7 @@ private:
     visualization_msgs::Marker foot_marker;
     sensor_msgs::JointState last_joint_states;
     std::map< std::string, int > joints_name_to_index;
+    std::string robot_name;
 
 };
 

@@ -1,8 +1,9 @@
 <launch>	
-	<!-- the plane detector -->
+  
+  <arg name="robot" default="coman"/>
 <remap from="/joint_states" to="/footstep/joint_states"/>
 
-	<node pkg="footstep_planner" name="foot_planner" type="foot_planner" respawn="false" output="screen" cwd="node">
+	<node pkg="footstep_planner" name="foot_planner" type="foot_planner" respawn="false" output="screen" cwd="node" args="$(arg robot)">
 		<!--topic remapping-->
 		<!-- <remap from="input_cloud" to="/camera/depth_registered/points" /> -->
 		<param name="voxel_size" value="0.01" />
