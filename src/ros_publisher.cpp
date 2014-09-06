@@ -214,16 +214,6 @@ void ros_publisher::setRobotJoints(std::map< std::string, boost::shared_ptr< urd
         //std::cout<<joint.first<<joints_name_to_index[joint.first]<<"=="<<j<<std::endl;
         j++;
     }
-    
-    //HACK for visualization_msgs
-    
-    last_joint_states.position[22]=0.7;
-    last_joint_states.position[21]=-0.25;
-    last_joint_states.position[15]=-1.8;
-    last_joint_states.position[9]=0.7;
-    last_joint_states.position[8]=0.25;
-    last_joint_states.position[2]=-1.8;
-    
 }
 
 void ros_publisher::publish_starting_position()
@@ -247,6 +237,30 @@ void ros_publisher::publish_robot_joints(KDL::JntArray const& joints, std::vecto
         i++;
     }
     //std::cout<<std::endl;
+        
+    //HACK for visualization
+    if(robot_name=="coman")
+    {
+	last_joint_states.position[joints_name_to_index["RShSag"]]=0.6;
+	last_joint_states.position[joints_name_to_index["RShLat"]]=-0.4;
+	last_joint_states.position[joints_name_to_index["RElbj"]]=-1.7;
+	last_joint_states.position[joints_name_to_index["LShSag"]]=0.6;
+	last_joint_states.position[joints_name_to_index["LShLat"]]=0.4;
+	last_joint_states.position[joints_name_to_index["LElbj"]]=-1.7;
+    }
+    
+    if(robot_name=="atlas")
+    {
+	last_joint_states.position[joints_name_to_index["r_arm_shx"]]=1.3;
+	last_joint_states.position[joints_name_to_index["r_arm_ely"]]=2;
+	last_joint_states.position[joints_name_to_index["r_arm_elx"]]=-1.5;
+	last_joint_states.position[joints_name_to_index["r_arm_shy"]]=0.5;
+	last_joint_states.position[joints_name_to_index["l_arm_shx"]]=-1.3;
+	last_joint_states.position[joints_name_to_index["l_arm_ely"]]=2;
+	last_joint_states.position[joints_name_to_index["l_arm_elx"]]=1.5;
+	last_joint_states.position[joints_name_to_index["l_arm_shy"]]=0.5;
+    }
+    
     pub_ik_joints.publish(last_joint_states);
 }
 
