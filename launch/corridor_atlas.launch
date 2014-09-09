@@ -4,7 +4,7 @@
 
 <remap from="/joint_states" to="/footstep/joint_states"/>
 
-  <param name="robot_description" command="$(find xacro)/xacro.py '$(find coman_urdf)/urdf/coman_robot.urdf.xacro'" />
+     <param name="robot_description" textfile="$(find atlas_description)/urdf/atlas_v3.urdf" />
 
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" >
    <rosparam param="publish_frequency">10</rosparam>
