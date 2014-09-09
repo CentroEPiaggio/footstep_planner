@@ -231,7 +231,7 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 		min=scalar;
 		result=centroid;
 		
-		std::cout<<"||New Best Step for energy consumption: "<<min<<std::endl;
+// 		std::cout<<"||New Best Step for energy consumption: "<<min<<std::endl;
 	    }
 	}
         return result;
@@ -249,7 +249,7 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 		min=scalar;
 		result=centroid;
 		
-		std::cout<<"||New Best Step for minimum distance from joints center: "<<min<<std::endl;
+// 		std::cout<<"||New Best Step for minimum distance from joints center: "<<min<<std::endl;
 	    }
 	}
         return result;

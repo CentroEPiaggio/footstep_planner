@@ -38,7 +38,7 @@ bool foot_collision_filter::point_is_in_bounds(pcl::PointXYZRGBNormal& point)
     
     StanceFoot_point = StanceFoot_Camera*Camera_point;
     
-    std::cout<<"|| StanceFoot_point: "<<StanceFoot_point.x()<<' '<<StanceFoot_point.y()<<std::endl;
+//     std::cout<<"|| StanceFoot_point: "<<StanceFoot_point.x()<<' '<<StanceFoot_point.y()<<std::endl;
     
     if(StanceFoot_point.x() + (h/l)*(- StanceFoot_point.y()) - h < 0) return false;
 
