@@ -163,12 +163,15 @@ pcl::SamplingSurface<PointT>::samplePartition (
     const PointCloud& data, const int first, const int last,
     std::vector <int>& indices, PointCloud& output)
 {
+  float ratio = ratio_;
+  if(ratio_*(last-first)<min_sample) ratio = ((float)min_sample)/(last-first);
+  
   for (int i = first; i < last; i++)
   {
     // TODO: change to Boost random number generators!
     const float r = float (std::rand ()) / float (RAND_MAX);
 
-    if (r < ratio_)
+    if (r < ratio)
     {
       output.points.push_back (data.points[indices[i]]);
       final_indices.push_back(indices[i]);

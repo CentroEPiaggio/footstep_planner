@@ -87,6 +87,12 @@ namespace pcl
         sample_ = sample;
       }
 
+      inline void 
+      setMinSample(int min_sample_)
+      {
+	  min_sample=min_sample_;
+      }
+
       /** \brief Get the value of the internal \a sample parameter. */
       inline unsigned int
       getSample () const
@@ -151,6 +157,8 @@ namespace pcl
     private:
 
       std::vector<int> final_indices;
+    int min_sample;
+    
       /** \brief @b CompareDim is a comparator object for sorting across a specific dimenstion (i,.e X, Y or Z)
        */
       struct CompareDim
