@@ -1,6 +1,6 @@
 <launch>
 <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 0 0 4.7 -1 3.14 camera_link camera_rotated 500" />
-<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="0.8 0.1 -1.45 0 0 0 camera_rotated world 500" />
+<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="0.9 0.1 -0.9 0 0 0 camera_rotated world 500" />
 
 <remap from="/joint_states" to="/footstep/joint_states"/>
 
