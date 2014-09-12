@@ -70,7 +70,7 @@ double step_quality_evaluator::angle_from_reference_direction(planner::foot_with
         KDL::Vector World_FootDirection = centroid.World_StanceFoot*KDL::Vector(1,0,0);
         auto filter=World_DesiredDirection+World_FootDirection;
         auto moving_foot=centroid.World_MovingFoot*KDL::Vector(1,0,0);
-        double scalar=dot(filter,moving_foot);
+        double scalar=dot(filter/filter.Norm(),moving_foot/moving_foot.Norm());
         return scalar;
 }
 

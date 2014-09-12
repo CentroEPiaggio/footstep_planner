@@ -24,6 +24,7 @@ limitations under the License.*/
 using namespace planner;
 
 #define DISTANCE_THRESHOLD 0.02*0.02 //We work with squares of distances, so this threshould is the square of 2cm!
+#define ANGLE_THRESHOLD 0.2 
 
 footstepPlanner::footstepPlanner(std::string robot_name_, ros_publisher* ros_pub_):kinematicFilter(robot_name_),comFilter(robot_name_),stepQualityEvaluator(robot_name_),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
@@ -198,7 +199,6 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
 
     std::list<foot_with_joints> steps;
     
-    
     generate_frames_from_normals(affordances,steps); //generating kdl frames to place foot
     color_filtered=1;
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
@@ -219,7 +219,7 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
 
 foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints >const& centroids, bool left, int loss_function_type)
 {
-    if(loss_function_type==1)
+    if(loss_function_type==1)	// energy_consumption
     {
 	double min=100000000000000;
 	foot_with_joints result;
@@ -236,7 +236,7 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	}
         return result;
     }
-    else if(loss_function_type==2)
+    else if(loss_function_type==2)	// mobility
     {	
 	stepQualityEvaluator.set_single_chain(&joint_chain);
 	double min=100000000000000;
@@ -254,11 +254,65 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	}
         return result;
     }
-    else
+    else if (loss_function_type==3)	// sum of distance, angle and mobility
     {
+	foot_with_joints const* result=&(*centroids.begin());
 	std::vector<foot_with_joints const*> minimum_steps;
 	double min=100000000000000;
-	foot_with_joints const* result=&(*centroids.begin());
+	for (auto const& centroid:centroids)
+	{
+	    KDL::Frame StanceFoot_MovingFoot;
+	    auto distance=stepQualityEvaluator.distance_from_reference_step(centroid,left,StanceFoot_MovingFoot);
+	    if (distance-min>DISTANCE_THRESHOLD) //If it is too big, keep the old min
+		continue;
+	    if (min-distance>DISTANCE_THRESHOLD) //New minimum
+	    {
+		min=distance;
+		minimum_steps.clear();
+		minimum_steps.push_back(&(centroid)); //TODO: any better idea?
+		continue;
+	    }
+	    if (distance-min<DISTANCE_THRESHOLD && min-distance>-DISTANCE_THRESHOLD) //If near, keep them both
+	    {
+		minimum_steps.push_back(&(centroid));
+	    }
+	}
+	std::cout<<"Number of steps after distance minimization "<<minimum_steps.size()<<std::endl;
+// 	double maximum=0;
+	std::vector<foot_with_joints const*> maximum_steps;
+	int maximum_index=(*minimum_steps.begin())->index;
+	KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
+	for (auto centroid:minimum_steps)
+	{
+	    auto angle=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);	    
+	    if (angle> cos(ANGLE_THRESHOLD))
+	    {	
+		maximum_steps.push_back(centroid);
+	    }
+	}
+	std::cout<<"Number of steps after angle cost function "<<maximum_steps.size()<<std::endl;
+	stepQualityEvaluator.set_single_chain(&joint_chain);
+	min=100000000000000;
+// 	foot_with_joints result;
+	for (auto centroid:maximum_steps)
+	{
+	    auto scalar=stepQualityEvaluator.distance_from_joint_center(*centroid);
+	    if (scalar<min)
+	    {
+		min=scalar;
+		result=centroid;
+		
+// 		std::cout<<"||New Best Step for minimum distance from joints center: "<<min<<std::endl;
+	    }
+	}
+
+        return *result;
+    }
+    else
+    {
+      	foot_with_joints const* result=&(*centroids.begin());
+	std::vector<foot_with_joints const*> minimum_steps;
+	double min=100000000000000;
 	for (auto const& centroid:centroids)
 	{
 	    KDL::Frame StanceFoot_MovingFoot;
@@ -283,7 +337,6 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	double maximum=0;
 	int maximum_index=(*minimum_steps.begin())->index;
 	KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
-
 	for (auto centroid:minimum_steps)
 	{
 	    auto scalar=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);
