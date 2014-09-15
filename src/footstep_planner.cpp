@@ -294,7 +294,11 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	  stepQualityEvaluator.set_single_chain(&joint_chain);
 	  auto mobility=stepQualityEvaluator.distance_from_joint_center(*centroid);
 	  
-	  double cost = -1*fabs(angle) + .5*(start_waist_distance + end_waist_distance)/2*M_PI + .5*mobility/0.67;
+	  std::vector<double> w;
+	  w.push_back(1.0);
+	  w.push_back(0.1);
+	  w.push_back(0.1);
+	  double cost = -w.at(0)*fabs(angle) + w.at(1)*(start_waist_distance + end_waist_distance)/2*M_PI + w.at(2)*mobility/0.67;
 	  if (cost < min)
 	  {
 	    min=cost;
