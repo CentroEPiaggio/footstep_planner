@@ -27,6 +27,7 @@ public:
     double angle_from_reference_direction(planner::foot_with_joints const& centroid, KDL::Vector World_DesiredDirection);
     double energy_consumption(planner::foot_with_joints const& state);
     double distance_from_joint_center(planner::foot_with_joints const& state);
+    double waist_orientation(planner::foot_with_joints const& state, bool start);
     void set_single_chain(safe_ordered_chain* joint_chain);
 private:
     double left_refy;

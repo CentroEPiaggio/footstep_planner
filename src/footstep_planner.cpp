@@ -24,7 +24,8 @@ limitations under the License.*/
 using namespace planner;
 
 #define DISTANCE_THRESHOLD 0.02*0.02 //We work with squares of distances, so this threshould is the square of 2cm!
-#define ANGLE_THRESHOLD 0.2 
+#define ANGLE_THRESHOLD 0.2
+#define WAIST_THRESHOLD 0.2	
 
 footstepPlanner::footstepPlanner(std::string robot_name_, ros_publisher* ros_pub_):kinematicFilter(robot_name_),comFilter(robot_name_),stepQualityEvaluator(robot_name_),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
@@ -278,33 +279,70 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	    }
 	}
 	std::cout<<"Number of steps after distance minimization "<<minimum_steps.size()<<std::endl;
-// 	double maximum=0;
-	std::vector<foot_with_joints const*> maximum_steps;
-	int maximum_index=(*minimum_steps.begin())->index;
+	
+	// SINGLE FUNCTION VERSION
 	KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
+	min=100000000000000;
 	for (auto centroid:minimum_steps)
 	{
-	    auto angle=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);	    
-	    if (angle> cos(ANGLE_THRESHOLD))
-	    {	
-		maximum_steps.push_back(centroid);
-	    }
+	  auto angle=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);
+	  
+	  bool start = true;
+	  auto start_waist_distance=stepQualityEvaluator.waist_orientation(*centroid,start);//,World_DesiredDirection);
+	  auto end_waist_distance=stepQualityEvaluator.waist_orientation(*centroid,!start);
+	  
+	  stepQualityEvaluator.set_single_chain(&joint_chain);
+	  auto mobility=stepQualityEvaluator.distance_from_joint_center(*centroid);
+	  
+	  double cost = -1*fabs(angle) + .5*(start_waist_distance + end_waist_distance)/2*M_PI + .5*mobility/0.67;
+	  if (cost < min)
+	  {
+	    min=cost;
+	    result=centroid;
+	  }
 	}
-	std::cout<<"Number of steps after angle cost function "<<maximum_steps.size()<<std::endl;
-	stepQualityEvaluator.set_single_chain(&joint_chain);
-	min=100000000000000;
-// 	foot_with_joints result;
-	for (auto centroid:maximum_steps)
-	{
-	    auto scalar=stepQualityEvaluator.distance_from_joint_center(*centroid);
-	    if (scalar<min)
-	    {
-		min=scalar;
-		result=centroid;
-		
-// 		std::cout<<"||New Best Step for minimum distance from joints center: "<<min<<std::endl;
-	    }
-	}
+	
+	// STACKED FILTERS VERSION
+// 	std::vector<foot_with_joints const*> maximum_steps;
+// 	int maximum_index=(*minimum_steps.begin())->index;
+// 	KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
+// 	for (auto centroid:minimum_steps)
+// 	{
+// 	    auto angle=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);	    
+// 	    if (angle> cos(ANGLE_THRESHOLD))
+// 	    {	
+// 		maximum_steps.push_back(centroid);
+// 	    }
+// 	}
+// 	std::cout<<"Number of steps after angle cost function "<<maximum_steps.size()<<std::endl;
+// 	
+// 	std::vector<foot_with_joints const*> waist_steps;
+// 	int waist_index=(*maximum_steps.begin())->index;
+// 	for (auto centroid:maximum_steps)
+// 	{
+// 	    bool start;
+// 	    auto distance=stepQualityEvaluator.waist_orientation(*centroid,start);//,World_DesiredDirection);	    
+// // 	    std::cout<<"distance from waist and feet: "<<distance<<std::endl;
+// 	    if (distance < WAIST_THRESHOLD) waist_steps.push_back(centroid);
+// 	    
+// 	    distance=stepQualityEvaluator.waist_orientation(*centroid,!start);//,World_DesiredDirection);
+// 	    if (distance < WAIST_THRESHOLD) waist_steps.push_back(centroid);
+// 	    
+// 	}
+// 	std::cout<<"Number of steps after waist cost function "<<waist_steps.size()<<std::endl;
+// 	
+// 	stepQualityEvaluator.set_single_chain(&joint_chain);
+// 	min=100000000000000;
+// // 	foot_with_joints result;
+// 	for (auto centroid:waist_steps)
+// 	{
+// 	    auto scalar=stepQualityEvaluator.distance_from_joint_center(*centroid);
+// 	    if (scalar<min)
+// 	    {
+// 		min=scalar;
+// 		result=centroid;
+// 	    }
+// 	}
 
         return *result;
     }

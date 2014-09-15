@@ -79,9 +79,11 @@ double step_quality_evaluator::energy_consumption(planner::foot_with_joints cons
 	auto joints = state.end_joints; // 	TODO check which joints should be used: start_joints, end_joints or joints 
 
 	double cost=0;
-	for(int i=0; i<joint_costs.size(); i++)
+	for(int i=0; i<joint_costs.size(); i++){
 		cost += joint_costs.at(i)*(fabs(joints(i)));
-	return cost;
+	}
+	return cost;	
+  
 }
 
 double step_quality_evaluator::distance_from_joint_center(const foot_with_joints& state)
@@ -89,14 +91,40 @@ double step_quality_evaluator::distance_from_joint_center(const foot_with_joints
 	auto joints = state.end_joints;
 	
 	double cost=0;
-		
-	for(int i=0; i<joint_center_costs.size(); i++)
-		cost += joint_center_costs.at(i)*((joints(i)-(joint_chain->q_max(i)-joint_chain->q_min(i))/2.0)/fabs((joint_chain->q_max(i)-joint_chain->q_min(i))));
-	return cost;
+	double range=0;
+	double range_2=0;
+	for(int i=0; i<joint_center_costs.size(); i++){
+		cost += joint_center_costs.at(i)*fabs((joints(i)-(joint_chain->q_max(i)-joint_chain->q_min(i))/2.0)/fabs((joint_chain->q_max(i)-joint_chain->q_min(i))));
+// 		range += joint_center_costs.at(i)*((fabs(std::max(joint_chain->q_max(i),joint_chain->q_min(i)))-fabs(joint_chain->q_max(i)-joint_chain->q_min(i))/2.0))/fabs(joint_chain->q_max(i)-joint_chain->q_min(i));
+// 		range_2 += joint_costs.at(i)*std::max(fabs(joint_chain->q_max(i)),fabs(joint_chain->q_min(i)));
+	}
+// 	std::cout<<"Range mobility: "<<range<<std::endl;
+// 	std::cout<<"Range energy: "<<range_2<<std::endl;
+	return cost;		
+}
+
+double step_quality_evaluator::waist_orientation(const foot_with_joints& state, bool start)
+{	
+      double rw,pw,yw;
+      double rs,ps,ys;
+      double rm,pm,ym;
+      
+      state.World_StanceFoot.M.GetRPY(rs,ps,ys);
+      state.World_MovingFoot.M.GetRPY(rm,pm,ym);
+      
+      if (start) state.World_Waist.M.GetRPY(rw,pw,yw);
+      
+      else state.World_EndWaist.M.GetRPY(rw,pw,yw);
+      
+      double distance = fabs((yw-ys) + (yw-ym));		
+      
+      return distance;	
 }
 
 void step_quality_evaluator::set_single_chain(safe_ordered_chain* joint_chain_)
 {
 	joint_chain=joint_chain_;
 }
+
+
 
