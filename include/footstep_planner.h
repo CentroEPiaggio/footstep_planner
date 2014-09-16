@@ -102,6 +102,8 @@ public:
     
     // robot area for the footstep planner
     double feasible_area_;
+    
+    std::list<foot_with_joints> single_check(KDL::Frame left_foot, KDL::Frame right_foot, bool only_ik, bool move, bool left);
 };
 
 }

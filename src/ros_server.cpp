@@ -136,7 +136,43 @@ void rosServer::run()
         {
             abort();
         }
+        if(command=="ik_check")
+	{
+	    if(single_check(true,false)) status_interface.setStatus("IK check SUCCEDED");
+	    else status_interface.setStatus("IK check FAILED");
+	}
+	if(command=="ik_com_check")
+	{
+	    if(single_check(false,false)) status_interface.setStatus("IK_COM check SUCCEDED");
+	    else status_interface.setStatus("IK_COM check FAILED");
+	}
+	if(command=="custom_step")
+	{
+	    if(single_check(false,true)) status_interface.setStatus("IK_COM check SUCCEDED - Planning Custom Step");
+	    else status_interface.setStatus("IK_COM check FAILED");
+	}
     }
+}
+
+bool rosServer::single_check(bool ik_only, bool move)
+{
+    std::list<foot_with_joints> World_centroids = footstep_planner.single_check(msg.left_foot,msg.right_foot,ik_only, move,left);
+    if(World_centroids.size())
+    {
+	if(move)
+	{
+	    auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left,3);  
+	
+	    publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
+	
+	    footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot);
+
+	    path.push_back(std::make_pair(final_centroid,footstep_planner.getLastUsedChain()));
+	    left=!left;
+	}
+	return true;
+    }
+    return false;
 }
 
 bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
@@ -155,7 +191,6 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
 
     return true;
 }
-
 
 bool rosServer::singleFoot(bool left)
 {

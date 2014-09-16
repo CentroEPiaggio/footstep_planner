@@ -96,6 +96,8 @@ public:
     bool left;
     bool save_to_file;
     
+    bool single_check(bool ik_only, bool move);
+    
   public:
     //------------------ Callbacks -------------------
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);

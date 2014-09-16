@@ -217,6 +217,28 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     return steps;
 }
 
+std::list<foot_with_joints> footstepPlanner::single_check(KDL::Frame left_foot, KDL::Frame right_foot, bool only_ik, bool move, bool left)
+{
+    KDL::Frame tmp_World_StanceFoot = World_StanceFoot;
+    
+    setCurrentDirection(World_Camera.Inverse()*World_CurrentDirection);
+    
+    World_StanceFoot = (left)?left_foot:right_foot;
+    
+    std::list<foot_with_joints> list;
+    foot_with_joints fwj;
+    fwj.World_StanceFoot = (left)?left_foot:right_foot;
+    fwj.World_MovingFoot = (left)?right_foot:left_foot;
+    list.insert(list.begin(),fwj);
+    
+    kinematic_filtering(list,left);
+        
+    if(!only_ik) dynamic_filtering(list,left);
+    
+    if(!move) World_StanceFoot=tmp_World_StanceFoot;
+    
+    return list;
+}
 
 foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints >const& centroids, bool left, int loss_function_type)
 {
