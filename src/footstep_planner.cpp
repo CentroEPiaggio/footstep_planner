@@ -220,42 +220,32 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
 
 foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints >const& centroids, bool left, int loss_function_type)
 {
-    if(loss_function_type==1)	// energy_consumption
-    {
-	double min=100000000000000;
-	foot_with_joints result;
-	for (auto centroid:centroids)
-	{
-	    auto scalar=stepQualityEvaluator.energy_consumption(centroid);
-	    if (scalar<min)
-	    {
-		min=scalar;
-		result=centroid;
-		
-// 		std::cout<<"||New Best Step for energy consumption: "<<min<<std::endl;
-	    }
-	}
-        return result;
-    }
-    else if(loss_function_type==2)	// mobility
+    std::vector<double> w;
+    w.push_back(1.0); 	// angle 1.0
+    w.push_back(0.1);	// waist 0.3
+    w.push_back(0.1);	// mobility 1.0
+	  
+    if(loss_function_type==1)	// mobility
     {	
 	stepQualityEvaluator.set_single_chain(&joint_chain);
 	double min=100000000000000;
 	foot_with_joints result;
 	for (auto centroid:centroids)
-	{
-	    auto scalar=stepQualityEvaluator.distance_from_joint_center(centroid);
-	    if (scalar<min)
+	{	
+	    bool start = true;
+	    auto start_waist_distance=stepQualityEvaluator.waist_orientation(centroid,start);
+	    auto end_waist_distance=stepQualityEvaluator.waist_orientation(centroid,!start);
+	    auto mobility=stepQualityEvaluator.distance_from_joint_center(centroid);
+	    double cost = w.at(1)*(start_waist_distance + end_waist_distance)/M_PI + w.at(2)*mobility/0.67;
+	    if (cost<min)
 	    {
-		min=scalar;
+		min=cost;
 		result=centroid;
-		
-// 		std::cout<<"||New Best Step for minimum distance from joints center: "<<min<<std::endl;
 	    }
 	}
         return result;
     }
-    else if (loss_function_type==3)	// sum of distance, angle and mobility
+    else if (loss_function_type==2)	// sum of distance, angle and mobility
     {
 	foot_with_joints const* result=&(*centroids.begin());
 	std::vector<foot_with_joints const*> minimum_steps;
@@ -294,11 +284,7 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	  stepQualityEvaluator.set_single_chain(&joint_chain);
 	  auto mobility=stepQualityEvaluator.distance_from_joint_center(*centroid);
 	  
-	  std::vector<double> w;
-	  w.push_back(1.0);
-	  w.push_back(0.1);
-	  w.push_back(0.1);
-	  double cost = -w.at(0)*fabs(angle) + w.at(1)*(start_waist_distance + end_waist_distance)/2*M_PI + w.at(2)*mobility/0.67;
+	  double cost = -w.at(0)*fabs(angle) + w.at(1)*(start_waist_distance + end_waist_distance)/M_PI + w.at(2)*mobility/0.67;
 	  if (cost < min)
 	  {
 	    min=cost;
@@ -350,6 +336,21 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 
         return *result;
     }
+    else if(loss_function_type==3)	// energy_consumption
+    {
+	double min=100000000000000;
+	foot_with_joints result;
+	for (auto centroid:centroids)
+	{
+	    auto scalar=stepQualityEvaluator.energy_consumption(centroid);
+	    if (scalar<min)
+	    {
+		min=scalar;
+		result=centroid;
+	    }
+	}
+        return result;
+    }
     else
     {
       	foot_with_joints const* result=&(*centroids.begin());
@@ -376,15 +377,19 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	    }
 	}
 	
-	double maximum=0;
+	double minimum=100000000000000;
 	int maximum_index=(*minimum_steps.begin())->index;
 	KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
 	for (auto centroid:minimum_steps)
 	{
-	    auto scalar=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);
-	    if (scalar>maximum)
+	    bool start = true;
+	    auto start_waist_distance=stepQualityEvaluator.waist_orientation(*centroid,start);
+	    auto end_waist_distance=stepQualityEvaluator.waist_orientation(*centroid,!start);
+	    auto angle=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);
+	    double cost = - w.at(0)*angle/0.67 + w.at(1)*(start_waist_distance + end_waist_distance)/M_PI; 
+	    if (cost<minimum)
 	    {
-		maximum=scalar;
+		minimum=cost;
 		result=centroid;
 	    }
 	}
