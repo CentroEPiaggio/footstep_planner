@@ -71,7 +71,7 @@ double step_quality_evaluator::angle_from_reference_direction(planner::foot_with
         auto filter=World_DesiredDirection+World_FootDirection;
         auto moving_foot=centroid.World_MovingFoot*KDL::Vector(1,0,0);
         double scalar=dot(filter/filter.Norm(),moving_foot/moving_foot.Norm());
-        return scalar;
+        return fabs(scalar);
 }
 
 double step_quality_evaluator::energy_consumption(planner::foot_with_joints const& state)
@@ -116,7 +116,7 @@ double step_quality_evaluator::waist_orientation(const foot_with_joints& state, 
       
       else state.World_EndWaist.M.GetRPY(rw,pw,yw);
       
-      double distance = fabs((yw-ys) + (yw-ym));		
+      double distance = fabs(yw-(ys + ym)/2.0);		
       
       return distance;	
 }
