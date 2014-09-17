@@ -127,8 +127,8 @@ void ros_publisher::publish_foot_position(KDL::Frame World_MovingFoot,int centro
     foot_marker.pose.position.z=World_MovingFoot.p.z();
     
     World_MovingFoot.M.GetQuaternion(foot_marker.pose.orientation.x,foot_marker.pose.orientation.y,foot_marker.pose.orientation.z,foot_marker.pose.orientation.w);
-    foot_marker.color.r=255*left;
-    foot_marker.color.g=255*(!left);
+    foot_marker.color.r=255*(!left);
+    foot_marker.color.g=255*(left);
     foot_marker.id = centroid_id; //to have a unique id
     foot_marker.lifetime = ros::Duration(0);
             
@@ -291,7 +291,7 @@ void ros_publisher::publish_filtered_frames(std::list< foot_with_joints > steps,
     marker.lifetime=ros::Duration(600);
     marker.color.a=1;
     marker.type=visualization_msgs::Marker::SPHERE_LIST;
-    if (color==1) marker.color.r=1;
+    if (color==1) { marker.color.r=1; marker.color.g=0.5; marker.color.b=0.1;}
     if (color==2) { marker.color.r=1; marker.color.g=1; }
     if (color==3) marker.color.g=1;
     
