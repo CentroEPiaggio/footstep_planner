@@ -32,6 +32,7 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     pub_ik_joints = node.advertise<sensor_msgs::JointState>("/joint_states",1,true);
     pub_normal_cloud_ = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("normal_cloud"), 1);
     pub_filtered_frames = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("filtered_frames"), 1);
+    pub_average_normal_cloud_ = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("average_normal"), 1);
     
     borders_marker.header.frame_id=camera_link_name;
     borders_marker.ns="border_poly";
@@ -209,6 +210,41 @@ void ros_publisher::publish_normal_cloud(pcl::PointCloud< pcl::Normal >::Ptr nor
 }
 
 
+void ros_publisher::publish_average_normal(pcl::PointXYZRGBNormal normal, int i)
+{
+    visualization_msgs::MarkerArray msg;
+    
+    visualization_msgs::Marker marker;
+    marker.header.stamp=ros::Time::now();
+    marker.header.frame_id=camera_link_name;
+    marker.ns="normals"+std::to_string(i);
+    marker.scale.x=0.009;
+    marker.scale.y=0.015;
+    marker.scale.z=0.009;
+    marker.lifetime=ros::Duration(600);
+    marker.color.g=1;
+    marker.color.a=1;
+    marker.type=visualization_msgs::Marker::ARROW;
+    geometry_msgs::Point point1,point2;
+    
+    point1.x=normal.x;
+    point1.y=normal.y;
+    point1.z=normal.z;
+    point2.x=normal.normal_x/20.0+point1.x;
+    point2.y=normal.normal_y/20.0+point1.y;
+    point2.z=normal.normal_z/20.0+point1.z;
+    
+    marker.points.clear();
+    marker.id=i;
+    marker.points.push_back(point1);
+    marker.points.push_back(point2);
+    
+    msg.markers.push_back(marker);
+
+    pub_average_normal_cloud_.publish(msg);
+}
+
+
 void ros_publisher::publish_last_joints_position()
 {
     last_joint_states.header.stamp=ros::Time::now();
@@ -292,7 +328,7 @@ void ros_publisher::publish_filtered_frames(std::list< foot_with_joints > steps,
     marker.color.a=1;
     marker.type=visualization_msgs::Marker::SPHERE_LIST;
     if (color==1) { marker.color.r=1; marker.color.g=0.5; marker.color.b=0.1;}
-    if (color==2) { marker.color.r=1; marker.color.g=1; }
+    if (color==2) { marker.color.r=0.6; marker.color.g=0.6; }
     if (color==3) marker.color.g=1;
     
     for (auto step:steps)
