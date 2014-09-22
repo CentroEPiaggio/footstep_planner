@@ -81,6 +81,7 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
 
     pcl::PointXYZRGBNormal average_normal;
     Eigen::Vector4f plane;
+    Eigen::Matrix<double,4,1> centroid;
     float curv;
 
     for (unsigned int i=0; i< clusters.size(); i++)
@@ -140,8 +141,13 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
  	}
 	
 	pcl::computePointNormal(*(clusters[i]),plane,curv);
-	average_normal.x=0; average_normal.y=0; average_normal.z=0;
+	pcl::compute3DCentroid(*(clusters[i]),centroid);
+	average_normal.x=0+centroid[0]; average_normal.y=0+centroid[1]; average_normal.z=0+centroid[2];
         average_normal.normal_x=plane[0]; average_normal.normal_y=plane[1]; average_normal.normal_z=plane[2];
+        
+        //flipping normals w.r.t. view point
+        pcl::flipNormalTowardsViewpoint	(average_normal,0,0,0,average_normal.normal_x, average_normal.normal_y,average_normal.normal_z);
+	
 	temp.average_normal=average_normal;
 	
         if(!temp.border) {
