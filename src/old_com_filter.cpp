@@ -58,7 +58,7 @@ void centerOfMassIKSolver::DoUpdateStep(const KDL::Frame& World_StanceFoot) {
 
 centerOfMassIKSolver::centerOfMassIKSolver(iDynUtils& idynModel):idynModel(idynModel)
 {
-    this->num_joints=idynModel.coman_model->joints_.size();//TODO check if this is the right joint array (coherent with idyntree)
+    this->num_joints=idynModel.urdf_model->joints_.size();//TODO check if this is the right joint array (coherent with idyntree)
 }
 
 void centerOfMassIKSolver::updateIdynJoints(yarp::sig::Vector& joints) //TODO: avoid vector copy, check for vector order

@@ -60,7 +60,7 @@ kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(r
 //,coman_model(robot_name_)
 {
     coman= coman_model.coman_iDyn3.getKDLTree();
-    coman_urdf_model = *coman_model.coman_model;
+    coman_urdf_model = *coman_model.urdf_model;
   
     if(robot_name=="coman")
     {
