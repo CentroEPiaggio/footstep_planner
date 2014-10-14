@@ -209,11 +209,13 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     color_filtered=2;
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
-
+    auto time=ros::Time::now();
     dynamic_filtering(steps,left); //DYNAMIC FILTER
     color_filtered=3;
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
-    ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());  
+    std::cout<<"time after kinematic filter"<<time<<std::endl;
+    ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());
+
     return steps;
 }
 

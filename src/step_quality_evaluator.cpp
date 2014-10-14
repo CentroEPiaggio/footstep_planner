@@ -121,7 +121,7 @@ double step_quality_evaluator::waist_orientation(const foot_with_joints& state, 
       return distance;	
 }
 
-void step_quality_evaluator::set_single_chain(safe_ordered_chain* joint_chain_)
+void step_quality_evaluator::set_single_chain(chain_and_solvers* joint_chain_)
 {
 	joint_chain=joint_chain_;
 }

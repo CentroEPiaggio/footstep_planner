@@ -77,6 +77,7 @@ bool endcycle(std_srvs::Empty::Request& request, std_srvs::Empty::Response& resp
 
 int main(int argc, char **argv) 
 {
+    Eigen::initParallel();
     yarp::os::Network yarp;
     if(!yarp.checkNetwork()){
         std::cout<<"yarpserver not running, pls run yarpserver"<<std::endl;

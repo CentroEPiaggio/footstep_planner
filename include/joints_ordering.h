@@ -69,6 +69,8 @@ public:
     KDL::ChainIkSolverVel_pinv* ikvelsolver;
     std::vector<std::string> joint_names;
     KDL::JntArray average_joints;
+    int index;
+    KDL::JntArray joints_value, q_min, q_max;
 };
 
 
@@ -76,6 +78,5 @@ public:
 class safe_ordered_chain:public chain_and_solvers
 {
 public:
-    KDL::JntArray joints_value, q_min, q_max;
 };
 #endif // JOINTSWAISTLEFTFOOT_H

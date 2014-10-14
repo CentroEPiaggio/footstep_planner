@@ -23,7 +23,7 @@
 #define IGNORE_JOINT_LIMITS 0
 
 //NEVER call this without setting the container chain!!
-void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL::JntArray& joints_value,KDL::JntArray& q_max, KDL::JntArray& q_min)
+void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL::JntArray& joints_value,KDL::JntArray& q_max, KDL::JntArray& q_min, int index)
 {
     for (KDL::Segment& segment: container->chain.segments)
     {
@@ -39,6 +39,7 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
     container->average_joints.resize(container->chain.getNrOfJoints());
     container->fksolver=new KDL::ChainFkSolverPos_recursive(container->chain);
     container->ikvelsolver = new KDL::ChainIkSolverVel_pinv(container->chain);
+    container->index=index;
     int j=0;
     for (auto joint_name:container->joint_names)
     {
@@ -88,10 +89,38 @@ kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(r
 	rwl_legs.chain.addChain(wl_leg.chain);
     }
     
-    initialize_solvers(&wl_leg,wl_leg.joints_value,wl_leg.q_max,wl_leg.q_min);
-    initialize_solvers(&wr_leg,wr_leg.joints_value,wr_leg.q_max,wr_leg.q_min);
-    initialize_solvers(&lw_leg,lw_leg.joints_value,lw_leg.q_max,lw_leg.q_min);
-    initialize_solvers(&rw_leg,rw_leg.joints_value,rw_leg.q_max,rw_leg.q_min);
-    initialize_solvers(&lwr_legs,lwr_legs.joints_value,lwr_legs.q_max,lwr_legs.q_min);
-    initialize_solvers(&rwl_legs,rwl_legs.joints_value,rwl_legs.q_max,rwl_legs.q_min);
+    initialize_solvers(&wl_leg,wl_leg.joints_value,wl_leg.q_max,wl_leg.q_min,0);
+    initialize_solvers(&wr_leg,wr_leg.joints_value,wr_leg.q_max,wr_leg.q_min,0);
+    initialize_solvers(&lw_leg,lw_leg.joints_value,lw_leg.q_max,lw_leg.q_min,0);
+    initialize_solvers(&rw_leg,rw_leg.joints_value,rw_leg.q_max,rw_leg.q_min,0);
+    initialize_solvers(&lwr_legs,lwr_legs.joints_value,lwr_legs.q_max,lwr_legs.q_min,0);
+    initialize_solvers(&rwl_legs,rwl_legs.joints_value,rwl_legs.q_max,rwl_legs.q_min,0);
+    
+    wl_leg_vector.resize(MAX_THREADS);//[i].chain=wl_leg.chain;
+    wr_leg_vector.resize(MAX_THREADS);//[i].chain=wr_leg.chain;
+    lw_leg_vector.resize(MAX_THREADS);//[i].chain=lw_leg.chain;
+    rw_leg_vector.resize(MAX_THREADS);//[i].chain=rw_leg.chain;
+    lwr_legs_vector.resize(MAX_THREADS);//[i].chain=lwr_legs.chain;
+    rwl_legs_vector.resize(MAX_THREADS);//[i].chain=rwl_legs.chain;
+    
+    for (int i=0;i<MAX_THREADS;i++)
+    {
+        
+        wl_leg_vector[i].chain=wl_leg.chain;
+        wr_leg_vector[i].chain=wr_leg.chain;
+        lw_leg_vector[i].chain=lw_leg.chain;
+        rw_leg_vector[i].chain=rw_leg.chain;
+        lwr_legs_vector[i].chain=lwr_legs.chain;
+        rwl_legs_vector[i].chain=rwl_legs.chain;
+        
+        initialize_solvers(&wl_leg_vector[i],wl_leg_vector[i].joints_value,wl_leg_vector[i].q_max,wl_leg_vector[i].q_min,i);
+        initialize_solvers(&wr_leg_vector[i],wr_leg_vector[i].joints_value,wr_leg_vector[i].q_max,wr_leg_vector[i].q_min,i);
+        initialize_solvers(&lw_leg_vector[i],lw_leg_vector[i].joints_value,lw_leg_vector[i].q_max,lw_leg_vector[i].q_min,i);
+        initialize_solvers(&rw_leg_vector[i],rw_leg_vector[i].joints_value,rw_leg_vector[i].q_max,rw_leg_vector[i].q_min,i);
+        initialize_solvers(&lwr_legs_vector[i],lwr_legs_vector[i].joints_value,lwr_legs_vector[i].q_max,lwr_legs_vector[i].q_min,i);
+        initialize_solvers(&rwl_legs_vector[i],rwl_legs_vector[i].joints_value,rwl_legs_vector[i].q_max,rwl_legs_vector[i].q_min,i);
+        
+    }
+    
+    
 }
