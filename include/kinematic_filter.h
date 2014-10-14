@@ -33,7 +33,7 @@ public:
     void setWorld_StanceFoot(const KDL::Frame& World_StanceFoot);
     void setLeftRightFoot(bool left);
     std::vector< std::string > getJointOrder();
-    safe_ordered_chain getJointChain();
+    chain_and_solvers getJointChain();
 public:
     kinematics_utilities kinematics;
 
@@ -46,7 +46,7 @@ private:
     KDL::Frame World_StanceFoot;
     KDL::JntArray jnt_pos_in;
     std::vector< std::string > current_chain_names;
-    safe_ordered_chain current_chain;
+    chain_and_solvers current_chain;
 
 };
 

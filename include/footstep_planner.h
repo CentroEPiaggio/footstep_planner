@@ -75,7 +75,7 @@ private:
     
     ros_publisher* ros_pub;
     int color_filtered;
-    safe_ordered_chain joint_chain;
+    chain_and_solvers joint_chain;
     
 public:
     footstepPlanner(std::string robot_name_, ros_publisher* ros_pub_);

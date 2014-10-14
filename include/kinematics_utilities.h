@@ -25,7 +25,7 @@
 #include <drc_shared/idynutils.h>
 #include <joints_ordering.h>
 
-
+#define MAX_THREADS 4
 // typedef safe_ordered_chain<JointsWaistLeftFoot> ChainWaistLeftFoot;
 // typedef safe_ordered_chain<JointsWaistRightFoot> ChainWaistRightFoot;
 // typedef safe_ordered_chain<JointsLeftFootWaist> ChainLeftFootWaist;
@@ -33,12 +33,12 @@
 // typedef safe_ordered_chain<JointsLeftFootWaistRightFoot> ChainLeftFootWaistRightFoot;
 // typedef safe_ordered_chain<JointsRightFootWaistLeftFoot> ChainRightFootWaistLeftFoot;
 
-class ChainWaistLeftFoot : public JointsWaistLeftFoot, public safe_ordered_chain{};
-class ChainWaistRightFoot : public JointsWaistRightFoot, public safe_ordered_chain{};
-class ChainLeftFootWaist : public JointsLeftFootWaist, public safe_ordered_chain{};
-class ChainRightFootWaist : public JointsRightFootWaist, public safe_ordered_chain{};
-class ChainLeftFootWaistRightFoot : public JointsLeftFootWaistRightFoot, public safe_ordered_chain{};
-class ChainRightFootWaistLeftFoot : public JointsRightFootWaistLeftFoot, public safe_ordered_chain{};
+class ChainWaistLeftFoot :  public chain_and_solvers{};
+class ChainWaistRightFoot :  public chain_and_solvers{};
+class ChainLeftFootWaist : public chain_and_solvers{};
+class ChainRightFootWaist : public chain_and_solvers{};
+class ChainLeftFootWaistRightFoot : public chain_and_solvers{};
+class ChainRightFootWaistLeftFoot : public chain_and_solvers{};
 
 
 /*class ChainRightFootWaistLeftFootWaist:public safe_ordered_chain
@@ -83,6 +83,14 @@ public:
     ChainRightFootWaist rw_leg;
     ChainLeftFootWaistRightFoot lwr_legs;
     ChainRightFootWaistLeftFoot rwl_legs;
+    
+    
+    std::vector<chain_and_solvers> wl_leg_vector;
+    std::vector<chain_and_solvers> wr_leg_vector;
+    std::vector<chain_and_solvers> lw_leg_vector;
+    std::vector<chain_and_solvers> rw_leg_vector;
+    std::vector<chain_and_solvers> lwr_legs_vector;
+    std::vector<chain_and_solvers> rwl_legs_vector;
     unsigned int num_joints;
     
 /*    KDL::Chain left_leg,right_leg,LR_legs,RL_legs;
@@ -111,7 +119,7 @@ public:
 private:
     std::string robot_name;
   //  bool initJointNames(urdf::Model& robot_model, std::string parent, std::string tip, std::vector< std::string >& joint_names);
-    void initialize_solvers(chain_and_solvers* container, KDL::JntArray& joints_value, KDL::JntArray& q_max, KDL::JntArray& q_min);
+    void initialize_solvers(chain_and_solvers* container, KDL::JntArray& joints_value, KDL::JntArray& q_max, KDL::JntArray& q_min, int index);
     
 };   
     

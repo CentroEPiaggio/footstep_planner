@@ -52,7 +52,7 @@ std::vector< std::string > kinematic_filter::getJointOrder()
     return current_chain.joint_names;
 }
 
-safe_ordered_chain kinematic_filter::getJointChain()
+chain_and_solvers kinematic_filter::getJointChain()
 {
     return current_chain;
 }
