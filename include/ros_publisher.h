@@ -37,7 +37,7 @@ public:
     void publish_robot_joints(const KDL::JntArray& joints, std::vector< std::string > joint_names);
     void publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal >::Ptr normals,int i);
         void publish_normal_cloud(pcl::PointCloud< pcl::Normal >::Ptr normals,pcl::PointCloud< pcl::PointXYZRGB >::Ptr points,int i);
-    void publish_average_normal(pcl::PointXYZRGBNormal normal, int i);
+    void publish_average_normal(std::list< polygon_with_normals >& affordances);
 
     void publish_last_joints_position();
     void setRobotJoints(std::map< std::string, boost::shared_ptr< urdf::Joint > > joints_);
