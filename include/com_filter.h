@@ -32,11 +32,16 @@ public:
 
 private:
     bool thread_com_filter(std::list< planner::foot_with_joints >& data, int num_threads);
-    bool internal_filter(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World,
+    bool internal_filter_first(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World,
                 KDL::Frame World_StanceFoot,std::list<planner::foot_with_joints>& temp_list,
                 chain_and_solvers* current_stance_chain_and_solver, chain_and_solvers* current_moving_chain_and_solver,
                 double desired_hip_height
                );
+    bool internal_filter_second(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World,
+                               KDL::Frame World_StanceFoot,std::list<planner::foot_with_joints>& temp_list,
+                               chain_and_solvers* current_stance_chain_and_solver, chain_and_solvers* current_moving_chain_and_solver,
+                               double desired_hip_height
+    );
 //     bool frame_is_stable(const KDL::Frame& StanceFoot_MovingFoot,const KDL::Frame& DesiredWaist_StanceFoot, KDL::JntArray& jnt_pos);
     bool frame_is_stable(const KDL::Frame& StanceFoot_MovingFoot,const KDL::Frame& DesiredWaist_StanceFoot, KDL::JntArray& jnt_pos,
                          chain_and_solvers* current_stance_chain_and_solver, chain_and_solvers* current_moving_chain_and_solver);

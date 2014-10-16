@@ -299,7 +299,7 @@ void ros_publisher::publish_robot_joints(KDL::JntArray const& joints, std::vecto
 	last_joint_states.position[joints_name_to_index["LElbj"]]=-1.7;
     }
     
-    if(robot_name=="atlas")
+    if(robot_name=="atlas_v3")
     {
 	last_joint_states.position[joints_name_to_index["r_arm_shx"]]=1.3;
 	last_joint_states.position[joints_name_to_index["r_arm_ely"]]=2;

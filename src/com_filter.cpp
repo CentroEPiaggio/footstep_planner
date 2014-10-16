@@ -55,7 +55,48 @@ bool com_filter::thread_com_filter(std::list<planner::foot_with_joints> &data, i
     std::vector<std::thread> pool;
     for (int i=0;i<num_threads;i++)
     {
-        pool.emplace_back(std::thread(&com_filter::internal_filter,this,std::ref(temp_list[i]),StanceFoot_World,World_StanceFoot,
+        pool.emplace_back(std::thread(&com_filter::internal_filter_first,this,std::ref(temp_list[i]),StanceFoot_World,World_StanceFoot,
+                                      std::ref(result_list[i]),
+                                      &current_stance_chain_and_solver->at(i),
+                                      &current_moving_chain_and_solver->at(i),desired_hip_height));
+    }
+    for (int i=0;i<num_threads;i++)
+    {
+        pool[i].join();
+        result.splice(result.end(),temp_list[i]);
+    }
+    data.swap(result);
+    for (int i=0;i<num_threads-1;i++)
+    {
+        temp_list[i].clear();
+    }
+    pool.clear();
+    data_initial_size=data.size();
+    partition=data.size()/num_threads;
+    total=0;
+    for (int i=0;i<num_threads-1;i++)
+    {
+        auto it=data.begin();
+        for (int j=0;j<partition;j++)
+        {
+            total++;
+            ++it;
+        }
+        temp_list[i].splice(temp_list[i].begin(),data,data.begin(),it);
+    }
+    it=data.begin();
+    final_size=data_initial_size-total;
+    for (int j=0;j<final_size;j++)
+    {
+        total++;
+        ++it;
+    }
+    temp_list[num_threads-1].splice(temp_list[num_threads-1].begin(),data,data.begin(),it);
+    
+    assert(total==data_initial_size);
+    for (int i=0;i<num_threads;i++)
+    {
+        pool.emplace_back(std::thread(&com_filter::internal_filter_second,this,std::ref(temp_list[i]),StanceFoot_World,World_StanceFoot,
                                       std::ref(result_list[i]),
                                       &current_stance_chain_and_solver->at(i),
                                       &current_moving_chain_and_solver->at(i),desired_hip_height));
@@ -101,7 +142,7 @@ bool com_filter::filter(std::list<planner::foot_with_joints> &data)
 }
 
 
-bool com_filter::internal_filter(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World, KDL::Frame World_StanceFoot,
+bool com_filter::internal_filter_first(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World, KDL::Frame World_StanceFoot,
                         std::list<planner::foot_with_joints>& temp_list, chain_and_solvers* current_stance_chain_and_solver, 
                         chain_and_solvers* current_moving_chain_and_solver, double desired_hip_height )
 {
@@ -155,10 +196,21 @@ bool com_filter::internal_filter(std::list<planner::foot_with_joints> &data, KDL
         std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<std::endl;//<<"\r";std::cout.flush();//std::endl;
     }
     std::cout<<std::endl;
+}
+    
+    
+bool com_filter::internal_filter_second(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World, KDL::Frame World_StanceFoot,
+                                           std::list<planner::foot_with_joints>& temp_list, chain_and_solvers* current_stance_chain_and_solver, 
+                                           chain_and_solvers* current_moving_chain_and_solver, double desired_hip_height )
+    {
     //HACK temp_list
     temp_list.clear();
     std::cout<<"Checking for the second foot configurations: "<<data.size()<<std::endl;
-
+    int total=data.size();
+    int counter=0;
+    int total_num_examined=0;
+    int total_num_inserted=0;
+    int total_num_failed=0;
 
     auto temp=current_stance_chain_and_solver;
     current_stance_chain_and_solver=current_moving_chain_and_solver;
@@ -167,7 +219,7 @@ bool com_filter::internal_filter(std::list<planner::foot_with_joints> &data, KDL
 
 
 
-    total=total_num_inserted;
+    //total=total_num_inserted;
     counter=0;
     total_num_examined=0;
     total_num_inserted=0;
