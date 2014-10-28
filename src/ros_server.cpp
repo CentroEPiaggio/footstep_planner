@@ -165,7 +165,7 @@ bool rosServer::single_check(bool ik_only, bool move)
 	
 	    publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
 	
-	    footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot);
+	    footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot,left);
 
 	    path.push_back(std::make_pair(final_centroid,footstep_planner.getLastUsedChain()));
 	    left=!left;
@@ -235,7 +235,7 @@ bool rosServer::singleFoot(bool left)
     auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left,3);  
     publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
 
-    footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot); //Finally we make the step
+    footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot,left); //Finally we make the step
 
     path.push_back(std::make_pair(final_centroid,footstep_planner.getLastUsedChain()));
     return true;

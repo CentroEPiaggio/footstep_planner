@@ -33,7 +33,8 @@ footstepPlanner::footstepPlanner(std::string robot_name_, ros_publisher* ros_pub
     left_joints.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(left_joints);
     kinematics.wl_leg.fksolver->JntToCart(left_joints,Waist_StanceFoot);
-    World_StanceFoot=Waist_StanceFoot;//TODO: get external World_Waist
+    SetToZero(World_Waist.p);//TODO: get external World_Waist
+    World_StanceFoot=World_Waist*Waist_StanceFoot;
     std::cout<<"starting World_StanceFoot"<<World_StanceFoot<<std::endl;
     comFilter.setZeroWaistHeight(-Waist_StanceFoot.p[2]);
     coordinate_filter* temp_filter = new coordinate_filter(0,0.0,0.6);
@@ -48,9 +49,14 @@ footstepPlanner::footstepPlanner(std::string robot_name_, ros_publisher* ros_pub
     ros_pub = ros_pub_;
 }
 
-void footstepPlanner::setCurrentSupportFoot(KDL::Frame foot_position)
+void footstepPlanner::setCurrentStanceFoot(bool left)
 {
     this->World_StanceFoot=foot_position;
+void footstepPlanner::setCurrentSupportFoot(KDL::Frame World_StanceFoot, bool left)
+{
+    this->World_StanceFoot=World_StanceFoot;
+    if (left) this->LeftFoot_Waist=World_Waist.Inverse()*World_StanceFoot;
+    else this->RightFoot_Waist=World_Waist.Inverse()*World_StanceFoot;
 }
 
 void footstepPlanner::setParams(double feasible_area_)

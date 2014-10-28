@@ -86,9 +86,11 @@ public:
     std::list<foot_with_joints> getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left);
     void setParams(double feasible_area_);
     
-    //World frame
-    void setCurrentSupportFoot(KDL::Frame foot_position);
-    
+    void setCurrentSupportFoot(KDL::Frame World_StanceFoot, bool left);
+    KDL::Frame LeftFoot_Waist, InitialLeftFoot_Waist;
+    KDL::Frame RightFoot_Waist, InitialRightFoot_Waist;
+    KDL::Frame InitialMeanFoot_Waist;
+    KDL::Frame World_Waist;
     
     void setWorldTransform(KDL::Frame transform);
     foot_with_joints selectBestCentroid(const std::list< foot_with_joints >& centroids, bool left, int loss_function_type = 0);
