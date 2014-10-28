@@ -56,7 +56,7 @@ private:
     KDL::Frame createFramesFromNormal(pcl::PointXYZRGBNormal normal);
 
     //World frame
-    bool centroid_is_reachable(KDL::Frame World_MovingFoot, KDL::JntArray& jnt_pos);
+    //bool centroid_is_reachable(KDL::Frame World_MovingFoot, KDL::JntArray& jnt_pos);
             
     void generate_frames_from_normals(std::list< polygon_with_normals >const& affordances, std::list< foot_with_joints >& steps);
     

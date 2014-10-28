@@ -315,49 +315,6 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	    result=centroid;
 	  }
 	}
-	
-	// STACKED FILTERS VERSION
-// 	std::vector<foot_with_joints const*> maximum_steps;
-// 	int maximum_index=(*minimum_steps.begin())->index;
-// 	KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
-// 	for (auto centroid:minimum_steps)
-// 	{
-// 	    auto angle=stepQualityEvaluator.angle_from_reference_direction(*centroid,World_DesiredDirection);	    
-// 	    if (angle> cos(ANGLE_THRESHOLD))
-// 	    {	
-// 		maximum_steps.push_back(centroid);
-// 	    }
-// 	}
-// 	std::cout<<"Number of steps after angle cost function "<<maximum_steps.size()<<std::endl;
-// 	
-// 	std::vector<foot_with_joints const*> waist_steps;
-// 	int waist_index=(*maximum_steps.begin())->index;
-// 	for (auto centroid:maximum_steps)
-// 	{
-// 	    bool start;
-// 	    auto distance=stepQualityEvaluator.waist_orientation(*centroid,start);//,World_DesiredDirection);	    
-// // 	    std::cout<<"distance from waist and feet: "<<distance<<std::endl;
-// 	    if (distance < WAIST_THRESHOLD) waist_steps.push_back(centroid);
-// 	    
-// 	    distance=stepQualityEvaluator.waist_orientation(*centroid,!start);//,World_DesiredDirection);
-// 	    if (distance < WAIST_THRESHOLD) waist_steps.push_back(centroid);
-// 	    
-// 	}
-// 	std::cout<<"Number of steps after waist cost function "<<waist_steps.size()<<std::endl;
-// 	
-// 	stepQualityEvaluator.set_single_chain(&joint_chain);
-// 	min=100000000000000;
-// // 	foot_with_joints result;
-// 	for (auto centroid:waist_steps)
-// 	{
-// 	    auto scalar=stepQualityEvaluator.distance_from_joint_center(*centroid);
-// 	    if (scalar<min)
-// 	    {
-// 		min=scalar;
-// 		result=centroid;
-// 	    }
-// 	}
-
         return *result;
     }
     else if(loss_function_type==3)	// energy_consumption
