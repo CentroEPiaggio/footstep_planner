@@ -266,13 +266,19 @@ void ros_publisher::setRobotJoints(std::map< std::string, boost::shared_ptr< urd
     }
 }
 
-void ros_publisher::publish_starting_position()
+void ros_publisher::publish_starting_position(std::map<std::string,double> initial_pos)
 {
     last_joint_states.header.stamp=ros::Time::now();
-    for (int i=0;i<last_joint_states.name.size();i++)
+    int i=0;
+    for (auto joint:last_joint_states.name)
     {
-        last_joint_states.position[i]=0;
+        last_joint_states.position[i]=initial_pos[joint];
+        i++;
     }
+//     for (int i=0;i<last_joint_states.name.size();i++)
+//     {
+//         last_joint_states.position[i]=0;
+//     }
     pub_ik_joints.publish(last_joint_states);
 }
 

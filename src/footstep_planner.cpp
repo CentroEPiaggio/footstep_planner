@@ -62,6 +62,22 @@ void footstepPlanner::setCurrentStanceFoot(bool left)
 }
 
 
+void footstepPlanner::setInitialPosition(const KDL::JntArray& left_leg_initial_position,
+                        const KDL::JntArray& right_leg_initial_position
+)
+{
+    SetToZero(World_Waist.p);//TODO: get external World_Waist
+    this->left_leg_initial_position=left_leg_initial_position;
+    this->right_leg_initial_position=right_leg_initial_position;
+    kinematics.wl_leg.fksolver->JntToCart(left_leg_initial_position,LeftFoot_Waist);
+    std::cout<<"starting LeftFoot_Waist"<<LeftFoot_Waist<<std::endl;
+    kinematics.wr_leg.fksolver->JntToCart(right_leg_initial_position,RightFoot_Waist);
+    std::cout<<"starting RightFoot_Waist"<<RightFoot_Waist<<std::endl;
+    InitialLeftFoot_Waist=LeftFoot_Waist;
+    InitialRightFoot_Waist=RightFoot_Waist;
+    InitialMeanFoot_Waist.p=(LeftFoot_Waist.p+RightFoot_Waist.p)/2.0;
+}
+
 void footstepPlanner::setCurrentSupportFoot(KDL::Frame World_StanceFoot, bool left)
 {
     this->World_StanceFoot=World_StanceFoot;

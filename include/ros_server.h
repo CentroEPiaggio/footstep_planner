@@ -48,6 +48,7 @@
 #include <drc_shared/yarp_status_interface.h>
 #include <drc_shared/yarp_command_interface.hpp>
 #include <drc_shared/yarp_msgs/fs_planner_msg.h>
+#include <drc_shared/yarp_single_chain_interface.h>
 
 // class object for the ROS node
 namespace planner {
@@ -81,6 +82,9 @@ public:
     borderExtraction border_extraction;
     tf::Transform current_robot_transform;
 
+    
+    walkman::drc::yarp_single_chain_interface left_leg,right_leg,left_arm,right_arm,torso;
+    
     //Camera link frame
     KDL::Vector current_direction;
     std::string camera_link_name;
@@ -95,7 +99,8 @@ public:
     walkman::drc::yarp_status_interface status_interface;
     bool left;
     bool save_to_file;
-    
+    void setInitialPosition();
+    std::map<std::string,double> initial_joints_value;
     bool single_check(bool ik_only, bool move);
     
   public:

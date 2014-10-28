@@ -19,6 +19,7 @@
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/JointState.h>
 #include <xml_pcl_io.h>
+#include <drc_shared/yarp_single_chain_interface.h>
 using namespace planner;
 
 extern volatile bool quit;
@@ -26,6 +27,11 @@ extern volatile bool quit;
 rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period,std::string robot_name_)
 :RateThread(period), nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"),robot_name_),
 command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner(robot_name_,&publisher)
+left_leg("left_leg", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
+right_leg("right_leg", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
+left_arm("left_arm", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
+right_arm("right_arm", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
+torso("torso", "footstep_planner", robot_name_, false, VOCAB_CM_NONE)
 {
     // init publishers and subscribers
     
@@ -80,7 +86,19 @@ void rosServer::run()
     {
         std::string command = msg.command;
         std::cout<<" - YARP: Command ["<<seq_num<<"] received: "<<command<<std::endl;
-	
+        if (command=="set_stance_foot")
+        {
+            if (msg.starting_foot=="left")
+                footstep_planner.setCurrentStanceFoot(true);
+            else if (msg.starting_foot=="right")
+                footstep_planner.setCurrentStanceFoot(false);
+            else
+                std::cout<<"could not set starting foot to "<<msg.starting_foot<<" options are:left/right"<<std::endl;;
+        }
+	if (command=="reset_starting_position")
+        { 
+           setInitialPosition();
+        }
 	if(command=="cap_plan")
 	{
 	    save_to_file = false;
@@ -152,6 +170,40 @@ void rosServer::run()
 	    else status_interface.setStatus("IK_COM check FAILED");
 	}
     }
+}
+
+void rosServer::setInitialPosition()
+{
+    yarp::sig::Vector temp;
+    KDL::JntArray kdl_left_leg,kdl_right_leg;
+    
+    left_leg.sensePosition(temp);
+    for (int i=0;i<temp.size();i++)
+        kdl_left_leg(i)=temp[i];
+    int i=0;
+    for (auto joint:footstep_planner.kinematics.coman_model.left_leg.joint_names)
+        initial_joints_value[joint]=temp[i++];
+    right_leg.sensePosition(temp);
+    kdl_right_leg.resize(temp.size());
+    for (int i=0;i<temp.size();i++)
+        kdl_right_leg(i)=temp[i];
+    i=0;
+    for (auto joint:footstep_planner.kinematics.coman_model.right_leg.joint_names)
+        initial_joints_value[joint]=temp[i++];
+    left_arm.sensePosition(temp);
+    i=0;
+    for (auto joint:footstep_planner.kinematics.coman_model.left_arm.joint_names)
+        initial_joints_value[joint]=temp[i++];
+    right_arm.sensePosition(temp);
+    i=0;
+    for (auto joint:footstep_planner.kinematics.coman_model.right_arm.joint_names)
+        initial_joints_value[joint]=temp[i++];
+    torso.sensePosition(temp);
+    i=0;
+    for (auto joint:footstep_planner.kinematics.coman_model.torso.joint_names)
+        initial_joints_value[joint]=temp[i++];
+     footstep_planner.setInitialPosition(kdl_left_leg,kdl_right_leg);
+
 }
 
 bool rosServer::single_check(bool ik_only, bool move)
@@ -245,7 +297,7 @@ bool rosServer::sendPathToRviz()
 {
     ros::Duration sleep_time(2);
     static tf::TransformBroadcaster br;
-    publisher.publish_starting_position();
+    publisher.publish_starting_position(initial_joints_value);
     tf::transformKDLToTF(KDL::Frame::Identity(),current_robot_transform);
     br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
     sleep_time.sleep();

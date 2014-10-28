@@ -41,7 +41,7 @@ public:
 
     void publish_last_joints_position();
     void setRobotJoints(std::map< std::string, boost::shared_ptr< urdf::Joint > > joints_);
-    void publish_starting_position();
+    void publish_starting_position(std::map< std::string, double > initial_pos);
     void publish_filtered_frames(std::list<foot_with_joints> steps, KDL::Frame World_Camera, int color);
     
 private:

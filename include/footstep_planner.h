@@ -30,6 +30,7 @@
 #include "foot_collision_filter.h"
 #include "tilt_filter.h"
 #include "ros_publisher.h"
+#include <kdl/jntarray.hpp>
 
 namespace planner
 {
@@ -44,7 +45,6 @@ private:
     
     //World frame
     KDL::Frame World_StanceFoot;
-    
     kinematic_filter kinematicFilter;
     com_filter comFilter;
     step_quality_evaluator stepQualityEvaluator;
@@ -76,6 +76,7 @@ private:
     ros_publisher* ros_pub;
     int color_filtered;
     chain_and_solvers joint_chain;
+    KDL::JntArray left_leg_initial_position,right_leg_initial_position;
     
 public:
     footstepPlanner(std::string robot_name_, ros_publisher* ros_pub_);
@@ -98,6 +99,9 @@ public:
     
     //Camera Link Frame
     void setCurrentDirection(KDL::Vector direction);
+    
+    void setInitialPosition(const KDL::JntArray& left_leg_initial_position,
+                            const KDL::JntArray& right_leg_initial_position);
     
     void setDirectionVector(double x, double y, double z);
     const std::vector<std::string>& getLastUsedChain();
