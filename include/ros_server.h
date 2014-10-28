@@ -42,6 +42,7 @@
 #include "curvaturefilter.h"
 #include "borderextraction.h"
 #include "ros_publisher.h"
+#include <drc_shared/yarp_msgs/fs_walking_msg.h>
 #include <drc_shared/idynutils.h>
 
 #include <yarp/os/all.h>
@@ -95,6 +96,8 @@ public:
     bool singleFoot(bool left);
     
     walkman::drc::yarp_custom_command_interface<fs_planner_msg> command_interface;
+    walkman::drc::yarp_custom_command_sender_interface<fs_walking_msg> walking_command_interface;
+    int seq_num_out=0;
     fs_planner_msg msg;
     walkman::drc::yarp_status_interface status_interface;
     bool left;
@@ -109,6 +112,7 @@ public:
     bool extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool sendPathToRviz();
+    bool create_steps_vector(fs_walking_msg& temp);
     void init();
     
     virtual bool threadInit();

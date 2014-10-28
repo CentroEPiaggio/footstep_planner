@@ -26,7 +26,8 @@ extern volatile bool quit;
 
 rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period,std::string robot_name_)
 :RateThread(period), nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"),robot_name_),
-command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner(robot_name_,&publisher)
+command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner(robot_name_,&publisher),
+walking_command_interface("drc_walking"),
 left_leg("left_leg", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
 right_leg("right_leg", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
 left_arm("left_arm", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
@@ -145,6 +146,20 @@ void rosServer::run()
 	if (command=="draw_path")
         {
             sendPathToRviz();
+        }
+        if (command=="send_plan_to_walking")
+        {
+            fs_walking_msg temp;
+            if (!create_steps_vector(temp))
+            {
+                std::cout<<"path was not planned"<<std::endl;
+                return;
+            }
+            temp.command="steps";
+            temp.current_left_foot=footstep_planner.InitialLeftFoot_Waist;
+            temp.current_right_foot=footstep_planner.InitialRightFoot_Waist;
+            temp.starting_foot=left?"left":"right";
+            walking_command_interface.sendCommand(temp,seq_num_out++);
         }
 	if(command=="direction")
 	{
@@ -328,6 +343,17 @@ bool rosServer::sendPathToRviz()
             sleep_time.sleep();
         }
     }
+}
+
+bool rosServer::create_steps_vector(fs_walking_msg &temp)
+{
+    if (path.size()==0)
+        return false;
+    for (auto centroid:path)
+    {
+        temp.steps.push_back(centroid.first.World_MovingFoot);
+    }
+    return true;
 }
 
 
