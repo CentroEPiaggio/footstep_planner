@@ -51,7 +51,17 @@ footstepPlanner::footstepPlanner(std::string robot_name_, ros_publisher* ros_pub
 
 void footstepPlanner::setCurrentStanceFoot(bool left)
 {
-    this->World_StanceFoot=foot_position;
+    if (left)
+    {
+        World_StanceFoot=World_Waist*LeftFoot_Waist.Inverse();
+    }
+    else
+    {
+        World_StanceFoot=World_Waist*RightFoot_Waist.Inverse();
+    }
+}
+
+
 void footstepPlanner::setCurrentSupportFoot(KDL::Frame World_StanceFoot, bool left)
 {
     this->World_StanceFoot=World_StanceFoot;
