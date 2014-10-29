@@ -28,11 +28,11 @@ rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double perio
 :RateThread(period), nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"),robot_name_),
 command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner(robot_name_,&publisher),
 walking_command_interface("drc_walking"),
-left_leg("left_leg", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
-right_leg("right_leg", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
-left_arm("left_arm", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
-right_arm("right_arm", "footstep_planner", robot_name_, false, VOCAB_CM_NONE),
-torso("torso", "footstep_planner", robot_name_, false, VOCAB_CM_NONE)
+left_leg("left_leg", "footstep_planner", robot_name_, true, VOCAB_CM_NONE),
+right_leg("right_leg", "footstep_planner", robot_name_, true, VOCAB_CM_NONE),
+left_arm("left_arm", "footstep_planner", robot_name_, true, VOCAB_CM_NONE),
+right_arm("right_arm", "footstep_planner", robot_name_, true, VOCAB_CM_NONE),
+torso("torso", "footstep_planner", robot_name_, true, VOCAB_CM_NONE)
 {
     // init publishers and subscribers
     
@@ -81,7 +81,8 @@ void rosServer::run()
     std_srvs::Empty::Request req;
     std_srvs::Empty::Response res;
     
-    publisher.publish_last_joints_position();
+    //publisher.publish_last_joints_position();
+    publisher.publish_starting_position(initial_joints_value);
     
     if(command_interface.getCommand(msg,seq_num))
     {
@@ -156,9 +157,9 @@ void rosServer::run()
                 return;
             }
             temp.command="steps";
-            temp.current_left_foot=footstep_planner.InitialLeftFoot_Waist;
-            temp.current_right_foot=footstep_planner.InitialRightFoot_Waist;
-            temp.starting_foot=left?"left":"right";
+            temp.current_left_foot=footstep_planner.InitialWaist_LeftFoot;
+            temp.current_right_foot=footstep_planner.InitialWaist_RightFoot;
+            temp.starting_foot=left?"left":"right";//BUG 
             walking_command_interface.sendCommand(temp,seq_num_out++);
         }
 	if(command=="direction")
@@ -193,32 +194,41 @@ void rosServer::setInitialPosition()
     KDL::JntArray kdl_left_leg,kdl_right_leg;
     
     left_leg.sensePosition(temp);
+    kdl_left_leg.resize(temp.size());
     for (int i=0;i<temp.size();i++)
+    {
         kdl_left_leg(i)=temp[i];
-    int i=0;
+    }
+    int j=0;
     for (auto joint:footstep_planner.kinematics.coman_model.left_leg.joint_names)
-        initial_joints_value[joint]=temp[i++];
+    {
+        //std::cout<<joint<<":"<<temp[j]<<std::endl;
+        initial_joints_value[joint]=temp[j++];
+    }
     right_leg.sensePosition(temp);
     kdl_right_leg.resize(temp.size());
     for (int i=0;i<temp.size();i++)
         kdl_right_leg(i)=temp[i];
-    i=0;
+    j=0;
     for (auto joint:footstep_planner.kinematics.coman_model.right_leg.joint_names)
-        initial_joints_value[joint]=temp[i++];
+        initial_joints_value[joint]=temp[j++];
     left_arm.sensePosition(temp);
-    i=0;
+    j=0;
     for (auto joint:footstep_planner.kinematics.coman_model.left_arm.joint_names)
-        initial_joints_value[joint]=temp[i++];
+        initial_joints_value[joint]=temp[j++];
     right_arm.sensePosition(temp);
-    i=0;
+    j=0;
     for (auto joint:footstep_planner.kinematics.coman_model.right_arm.joint_names)
-        initial_joints_value[joint]=temp[i++];
+        initial_joints_value[joint]=temp[j++];
     torso.sensePosition(temp);
-    i=0;
+    j=0;
     for (auto joint:footstep_planner.kinematics.coman_model.torso.joint_names)
-        initial_joints_value[joint]=temp[i++];
+        initial_joints_value[joint]=temp[j++];
      footstep_planner.setInitialPosition(kdl_left_leg,kdl_right_leg);
 
+    for (auto joint:initial_joints_value)
+    std::cout<<joint.first<<":"<<joint.second<<std::endl;
+    
 }
 
 bool rosServer::single_check(bool ik_only, bool move)
@@ -313,7 +323,7 @@ bool rosServer::sendPathToRviz()
     ros::Duration sleep_time(2);
     static tf::TransformBroadcaster br;
     publisher.publish_starting_position(initial_joints_value);
-    tf::transformKDLToTF(KDL::Frame::Identity(),current_robot_transform);
+    tf::transformKDLToTF(footstep_planner.World_InitialWaist,current_robot_transform);
     br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "world", "base_link"));
     sleep_time.sleep();
     for (auto centroid:path)
@@ -351,7 +361,7 @@ bool rosServer::create_steps_vector(fs_walking_msg &temp)
         return false;
     for (auto centroid:path)
     {
-        temp.steps.push_back(centroid.first.World_MovingFoot);
+        temp.steps.push_back(footstep_planner.InitialWaist_MeanFoot.Inverse()*footstep_planner.World_InitialWaist.Inverse() *centroid.first.World_MovingFoot);
     }
     return true;
 }

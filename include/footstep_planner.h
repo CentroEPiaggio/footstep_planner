@@ -88,9 +88,11 @@ public:
     void setParams(double feasible_area_);
     
     void setCurrentSupportFoot(KDL::Frame World_StanceFoot, bool left);
-    KDL::Frame LeftFoot_Waist, InitialLeftFoot_Waist;
-    KDL::Frame RightFoot_Waist, InitialRightFoot_Waist;
-    KDL::Frame InitialMeanFoot_Waist;
+    KDL::Frame Waist_LeftFoot, InitialWaist_LeftFoot;
+    KDL::Frame Waist_RightFoot, InitialWaist_RightFoot;
+    KDL::Frame World_InitialWaist;
+    KDL::Frame World_Gravity;
+    KDL::Frame InitialWaist_MeanFoot;
     KDL::Frame World_Waist;
     
     void setWorldTransform(KDL::Frame transform);

@@ -51,14 +51,43 @@ footstepPlanner::footstepPlanner(std::string robot_name_, ros_publisher* ros_pub
 
 void footstepPlanner::setCurrentStanceFoot(bool left)
 {
+    left_joints.resize(kinematics.wl_leg.chain.getNrOfJoints());
+    SetToZero(left_joints);
+    SetToZero(World_Waist.p);//TODO: get external World_Waist
+    KDL::Frame defaultWaist_StanceFoot;
     if (left)
     {
-        World_StanceFoot=World_Waist*LeftFoot_Waist.Inverse();
+        kinematics.wl_leg.fksolver->JntToCart(left_joints, defaultWaist_StanceFoot);
+        World_InitialWaist=World_Waist*defaultWaist_StanceFoot*Waist_LeftFoot.Inverse();
+        World_StanceFoot=World_InitialWaist*Waist_LeftFoot;
     }
     else
     {
-        World_StanceFoot=World_Waist*RightFoot_Waist.Inverse();
+        kinematics.wr_leg.fksolver->JntToCart(left_joints, defaultWaist_StanceFoot);
+        World_InitialWaist=World_Waist*defaultWaist_StanceFoot*Waist_RightFoot.Inverse();
+        World_StanceFoot=World_InitialWaist*Waist_RightFoot;
     }
+    
+    
+    InitialWaist_MeanFoot.p=(Waist_LeftFoot.p+Waist_RightFoot.p)/2.0;
+    //auto x_axis=(Waist_LeftFoot.p-Waist_RightFoot.p);
+    //x_axis.Normalize();
+    double roll,pitch,yaw;
+    World_InitialWaist.M.GetRPY(roll,pitch,yaw);
+    KDL::Vector Waist_GravityFromIMU(0,0,1);//TODO
+    Waist_GravityFromIMU.Normalize();
+    auto z_axis=Waist_GravityFromIMU;
+    KDL::Vector x_axis=KDL::Rotation::Rot2(z_axis,yaw)*KDL::Vector(1,0,0);
+    KDL::Vector y_axis=z_axis*x_axis;
+    InitialWaist_MeanFoot.M=KDL::Rotation(x_axis,y_axis,z_axis);
+    
+    ros::Duration sleep_time(2);
+    static tf::TransformBroadcaster br;
+    tf::Transform current_robot_transform;
+    tf::transformKDLToTF(InitialWaist_MeanFoot,current_robot_transform);
+    br.sendTransform(tf::StampedTransform(current_robot_transform, ros::Time::now(), "base_link", "MEAN_Foot"));
+    sleep_time.sleep();
+    
 }
 
 
@@ -66,23 +95,22 @@ void footstepPlanner::setInitialPosition(const KDL::JntArray& left_leg_initial_p
                         const KDL::JntArray& right_leg_initial_position
 )
 {
-    SetToZero(World_Waist.p);//TODO: get external World_Waist
     this->left_leg_initial_position=left_leg_initial_position;
     this->right_leg_initial_position=right_leg_initial_position;
-    kinematics.wl_leg.fksolver->JntToCart(left_leg_initial_position,LeftFoot_Waist);
-    std::cout<<"starting LeftFoot_Waist"<<LeftFoot_Waist<<std::endl;
-    kinematics.wr_leg.fksolver->JntToCart(right_leg_initial_position,RightFoot_Waist);
-    std::cout<<"starting RightFoot_Waist"<<RightFoot_Waist<<std::endl;
-    InitialLeftFoot_Waist=LeftFoot_Waist;
-    InitialRightFoot_Waist=RightFoot_Waist;
-    InitialMeanFoot_Waist.p=(LeftFoot_Waist.p+RightFoot_Waist.p)/2.0;
+    kinematics.wl_leg.fksolver->JntToCart(left_leg_initial_position,Waist_LeftFoot);
+    std::cout<<"starting Waist_LeftFoot"<<Waist_LeftFoot<<std::endl;
+    kinematics.wr_leg.fksolver->JntToCart(right_leg_initial_position,Waist_RightFoot);
+    std::cout<<"starting Waist_RightFoot"<<Waist_RightFoot<<std::endl;
+    InitialWaist_LeftFoot=Waist_LeftFoot;
+    InitialWaist_RightFoot=Waist_RightFoot;
+    
 }
 
 void footstepPlanner::setCurrentSupportFoot(KDL::Frame World_StanceFoot, bool left)
 {
     this->World_StanceFoot=World_StanceFoot;
-    if (left) this->LeftFoot_Waist=World_Waist.Inverse()*World_StanceFoot;
-    else this->RightFoot_Waist=World_Waist.Inverse()*World_StanceFoot;
+    if (left) this->Waist_LeftFoot=World_Waist.Inverse()*World_StanceFoot;
+    else this->Waist_RightFoot=World_Waist.Inverse()*World_StanceFoot;
 }
 
 void footstepPlanner::setParams(double feasible_area_)
