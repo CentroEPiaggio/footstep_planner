@@ -160,7 +160,7 @@ void rosServer::run()
             temp.current_left_foot=footstep_planner.InitialWaist_LeftFoot;
             temp.current_right_foot=footstep_planner.InitialWaist_RightFoot;
             temp.starting_foot=left?"left":"right";//BUG 
-            walking_command_interface.sendCommand(temp,seq_num_out++);
+            walking_command_interface.sendCommand(temp,seq_num_out++);  //TODO: fix the usage of this, walking has changed
         }
 	if(command=="direction")
 	{
@@ -361,7 +361,9 @@ bool rosServer::create_steps_vector(fs_walking_msg &temp)
         return false;
     for (auto centroid:path)
     {
-        temp.steps.push_back(footstep_planner.InitialWaist_MeanFoot.Inverse()*footstep_planner.World_InitialWaist.Inverse() *centroid.first.World_MovingFoot);
+        step_with_name temp_step;
+	temp_step.pose = footstep_planner.InitialWaist_MeanFoot.Inverse()*footstep_planner.World_InitialWaist.Inverse() *centroid.first.World_MovingFoot;
+        temp.steps.push_back(temp_step);
     }
     return true;
 }
