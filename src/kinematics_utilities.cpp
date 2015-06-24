@@ -57,13 +57,13 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
 }
 
 
-kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(robot_name_),idyn_model(robot_name_)
+kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(robot_name_),idyn_model(robot_name_,"/home/ale/projects/walkman/drc/iit-bigman-ros-pkg/bigman_urdf/urdf/bigman.urdf","/home/ale/projects/walkman/drc/iit-bigman-ros-pkg/bigman_srdf/srdf/bigman.srdf")
 //,idyn_model(robot_name_)
 {
     robot_kdl= idyn_model.iDyn3_model.getKDLTree();
     urdf_model = *idyn_model.urdf_model;
   
-    if(robot_name=="coman")
+    if(robot_name=="coman" || robot_name=="walkman" || robot_name=="bigman")
     {
         robot_kdl.getChain("Waist","l_sole",wl_leg.chain);
 	robot_kdl.getChain("Waist","r_sole",wr_leg.chain);
@@ -76,7 +76,7 @@ kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(r
 	rwl_legs.chain.addChain(wl_leg.chain);
     }
     
-    if(robot_name=="atlas_v3" || robot_name=="walkman" || robot_name=="bigman")
+    if(robot_name=="atlas_v3")
     {
 	robot_kdl.getChain("pelvis","l_sole",wl_leg.chain);
 	robot_kdl.getChain("pelvis","r_sole",wr_leg.chain);

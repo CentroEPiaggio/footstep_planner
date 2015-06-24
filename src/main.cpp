@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     walkman::drc::yarp_switch_interface switch_interface("footstep_planner");
     std::string sCommand, robot_name;
     
-    if(argc!=0) robot_name=argv[1];
+    if(argc==2) robot_name=argv[1];
     else robot_name="bigman";
   
     ros::init(argc, argv, "footstep_planner");

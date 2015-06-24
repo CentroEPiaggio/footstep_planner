@@ -84,7 +84,6 @@ public:
     tf::Transform current_robot_transform;
 
     
-    walkman::drc::yarp_single_chain_interface left_leg,right_leg,left_arm,right_arm,torso;
     
     //Camera link frame
     KDL::Vector current_direction;
