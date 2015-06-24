@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     std::string sCommand, robot_name;
     
     if(argc!=0) robot_name=argv[1];
-    else robot_name="coman";
+    else robot_name="bigman";
   
     ros::init(argc, argv, "footstep_planner");
     ros::NodeHandle nh;

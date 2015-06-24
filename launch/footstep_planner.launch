@@ -1,6 +1,6 @@
 <launch>	
   
-  <arg name="robot" default="coman"/>
+  <arg name="robot" default="bigman"/>
 <remap from="/joint_states" to="/footstep/joint_states"/>
 
 	<node pkg="footstep_planner" name="foot_planner" type="foot_planner" respawn="false" output="screen" cwd="node" args="$(arg robot)">

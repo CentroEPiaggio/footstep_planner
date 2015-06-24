@@ -47,8 +47,8 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
         q_max(j)=M_PI/3.0;
         q_min(j)=-M_PI/3.0;
         #else
-        q_max(j)=coman_urdf_model.joints_[joint_name]->limits->upper;
-        q_min(j)=coman_urdf_model.joints_[joint_name]->limits->lower;
+        q_max(j)=urdf_model.joints_[joint_name]->limits->upper;
+        q_min(j)=urdf_model.joints_[joint_name]->limits->lower;
         #endif
 	container->average_joints(j)=(q_max(j)+q_min(j))/2.0;
         j++;
@@ -57,35 +57,35 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
 }
 
 
-kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(robot_name_),coman_model(robot_name_)
-//,coman_model(robot_name_)
+kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(robot_name_),idyn_model(robot_name_)
+//,idyn_model(robot_name_)
 {
-    coman= coman_model.coman_iDyn3.getKDLTree();
-    coman_urdf_model = *coman_model.urdf_model;
+    robot_kdl= idyn_model.iDyn3_model.getKDLTree();
+    urdf_model = *idyn_model.urdf_model;
   
     if(robot_name=="coman")
     {
-        coman.getChain("Waist","l_sole",wl_leg.chain);
-	coman.getChain("Waist","r_sole",wr_leg.chain);
-	coman.getChain("l_sole","Waist",lw_leg.chain);
-	coman.getChain("r_sole","Waist",rw_leg.chain);
+        robot_kdl.getChain("Waist","l_sole",wl_leg.chain);
+	robot_kdl.getChain("Waist","r_sole",wr_leg.chain);
+	robot_kdl.getChain("l_sole","Waist",lw_leg.chain);
+	robot_kdl.getChain("r_sole","Waist",rw_leg.chain);
 	num_joints=wl_leg.chain.getNrOfJoints()+wr_leg.chain.getNrOfJoints();
-	coman.getChain("l_sole","Waist",lwr_legs.chain);
+	robot_kdl.getChain("l_sole","Waist",lwr_legs.chain);
 	lwr_legs.chain.addChain(wr_leg.chain);
-	coman.getChain("r_sole","Waist",rwl_legs.chain);
+	robot_kdl.getChain("r_sole","Waist",rwl_legs.chain);
 	rwl_legs.chain.addChain(wl_leg.chain);
     }
     
-    if(robot_name=="atlas_v3")
+    if(robot_name=="atlas_v3" || robot_name=="walkman" || robot_name=="bigman")
     {
-	coman.getChain("pelvis","l_sole",wl_leg.chain);
-	coman.getChain("pelvis","r_sole",wr_leg.chain);
-	coman.getChain("l_sole","pelvis",lw_leg.chain);
-	coman.getChain("r_sole","pelvis",rw_leg.chain);
+	robot_kdl.getChain("pelvis","l_sole",wl_leg.chain);
+	robot_kdl.getChain("pelvis","r_sole",wr_leg.chain);
+	robot_kdl.getChain("l_sole","pelvis",lw_leg.chain);
+	robot_kdl.getChain("r_sole","pelvis",rw_leg.chain);
 	num_joints=wl_leg.chain.getNrOfJoints()+wr_leg.chain.getNrOfJoints();
-	coman.getChain("l_sole","pelvis",lwr_legs.chain);
+	robot_kdl.getChain("l_sole","pelvis",lwr_legs.chain);
 	lwr_legs.chain.addChain(wr_leg.chain);
-	coman.getChain("r_sole","pelvis",rwl_legs.chain);
+	robot_kdl.getChain("r_sole","pelvis",rwl_legs.chain);
 	rwl_legs.chain.addChain(wl_leg.chain);
     }
     

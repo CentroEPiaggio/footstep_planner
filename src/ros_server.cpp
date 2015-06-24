@@ -41,7 +41,7 @@ torso("torso", "footstep_planner", robot_name_, true, VOCAB_CM_NONE)
     srv_border_extraction = nh->advertiseService(nh->resolveName("border_extraction"), &rosServer::extractBorders, this);
     srv_footstep_placer = nh->advertiseService(nh->resolveName("footstep_placer"),&rosServer::planFootsteps, this);
     
-    publisher.setRobotJoints(footstep_planner.kinematics.coman_urdf_model.joints_);
+    publisher.setRobotJoints(footstep_planner.kinematics.urdf_model.joints_);
     
     double curvature_threshold_,voxel_size_,normal_radius_,cluster_tolerance_;
     int min_cluster_size_;
@@ -200,7 +200,7 @@ void rosServer::setInitialPosition()
         kdl_left_leg(i)=temp[i];
     }
     int j=0;
-    for (auto joint:footstep_planner.kinematics.coman_model.left_leg.joint_names)
+    for (auto joint:footstep_planner.kinematics.idyn_model.left_leg.joint_names)
     {
         //std::cout<<joint<<":"<<temp[j]<<std::endl;
         initial_joints_value[joint]=temp[j++];
@@ -210,19 +210,19 @@ void rosServer::setInitialPosition()
     for (int i=0;i<temp.size();i++)
         kdl_right_leg(i)=temp[i];
     j=0;
-    for (auto joint:footstep_planner.kinematics.coman_model.right_leg.joint_names)
+    for (auto joint:footstep_planner.kinematics.idyn_model.right_leg.joint_names)
         initial_joints_value[joint]=temp[j++];
     left_arm.sensePosition(temp);
     j=0;
-    for (auto joint:footstep_planner.kinematics.coman_model.left_arm.joint_names)
+    for (auto joint:footstep_planner.kinematics.idyn_model.left_arm.joint_names)
         initial_joints_value[joint]=temp[j++];
     right_arm.sensePosition(temp);
     j=0;
-    for (auto joint:footstep_planner.kinematics.coman_model.right_arm.joint_names)
+    for (auto joint:footstep_planner.kinematics.idyn_model.right_arm.joint_names)
         initial_joints_value[joint]=temp[j++];
     torso.sensePosition(temp);
     j=0;
-    for (auto joint:footstep_planner.kinematics.coman_model.torso.joint_names)
+    for (auto joint:footstep_planner.kinematics.idyn_model.torso.joint_names)
         initial_joints_value[joint]=temp[j++];
      footstep_planner.setInitialPosition(kdl_left_leg,kdl_right_leg);
 

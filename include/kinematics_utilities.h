@@ -72,10 +72,10 @@ public:
     kinematics_utilities(std::string robot_name);
 //    Eigen::Matrix<double,6,1> left_foot, right_foot;
     
-    urdf::Model coman_urdf_model;
+    urdf::Model urdf_model;
     
-    iDynUtils coman_model;
-    KDL::Tree coman;
+    iDynUtils idyn_model;
+    KDL::Tree robot_kdl;
 
     ChainWaistLeftFoot wl_leg;
     ChainWaistRightFoot wr_leg;
