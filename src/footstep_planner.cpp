@@ -189,7 +189,7 @@ void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& aff
     filter_by_tilt->set_world(World_Camera);
     filter_by_tilt->filter_normals(affordances);   //filter on the tilt of the normal
     
-    ROS_INFO("Number of affordances after tilt filter : %lu ",affordances.size());    
+    ROS_INFO("Number of affordances after tilt filter : %lu ",affordances.size());
     
     KDL::Frame StanceFoot_Camera =  World_StanceFoot.Inverse()*World_Camera;
 

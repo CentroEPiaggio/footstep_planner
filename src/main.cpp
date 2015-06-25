@@ -15,9 +15,10 @@
 #include <yarp/os/all.h>
 #include <ros/ros.h>
 #include "ros_server.h"
+
 volatile bool quit;
 
-class fs_planner_module: public yarp::os::RFModule
+class fs_planner_module//: public yarp::os::RFModule
 {
 protected:
     rosServer* thr;
@@ -79,13 +80,13 @@ int main(int argc, char **argv)
 {
     Eigen::initParallel();
     yarp::os::Network yarp;
-    if(!yarp.checkNetwork()){
-        std::cout<<"yarpserver not running, pls run yarpserver"<<std::endl;
-        return 0;
-    }
-    yarp.init();
+//     if(!yarp.checkNetwork()){
+//         std::cout<<"yarpserver not running, pls run yarpserver"<<std::endl;
+//         return 0;
+//     }
+//     yarp.init();
     
-    walkman::drc::yarp_switch_interface switch_interface("footstep_planner");
+    //walkman::yarp_switch_interface switch_interface("footstep_planner");
     std::string sCommand, robot_name;
     
     if(argc==2) robot_name=argv[1];
@@ -110,31 +111,6 @@ int main(int argc, char **argv)
     else   std::cout<<"Error starting Footstep Planner Module"<<std::endl;
     while(!quit)
     {
-	if(switch_interface.getCommand(sCommand))
-	{
-	    std::cout<<"Switch Interface received: "<<sCommand<<std::endl;
-	    if(sCommand.compare("stop")==0)
-	    {
-		if(node.isAlive())
-		{
-		    std::cout<<"Stopping thread"<<std::endl;
-		    node.close();
-	        }
-	    }
-	    else if(sCommand.compare("start")==0)
-	    {
-		if(node.isAlive())
-		{
-		    node.close();
-		}
-		std::cout<<"Starting thread"<<std::endl;
-		
-		bool ok=node.my_configure();
-		if(ok) std::cout<<"Footstep Planner is started"<<std::endl;
-		else   std::cout<<"Error starting Footstep Planner Module"<<std::endl;
-	    }
-	}
-
 	ros::spinOnce();
 	freq.sleep();
    }
@@ -146,6 +122,6 @@ int main(int argc, char **argv)
       node.close();
    }
     
-   yarp.fini();
+//    yarp.fini();
    return 0;
 }

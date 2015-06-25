@@ -17,7 +17,6 @@
 
 #include <data_types.h>
 #include "kinematics_utilities.h"
-#include <drc_shared/idynutils.h>
 #include <list>
 
 class com_filter

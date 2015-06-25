@@ -31,7 +31,7 @@
 #include "tilt_filter.h"
 #include "ros_publisher.h"
 #include <kdl/jntarray.hpp>
-
+#include <kdl/tree.hpp>
 namespace planner
 {
 

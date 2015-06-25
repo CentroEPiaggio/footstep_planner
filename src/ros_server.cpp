@@ -24,10 +24,11 @@ using namespace planner;
 
 extern volatile bool quit;
 
-rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period,std::string robot_name_)
-:RateThread(period), nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"),robot_name_),
-command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner(robot_name_,&publisher),
-walking_command_interface("drc_walking"),
+rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period,std::string robot_name_):
+// RateThread(period),
+period(period),
+nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"),robot_name_),
+command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner(robot_name_,&publisher)
 {
     // init publishers and subscribers
     
@@ -60,6 +61,41 @@ walking_command_interface("drc_walking"),
     left=true;
 }
 
+void rosServer::thr_body()
+{
+    while (!stopped)
+    {
+        if (!paused)
+            run();
+        usleep(period);
+    }
+}
+
+
+void rosServer::resume()
+{
+    paused=false;
+}
+
+void rosServer::stop()
+{
+    stopped=true;
+    thr.join();
+}
+
+bool rosServer::start()
+{
+    stopped=false;
+    paused=false;
+    thr = std::thread(&rosServer::thr_body,this);
+    return true;
+}
+
+void rosServer::suspend()
+{
+    paused=true;
+}
+
 
 bool rosServer::threadInit()
 {
@@ -81,16 +117,17 @@ void rosServer::run()
     
     if(command_interface.getCommand(msg,seq_num))
     {
-        std::string command = msg.command;
+//         std::string command = msg.command;
+        std::string command = msg.frame_id.data();
         std::cout<<" - YARP: Command ["<<seq_num<<"] received: "<<command<<std::endl;
         if (command=="set_stance_foot")
         {
-            if (msg.starting_foot=="left")
+            if (msg.seq==0)//"left")
                 footstep_planner.setCurrentStanceFoot(true);
-            else if (msg.starting_foot=="right")
+            else if (msg.seq==1)//starting_foot=="right")
                 footstep_planner.setCurrentStanceFoot(false);
             else
-                std::cout<<"could not set starting foot to "<<msg.starting_foot<<" options are:left/right"<<std::endl;;
+                std::cout<<"could not set starting foot to "<<msg.seq<<" options are:0 left/1 right"<<std::endl;;
         }
 	if (command=="reset_starting_position")
         { 
@@ -129,11 +166,11 @@ void rosServer::run()
         if (command=="plan_num")
         {
             std::string temp;
-            temp="planning for "+std::to_string(msg.num_steps)+" steps";
+            temp="planning for "+std::to_string(msg.seq)+" steps";
             status_interface.setStatus(temp);
             int i=0;
             bool ok=true;
-            while (i<msg.num_steps && ok)
+            while (i<msg.seq && ok)
             {
                 ok=planFootsteps(req,res);
                 i++;
@@ -155,11 +192,12 @@ void rosServer::run()
             temp.current_left_foot=footstep_planner.InitialWaist_LeftFoot;
             temp.current_right_foot=footstep_planner.InitialWaist_RightFoot;
             temp.starting_foot=left?"left":"right";//BUG 
-            walking_command_interface.sendCommand(temp,seq_num_out++);  //TODO: fix the usage of this, walking has changed
+//             walking_command_interface.sendCommand(temp,seq_num_out++);  //TODO: fix the usage of this, walking has changed
         }
 	if(command=="direction")
 	{
-            footstep_planner.setDirectionVector(msg.x,msg.y,msg.z);
+            std::cout<<"direction is currently not supported without yarp"<<std::endl;
+//             footstep_planner.setDirectionVector(msg.x,msg.y,msg.z);
 	}
 	if(command=="exit")
         {
@@ -167,16 +205,22 @@ void rosServer::run()
         }
         if(command=="ik_check")
 	{
+            std::cout<<"ik_check is currently not supported without yarp"<<std::endl;
+            
 	    if(single_check(true,false)) status_interface.setStatus("IK check SUCCEDED");
 	    else status_interface.setStatus("IK check FAILED");
 	}
 	if(command=="ik_com_check")
 	{
+            std::cout<<"ik_com_check is currently not supported without yarp"<<std::endl;
+            
 	    if(single_check(false,false)) status_interface.setStatus("IK_COM check SUCCEDED");
 	    else status_interface.setStatus("IK_COM check FAILED");
 	}
 	if(command=="custom_step")
 	{
+            std::cout<<"custom_step is currently not supported without yarp"<<std::endl;
+            
 	    if(single_check(false,true)) status_interface.setStatus("IK_COM check SUCCEDED - Planning Custom Step");
 	    else status_interface.setStatus("IK_COM check FAILED");
 	}
@@ -228,7 +272,7 @@ void rosServer::setInitialPosition()
 
 bool rosServer::single_check(bool ik_only, bool move)
 {
-    std::list<foot_with_joints> World_centroids = footstep_planner.single_check(msg.left_foot,msg.right_foot,ik_only, move,left);
+    std::list<foot_with_joints> World_centroids;// = footstep_planner.single_check(msg.left_foot,msg.right_foot,ik_only, move,left);
     if(World_centroids.size())
     {
 	if(move)

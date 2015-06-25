@@ -42,19 +42,22 @@
 #include "curvaturefilter.h"
 #include "borderextraction.h"
 #include "ros_publisher.h"
+#include <std_msgs/String.h>
 #include <drc_shared/yarp_msgs/fs_walking_msg.h>
-#include <drc_shared/idynutils.h>
 
 #include <yarp/os/all.h>
-#include <drc_shared/yarp_status_interface.h>
-#include <drc_shared/yarp_command_interface.hpp>
+
+#include "ros_command_interface.hpp"
+#include "ros_status_interface.hpp"
 #include <drc_shared/yarp_msgs/fs_planner_msg.h>
 #include <drc_shared/yarp_single_chain_interface.h>
+
+
 
 // class object for the ROS node
 namespace planner {
 
-class rosServer: public yarp::os::RateThread
+class rosServer//: public yarp::os::RateThread
 {
 public:
     rosServer(ros::NodeHandle* nh_,yarp::os::Network* yarp_, double period,std::string robot_name_);
@@ -94,17 +97,24 @@ public:
     
     bool singleFoot(bool left);
     
-    walkman::drc::yarp_custom_command_interface<fs_planner_msg> command_interface;
-    walkman::drc::yarp_custom_command_sender_interface<fs_walking_msg> walking_command_interface;
+//     walkman::yarp_custom_command_interface<fs_planner_msg> command_interface;
+    walkman::ros_custom_command_interface<std_msgs::Header> command_interface;
+//     walkman::yarp_custom_command_sender_interface<fs_walking_msg> walking_command_interface;
     int seq_num_out=0;
-    fs_planner_msg msg;
-    walkman::drc::yarp_status_interface status_interface;
+//     fs_planner_msg msg;
+    std_msgs::Header msg;
+    walkman::ros_status_interface status_interface;
     bool left;
     bool save_to_file;
     void setInitialPosition();
     std::map<std::string,double> initial_joints_value;
+    double period;
     bool single_check(bool ik_only, bool move);
     
+    std::thread thr;
+    bool paused;
+    bool stopped;
+    void thr_body();
   public:
     //------------------ Callbacks -------------------
     bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
@@ -120,6 +130,11 @@ public:
     //Camera_link reference Frame
     std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > clusters;
     std::list< polygon_with_normals > polygons;
+    
+    bool start();
+    void stop();
+    void resume();
+    void suspend();
     
 };
 

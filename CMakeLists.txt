@@ -35,23 +35,33 @@ find_package(TinyXML REQUIRED)
 FIND_PACKAGE(tf REQUIRED)
 FIND_PACKAGE(tf_conversions REQUIRED)
 FIND_PACKAGE(urdf REQUIRED)
-FIND_PACKAGE(roscpp REQUIRED)
-FIND_PACKAGE(message_generation REQUIRED)
+FIND_PACKAGE(gencpp REQUIRED)
+# FIND_PACKAGE(roscpp REQUIRED)
+# FIND_PACKAGE(message_generation REQUIRED)
 
-FIND_PACKAGE(catkin REQUIRED)
+FIND_PACKAGE(catkin REQUIRED COMPONENTS message_generation roscpp std_msgs)
 
 set(ROS_LIB_FOLDER $ENV{ROS_LIB_FOLDER} CACHE STRING "ros lib folder")
 
 LINK_DIRECTORIES(${ROS_LIB_FOLDER} )
-add_service_files(
-        FILES
-        PlaneDetection.srv
-        )
+add_message_files(
+FILES
+fs_command.msg
+)
+
+# add_service_files(
+#         FILES
+#         PlaneDetection.srv
+#         )
+
+generate_messages(
+DEPENDENCIES std_msgs
+)
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp rospy roslib urdf srdfdom
-  DEPENDS system_lib
+  CATKIN_DEPENDS roscpp rospy roslib urdf srdfdom message_runtime message_generation std_msgs sensor_msgs 
+  DEPENDS system_lib message_runtime message_generation 
 )
 
 ###########
@@ -126,6 +136,8 @@ install(TARGETS foot_planner
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+
 
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch)

@@ -19,11 +19,12 @@
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <kdl/frames_io.hpp>
 #include <kdl/chainiksolverpos_nr_jl.hpp>
+#include <kdl/tree.hpp>
 #include <kdl/chainiksolvervel_pinv.hpp>
 #include <eigen3/Eigen/Eigen>
 #include <urdf/model.h>
-#include <drc_shared/idynutils.h>
 #include <joints_ordering.h>
+#include <kdl_parser/kdl_parser.hpp>
 
 #define MAX_THREADS 4
 // typedef safe_ordered_chain<JointsWaistLeftFoot> ChainWaistLeftFoot;
