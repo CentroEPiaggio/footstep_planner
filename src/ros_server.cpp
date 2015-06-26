@@ -233,7 +233,7 @@ bool rosServer::single_check(bool ik_only, bool move)
     {
 	if(move)
 	{
-	    auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left,3);  
+	    auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left);  
 	
 	    publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
 	
@@ -304,7 +304,7 @@ bool rosServer::singleFoot(bool left)
         }
     }
 #endif
-    auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left,3);  
+    auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left);  
     publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
 
     footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot,left); //Finally we make the step
@@ -388,7 +388,7 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
 
     left=!left;
 //     sendPathToRviz();
-    std::cout<<"planning completed"<<std::endl;
+    ROS_INFO("planning completed");
     return true;
 }
 

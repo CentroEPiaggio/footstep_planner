@@ -22,10 +22,15 @@ step_quality_evaluator::step_quality_evaluator(std::string robot_name_):robot_na
 	left_refy=-0.15;
 	refx=0.15;
     }
-    if(robot_name=="atlas_v3" || robot_name=="walkman" || robot_name=="bigman")
+    if(robot_name=="atlas_v3")
     {
 	left_refy=-0.25;
 	refx=0.25;
+    }
+    if(robot_name=="walkman" || robot_name=="bigman")
+    {
+        left_refy=-0.3;
+	refx=0.2;
     }
     
     joint_costs.push_back(0.1);

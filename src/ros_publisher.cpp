@@ -321,6 +321,18 @@ void ros_publisher::publish_robot_joints(KDL::JntArray const& joints, std::vecto
 	last_joint_states.position[joints_name_to_index["l_arm_shy"]]=0.5;
     }
     
+    if(robot_name=="walkman" || robot_name=="bigman")
+    {
+	last_joint_states.position[joints_name_to_index["RShSag"]]=1.2;
+	last_joint_states.position[joints_name_to_index["RShYaw"]]=0.5;
+	last_joint_states.position[joints_name_to_index["RShLat"]]=-0.2;
+	last_joint_states.position[joints_name_to_index["RElbj"]]=-2.45;
+	last_joint_states.position[joints_name_to_index["LShSag"]]=1.2;
+	last_joint_states.position[joints_name_to_index["LShYaw"]]=-0.5;
+	last_joint_states.position[joints_name_to_index["LShLat"]]=0.2;
+	last_joint_states.position[joints_name_to_index["LElbj"]]=-2.45;
+    }
+    
     pub_ik_joints.publish(last_joint_states);
 }
 

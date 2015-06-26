@@ -273,7 +273,7 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     dynamic_filtering(steps,left); //DYNAMIC FILTER
     color_filtered=3;
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
-    std::cout<<"time after kinematic filter"<<time<<std::endl;
+    std::cout<<"time after dynamic filter"<<time<<std::endl;
     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());
 
     return steps;
@@ -329,7 +329,7 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	}
         return result;
     }
-    else if (loss_function_type==2)	// sum of distance, angle and mobility
+    else if (loss_function_type==2 || loss_function_type==4)	// sum of distance, angle and mobility / energy
     {
 	foot_with_joints const* result=&(*centroids.begin());
 	std::vector<foot_with_joints const*> minimum_steps;
@@ -367,8 +367,12 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	  
 	  stepQualityEvaluator.set_single_chain(&joint_chain);
 	  auto mobility=stepQualityEvaluator.distance_from_joint_center(*centroid);
-	  
-	  double cost = -w.at(0)*fabs(angle) + w.at(1)*(start_waist_distance + end_waist_distance)/M_PI + w.at(2)*mobility/0.67;
+	  auto energy = stepQualityEvaluator.energy_consumption(*centroid);
+	  double cost = 10000000;
+	  if (loss_function_type==2)
+	    cost = -w.at(0)*fabs(angle) + w.at(1)*(start_waist_distance + end_waist_distance)/M_PI + w.at(2)*mobility/0.67;
+	  else if (loss_function_type==4)
+	    cost = -w.at(0)*fabs(angle) + w.at(1)*(start_waist_distance + end_waist_distance)/M_PI + w.at(2)*energy/0.67;
 	  if (cost < min)
 	  {
 	    min=cost;

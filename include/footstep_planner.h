@@ -96,7 +96,7 @@ public:
     KDL::Frame World_Waist;
     
     void setWorldTransform(KDL::Frame transform);
-    foot_with_joints selectBestCentroid(const std::list< foot_with_joints >& centroids, bool left, int loss_function_type = 0);
+    foot_with_joints selectBestCentroid(const std::list< foot_with_joints >& centroids, bool left, int loss_function_type = 4);
     inline KDL::Frame getWorldTransform(){return World_Camera;}
     
     //Camera Link Frame

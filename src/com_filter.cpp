@@ -154,7 +154,11 @@ bool com_filter::internal_filter_first(std::list<planner::foot_with_joints> &dat
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         counter++;
-        auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
+	if (counter%5 !=0) 
+	{
+          single_step=data.erase(single_step);
+	  continue;
+	}        auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
         auto WaistPositions_StanceFoot=generateWaistPositions_StanceFoot(StanceFoot_MovingFoot,StanceFoot_World,0,desired_hip_height);
 	int num_inserted=0;
@@ -227,6 +231,11 @@ bool com_filter::internal_filter_second(std::list<planner::foot_with_joints> &da
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         counter++;
+	if (counter%13 !=0) 
+	{
+          single_step=data.erase(single_step);
+	  continue;
+	}
         auto MovingFoot_StanceFoot=(StanceFoot_World*single_step->World_MovingFoot).Inverse();
         single_step->World_StanceFoot=World_StanceFoot;
         auto WaistPositions_MovingFoot=generateWaistPositions_StanceFoot(MovingFoot_StanceFoot,single_step->World_MovingFoot.Inverse(),0,desired_hip_height);
@@ -351,9 +360,10 @@ std::list< KDL::Frame > com_filter::generateWaistPositions_StanceFoot ( const KD
     //double angle_ref=atan2(StanceFoot_MovingFoot.p[0],-StanceFoot_MovingFoot.p[1])+M_PI*left;
     double angle_ref=0;
     //double angle=0;
+//     level_of_details=2;
     for (double angle=-M_PI/6.0;angle<M_PI/6.1;angle=angle+M_PI/15.0)
     {//double height=-0.01;
-        for (double height=-desired_hip_height*0.2-0.01*level_of_details;height<-0.0;height=height+(desired_hip_height*0.1)/(1+level_of_details/2.0))
+        for (double height=-desired_hip_height*0.1-0.01*level_of_details;height<-0.0;height=height+(desired_hip_height*0.05)/(1+level_of_details/2.0))
 	{
 	    KDL::Frame DesiredWaist_StanceFoot=computeStanceFoot_WaistPosition(StanceFoot_World,angle+angle_ref,desired_hip_height+height).Inverse();
 	    DesiredWaist_StanceFoot_list.push_back(DesiredWaist_StanceFoot);
