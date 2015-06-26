@@ -1,0 +1,20 @@
+<launch>
+<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 0 0 4.7 -0.85 3.14 camera_link camera_rotated 500" />
+<node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="0.44 0.0 -0.1 0 0 0 camera_rotated world 500" />
+<node pkg="tf" type="static_transform_publisher" name="link3_broadcaster" args="0 0 0 0 0 0 base_link pelvis 500" />
+<!--node pkg="tf" type="static_transform_publisher" name="link2_broadcaster" args="0 0 0 0 0 0 world base_link 500" /-->
+<remap from="/joint_states" to="/footstep/joint_states"/>
+<!--node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+ <rosparam param="source_list">["/footstep/joint_states"]</rosparam>
+ <rosparam param="rate">3</rosparam>
+ <rosparam param="publish_default_positions">true</rosparam>
+</node-->
+<!-- Put robot description from URDF to paramServer -->
+     <param name="robot_description" textfile="$(find bigman_urdf)/urdf/bigman.urdf" />
+
+<!-- Given the published joint states, publish tf for the robot links -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" >
+   <rosparam param="publish_frequency">10</rosparam>
+ </node>
+
+</launch>
