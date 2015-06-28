@@ -58,12 +58,22 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
 }
 
 
-kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(robot_name_),idyn_model(robot_name_,"/home/mirko/projects/walkman/drc/iit-bigman-ros-pkg/bigman_urdf/urdf/bigman.urdf","/home/mirko/projects/walkman/drc/iit-bigman-ros-pkg/bigman_srdf/srdf/bigman.srdf")
+kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(robot_name_),robot_urdf_file("/home/mirko/projects/walkman/drc/iit-bigman-ros-pkg/bigman_urdf/urdf/bigman.urdf")//,idyn_model(robot_name_,"/home/mirko/projects/walkman/drc/iit-bigman-ros-pkg/bigman_urdf/urdf/bigman.urdf","/home/mirko/projects/walkman/drc/iit-bigman-ros-pkg/bigman_srdf/srdf/bigman.srdf")
 //,idyn_model(robot_name_)
 {
-    robot_kdl= idyn_model.iDyn3_model.getKDLTree();
-    urdf_model = *idyn_model.urdf_model;
-  
+    if (!urdf_model.initFile(robot_urdf_file))
+    {
+        std::cout<<"Failed to parse urdf robot model"<<std::endl;
+        abort();
+    }
+    
+    if (!kdl_parser::treeFromUrdfModel(urdf_model, robot_kdl))
+    {
+        std::cout<<"Failed to construct kdl tree"<<std::endl;
+        abort();
+    }
+
+    
     if(robot_name=="coman" || robot_name=="walkman" || robot_name=="bigman")
     {
         robot_kdl.getChain("Waist","l_sole",wl_leg.chain);

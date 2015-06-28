@@ -36,31 +36,32 @@ FIND_PACKAGE(tf REQUIRED)
 FIND_PACKAGE(tf_conversions REQUIRED)
 FIND_PACKAGE(urdf REQUIRED)
 FIND_PACKAGE(gencpp REQUIRED)
+
 # FIND_PACKAGE(roscpp REQUIRED)
 # FIND_PACKAGE(message_generation REQUIRED)
 
-FIND_PACKAGE(catkin REQUIRED COMPONENTS message_generation roscpp std_msgs)
+FIND_PACKAGE(catkin REQUIRED COMPONENTS message_generation roscpp std_msgs kdl_parser)
 
 set(ROS_LIB_FOLDER $ENV{ROS_LIB_FOLDER} CACHE STRING "ros lib folder")
 
 LINK_DIRECTORIES(${ROS_LIB_FOLDER} )
-add_message_files(
-FILES
-fs_command.msg
-)
-
+# add_message_files(
+# FILES
+# fs_command.msg
+# )
+# 
 # add_service_files(
 #         FILES
-#         PlaneDetection.srv
+#         param_server.srv
 #         )
 
-generate_messages(
-DEPENDENCIES std_msgs
-)
+# generate_messages(
+# DEPENDENCIES std_msgs
+# )
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp rospy roslib urdf srdfdom message_runtime message_generation std_msgs sensor_msgs 
+  CATKIN_DEPENDS roscpp rospy roslib urdf srdfdom message_runtime message_generation std_msgs sensor_msgs kdl_parser
   DEPENDS system_lib message_runtime message_generation 
 )
 
@@ -105,6 +106,7 @@ add_executable(foot_planner
        src/pcd_io.cpp
        src/joints_ordering.cpp
        src/sampling_surface.hpp
+       src/param_manager.cpp
        ${HEADER_FILES}
        )
 

@@ -30,19 +30,18 @@ class fs_planner_module//: public yarp::os::RFModule
 protected:
     rosServer* thr;
     ros::NodeHandle* nh;
-    yarp::os::Network* yarp;
     bool Alive;
     double period;
     std::string robot_name;
 public:
-    fs_planner_module(ros::NodeHandle* nh_, yarp::os::Network* yarp_, double period_,std::string robot_name_):nh(nh_),yarp(yarp_),period(period_),robot_name(robot_name_)
+    fs_planner_module(ros::NodeHandle* nh_, double period_,std::string robot_name_):nh(nh_),period(period_),robot_name(robot_name_)
     {
 	Alive=false;
     }
     
     bool my_configure()
     {
-	thr = new rosServer(nh,yarp,period,robot_name);
+	thr = new rosServer(nh,period,robot_name);
 	
         if(!thr->start())
         {
@@ -103,7 +102,7 @@ int main(int argc, char **argv)
     ros::NodeHandle nh;
     
     quit=false;
-    fs_planner_module node(&nh,&yarp,200,robot_name);
+    fs_planner_module node(&nh,200,robot_name);
     
     ros::ServiceServer srv_exit;
     

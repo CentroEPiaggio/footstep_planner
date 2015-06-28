@@ -26,7 +26,6 @@
 #include <joints_ordering.h>
 #include <kdl_parser/kdl_parser.hpp>
 
-#define MAX_THREADS 4
 // typedef safe_ordered_chain<JointsWaistLeftFoot> ChainWaistLeftFoot;
 // typedef safe_ordered_chain<JointsWaistRightFoot> ChainWaistRightFoot;
 // typedef safe_ordered_chain<JointsLeftFootWaist> ChainLeftFootWaist;
@@ -70,12 +69,13 @@ public:
 class kinematics_utilities
 {
 public:
-    kinematics_utilities(std::string robot_name);
+    kinematics_utilities(std::string robot_name_);
 //    Eigen::Matrix<double,6,1> left_foot, right_foot;
     
     urdf::Model urdf_model;
+    std::string robot_urdf_file;
     
-    iDynUtils idyn_model;
+//     iDynUtils idyn_model;
     KDL::Tree robot_kdl;
 
     ChainWaistLeftFoot wl_leg;

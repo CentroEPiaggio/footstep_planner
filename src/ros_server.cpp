@@ -24,10 +24,10 @@ using namespace planner;
 
 extern volatile bool quit;
 
-rosServer::rosServer(ros::NodeHandle* nh_, yarp::os::Network* yarp_,double period,std::string robot_name_):
+rosServer::rosServer(ros::NodeHandle* nh_,double period,std::string robot_name_):
 // RateThread(period),
 period(period),
-nh(nh_),yarp(yarp_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"),robot_name_),
+nh(nh_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"),robot_name_),
 command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner(robot_name_,&publisher)
 {
     // init publishers and subscribers
@@ -120,17 +120,26 @@ void rosServer::run()
     
     if(command_interface.getCommand(msg,seq_num))
     {
-//         std::string command = msg.command;
+#ifdef USE_YARP
+        std::string command = msg.command;
+        int first_param;
+        if (command=="set_stance_foot")
+            first_param=msg.starting_foot=="left"?0:msg.starting_foot=="right"?1:2;
+        if (command=="plan_num")
+            first_param=msg.num_steps;
+#else
         std::string command = msg.frame_id.data();
+        int first_param=msg.seq;
+#endif
         std::cout<<" - YARP: Command ["<<seq_num<<"] received: "<<command<<std::endl;
         if (command=="set_stance_foot")
         {
-            if (msg.seq==0)//"left")
+            if (first_param==0)//starting_foot=="left")
                 footstep_planner.setCurrentStanceFoot(true);
-            else if (msg.seq==1)//starting_foot=="right")
+            else if (first_param==1)//starting_foot=="right")
                 footstep_planner.setCurrentStanceFoot(false);
             else
-                std::cout<<"could not set starting foot to "<<msg.seq<<" options are:0 left/1 right"<<std::endl;;
+                std::cout<<"could not set starting foot to "<<first_param<<" options are:0 left/1 right"<<std::endl;;
         }
 	if (command=="reset_starting_position")
         { 
@@ -169,11 +178,11 @@ void rosServer::run()
         if (command=="plan_num")
         {
             std::string temp;
-            temp="planning for "+std::to_string(msg.seq)+" steps";
+            temp="planning for "+std::to_string(first_param)+" steps";
             status_interface.setStatus(temp);
             int i=0;
             bool ok=true;
-            while (i<msg.seq && ok)
+            while (i<first_param && ok)
             {
                 ok=planFootsteps(req,res);
                 i++;

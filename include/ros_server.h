@@ -50,9 +50,11 @@
 #include "ros_command_interface.hpp"
 #include "ros_status_interface.hpp"
 #include <drc_shared/yarp_msgs/fs_planner_msg.h>
-#include <drc_shared/yarp_single_chain_interface.h>
 
-
+// #define USE_YARP
+#ifdef USE_YARP
+#include <GYM/yarp_command_interface.hpp>
+#endif
 
 // class object for the ROS node
 namespace planner {
@@ -60,11 +62,10 @@ namespace planner {
 class rosServer//: public yarp::os::RateThread
 {
 public:
-    rosServer(ros::NodeHandle* nh_,yarp::os::Network* yarp_, double period,std::string robot_name_);
+    rosServer(ros::NodeHandle* nh_, double period,std::string robot_name_);
   private:
     //! The node handle
     ros::NodeHandle* nh;
-    yarp::os::Network* yarp;
 
     //! Node handle in the private namespace
     ros::NodeHandle priv_nh_;
@@ -97,12 +98,17 @@ public:
     
     bool singleFoot(bool left);
     
-//     walkman::yarp_custom_command_interface<fs_planner_msg> command_interface;
+#ifdef USE_YARP
+    walkman::yarp_custom_command_interface<fs_planner_msg> command_interface;
+#else
     walkman::ros_custom_command_interface<std_msgs::Header> command_interface;
-//     walkman::yarp_custom_command_sender_interface<fs_walking_msg> walking_command_interface;
+#endif
     int seq_num_out=0;
-//     fs_planner_msg msg;
+#ifdef USE_YARP
+    fs_planner_msg msg;
+#else
     std_msgs::Header msg;
+#endif
     walkman::ros_status_interface status_interface;
     bool left;
     bool save_to_file;
@@ -114,6 +120,7 @@ public:
     std::thread thr;
     bool paused;
     bool stopped;
+    double loss_function_type;
     void thr_body();
   public:
     //------------------ Callbacks -------------------
