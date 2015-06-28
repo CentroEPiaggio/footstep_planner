@@ -15,8 +15,15 @@
 #include <yarp/os/all.h>
 #include <ros/ros.h>
 #include "ros_server.h"
+#include <param_manager.h>
 
 volatile bool quit;
+
+std::map<std::string,std::string&> param_manager::map_string;
+std::map<std::string,double&> param_manager::map_double;
+std::map<std::string,int&> param_manager::map_int;
+ros::NodeHandle* param_manager::nh;
+ros::ServiceServer param_manager::param_server;
 
 class fs_planner_module//: public yarp::os::RFModule
 {
@@ -79,6 +86,7 @@ bool endcycle(std_srvs::Empty::Request& request, std_srvs::Empty::Response& resp
 int main(int argc, char **argv) 
 {
     Eigen::initParallel();
+    ros::init(argc, argv, "footstep_planner");
     yarp::os::Network yarp;
 //     if(!yarp.checkNetwork()){
 //         std::cout<<"yarpserver not running, pls run yarpserver"<<std::endl;
@@ -91,8 +99,7 @@ int main(int argc, char **argv)
     
     if(argc==2) robot_name=argv[1];
     else robot_name="bigman";
-  
-    ros::init(argc, argv, "footstep_planner");
+    param_manager pm;
     ros::NodeHandle nh;
     
     quit=false;
