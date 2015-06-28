@@ -127,9 +127,9 @@ com_filter::com_filter(std::string robot_name_):kinematics(robot_name_)
     stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(stance_jnts_in);
     param_manager::register_param("com_max_tested_points_1",MAX_TESTED_POINTS_1);
-    param_manager::update_param("com_max_tested_points_1",1000);
+    param_manager::update_param("com_max_tested_points_1",1000.0);
     param_manager::register_param("com_max_tested_points_2",MAX_TESTED_POINTS_2);
-    param_manager::update_param("com_max_tested_points_2",1000);
+    param_manager::update_param("com_max_tested_points_2",1000.0);
     param_manager::register_param("LEVEL_OF_DETAILS",LEVEL_OF_DETAILS);
     param_manager::update_param("LEVEL_OF_DETAILS",0);
     param_manager::register_param("MAX_THREADS",MAX_THREADS);

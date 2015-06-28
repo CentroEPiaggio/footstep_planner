@@ -7,18 +7,22 @@ bool param_manager::param_update_callback(dynamic_reconfigure::ReconfigureReques
     if (req.config.strs.at(0).name=="help")
     {
         std::string help;
-        help.append(" double params:");
+        help.append(" double params:\n");
 
         for (auto name:map_double)
         {
             help.append(name.first);
-            help.append(" , ");
+            help.append("= ");
+            help.append(std::to_string(name.second));
+            help.append(", ");
         }
-        help.append("\n int params:");
+        help.append("\n int params:\n");
         for (auto name:map_int)
         {
             help.append(name.first);
-            help.append(" , ");
+            help.append("= ");
+            help.append(std::to_string(name.second));
+            help.append(", ");
         }
         res.config.strs.clear();
         res.config.doubles.clear();
