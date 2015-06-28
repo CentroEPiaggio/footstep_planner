@@ -21,6 +21,7 @@
 #include <joints_ordering.h>
 
 #define IGNORE_JOINT_LIMITS 0
+#define MAX_THREADS 16
 
 //NEVER call this without setting the container chain!!
 void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL::JntArray& joints_value,KDL::JntArray& q_max, KDL::JntArray& q_min, int index)
@@ -124,3 +125,5 @@ kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(r
     
     
 }
+
+#undef MAX_THREADS

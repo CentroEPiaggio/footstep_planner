@@ -13,12 +13,17 @@
  * limitations under the License.*/
 
 #include "com_filter.h"
+#include <param_manager.h>
 #include <iCub/iDynTree/iDyn2KDL.h>
 #include <eigen3/Eigen/Dense>
 #include <thread>
 #include <tf_conversions/tf_kdl.h>
 #include <tf/transform_broadcaster.h>
 
+double MAX_TESTED_POINTS_1;
+double MAX_TESTED_POINTS_2;
+double LEVEL_OF_DETAILS;
+int MAX_THREADS;
 
 bool com_filter::thread_com_filter(std::list<planner::foot_with_joints> &data, int num_threads)
 {
@@ -121,6 +126,14 @@ com_filter::com_filter(std::string robot_name_):kinematics(robot_name_)
 {
     stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(stance_jnts_in);
+    param_manager::register_param("com_max_tested_points_1",MAX_TESTED_POINTS_1);
+    param_manager::update_param("com_max_tested_points_1",1000);
+    param_manager::register_param("com_max_tested_points_2",MAX_TESTED_POINTS_2);
+    param_manager::update_param("com_max_tested_points_2",1000);
+    param_manager::register_param("LEVEL_OF_DETAILS",LEVEL_OF_DETAILS);
+    param_manager::update_param("LEVEL_OF_DETAILS",0);
+    param_manager::register_param("MAX_THREADS",MAX_THREADS);
+    param_manager::update_param("MAX_THREADS",4);
 }
 
 
@@ -151,16 +164,17 @@ bool com_filter::internal_filter_first(std::list<planner::foot_with_joints> &dat
     int total_num_examined=0;
     int total_num_inserted=0;
     int total_num_failed=0;
+    int mod = (total/MAX_TESTED_POINTS_1);
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         counter++;
-	if (counter%5 !=0) 
+	if (counter%mod !=0) 
 	{
           single_step=data.erase(single_step);
 	  continue;
 	}        auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
-        auto WaistPositions_StanceFoot=generateWaistPositions_StanceFoot(StanceFoot_MovingFoot,StanceFoot_World,0,desired_hip_height);
+        auto WaistPositions_StanceFoot=generateWaistPositions_StanceFoot(StanceFoot_MovingFoot,StanceFoot_World,LEVEL_OF_DETAILS,desired_hip_height);
 	int num_inserted=0;
         for (auto WaistPosition_StanceFoot:WaistPositions_StanceFoot)
 	{
@@ -228,17 +242,18 @@ bool com_filter::internal_filter_second(std::list<planner::foot_with_joints> &da
     total_num_examined=0;
     total_num_inserted=0;
     total_num_failed=0;
+    int mod = (total/MAX_TESTED_POINTS_2);
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         counter++;
-	if (counter%13 !=0) 
+	if (counter%mod !=0) 
 	{
           single_step=data.erase(single_step);
 	  continue;
 	}
         auto MovingFoot_StanceFoot=(StanceFoot_World*single_step->World_MovingFoot).Inverse();
         single_step->World_StanceFoot=World_StanceFoot;
-        auto WaistPositions_MovingFoot=generateWaistPositions_StanceFoot(MovingFoot_StanceFoot,single_step->World_MovingFoot.Inverse(),0,desired_hip_height);
+        auto WaistPositions_MovingFoot=generateWaistPositions_StanceFoot(MovingFoot_StanceFoot,single_step->World_MovingFoot.Inverse(),LEVEL_OF_DETAILS,desired_hip_height);
         int num_inserted=0;
         for (auto WaistPosition_MovingFoot:WaistPositions_MovingFoot)
         {
