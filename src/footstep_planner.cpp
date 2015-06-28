@@ -14,6 +14,7 @@ limitations under the License.*/
 
 
 #include "footstep_planner.h"
+#include <param_manager.h>
 #include <pcl/features/normal_3d.h>
 #include <iostream>
 #include <tf/transform_broadcaster.h>
@@ -23,12 +24,26 @@ limitations under the License.*/
 
 using namespace planner;
 
-#define DISTANCE_THRESHOLD 0.02*0.02 //We work with squares of distances, so this threshould is the square of 2cm!
-#define ANGLE_THRESHOLD 0.2
-#define WAIST_THRESHOLD 0.2	
+double DISTANCE_THRESHOLD; //0.02*0.02 //We work with squares of distances, so this threshould is the square of 2cm!
+double ANGLE_THRESHOLD;// 0.2
+double WAIST_THRESHOLD;// 0.2
 
 footstepPlanner::footstepPlanner(std::string robot_name_, ros_publisher* ros_pub_):kinematicFilter(robot_name_),comFilter(robot_name_),stepQualityEvaluator(robot_name_),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
+    param_manager::register_param("DISTANCE_THRESHOLD",DISTANCE_THRESHOLD);
+    param_manager::update_param("DISTANCE_THRESHOLD",0.02*0.02);
+    param_manager::register_param("ANGLE_THRESHOLD",ANGLE_THRESHOLD);
+    param_manager::update_param("ANGLE_THRESHOLD",0.2);
+    param_manager::register_param("WAIST_THRESHOLD",WAIST_THRESHOLD);
+    param_manager::update_param("WAIST_THRESHOLD",0.2);
+
+    param_manager::register_param("kin_min_angle",min_angle);
+    param_manager::update_param("kin_min_angle",-0.8);
+    param_manager::register_param("kin_max_angle",max_angle);
+    param_manager::update_param("kin_max_angle",0.8);
+    param_manager::register_param("kin_angle_step",angle_step);
+    param_manager::update_param("kin_angle_step",0.2);
+    
     KDL::Frame Waist_StanceFoot;
     left_joints.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(left_joints);
@@ -163,7 +178,7 @@ void footstepPlanner::generate_frames_from_normals(const std::list< polygon_with
         {
             KDL::Frame plane_frame=createFramesFromNormal((*item.normals)[i]);
             int k=-1;
-            for (double angle=-0.8;angle<=0.8;angle=angle+0.2) 
+            for (double angle=min_angle;angle<=max_angle;angle=angle+angle_step) 
             {
                 //double angle=0.0;
                 k++;
