@@ -13,10 +13,17 @@
  * limitations under the License.*/
 
 #include "coordinate_filter.h"
+#include <param_manager.h>
 
 coordinate_filter::coordinate_filter(unsigned int filter_axis_, double axis_min_, double axis_max_):
 filter_axis(filter_axis_),default_axis_min(axis_min_),default_axis_max(axis_max_)
-{	
+{
+    std::string temp = "filter_axis";
+    param_manager::register_param(temp+std::to_string(filter_axis_)+"min",this->axis_min);
+    param_manager::register_param(temp+std::to_string(filter_axis_)+"max",this->axis_max);
+    param_manager::update_param(temp+std::to_string(filter_axis_)+"min",axis_min_);
+    param_manager::update_param(temp+std::to_string(filter_axis_)+"max",axis_max_);
+
     stance_foot_set = false;
     this->axis_max=axis_max_;
     this->axis_min=axis_min_;
