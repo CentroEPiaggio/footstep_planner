@@ -19,7 +19,7 @@
 #include <tf/transform_broadcaster.h>
 #include <sensor_msgs/JointState.h>
 #include <xml_pcl_io.h>
-#include <drc_shared/yarp_single_chain_interface.h>
+#include <param_manager.h>
 using namespace planner;
 
 extern volatile bool quit;
@@ -58,6 +58,9 @@ command_interface("footstep_planner"),status_interface("footstep_planner"),foots
     save_to_file = false;
     status_interface.start();
     
+    this->loss_function_type =4;
+    param_manager::register_param("loss_function_type",loss_function_type);
+    param_manager::update_param("loss_function_type",4);
     left=true;
 }
 
@@ -348,7 +351,7 @@ bool rosServer::singleFoot(bool left)
         }
     }
 #endif
-    auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left);  
+    auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left,loss_function_type);  
     publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
 
     footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot,left); //Finally we make the step
