@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 {
     Eigen::initParallel();
     ros::init(argc, argv, "footstep_planner");
-    yarp::os::Network yarp;
+//     yarp::os::Network yarp;
 //     if(!yarp.checkNetwork()){
 //         std::cout<<"yarpserver not running, pls run yarpserver"<<std::endl;
 //         return 0;

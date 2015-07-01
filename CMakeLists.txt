@@ -25,26 +25,31 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Mo
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
-find_package(YARP REQUIRED)
+# find_package(YARP REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(PCL 1.7 REQUIRED)
-find_package(iDynTree REQUIRED)
-find_package(drc_shared REQUIRED)
-find_package(kdl_codyco REQUIRED)
-find_package(TinyXML REQUIRED)
-FIND_PACKAGE(tf REQUIRED)
-FIND_PACKAGE(tf_conversions REQUIRED)
-FIND_PACKAGE(urdf REQUIRED)
-FIND_PACKAGE(gencpp REQUIRED)
+# find_package(iDynTree REQUIRED)
+# find_package(TinyXML REQUIRED)
+# find_package(drc_shared REQUIRED)
+# find_package(idynutils REQUIRED)
+# find_package(GYM REQUIRED)
+# find_package(paramHelp REQUIRED)
+# find_package(kdl_codyco REQUIRED)
+# FIND_PACKAGE(tf REQUIRED)
+# FIND_PACKAGE(tf_conversions REQUIRED)
+# FIND_PACKAGE(urdf REQUIRED)
+# FIND_PACKAGE(gencpp REQUIRED)
 
 # FIND_PACKAGE(roscpp REQUIRED)
 # FIND_PACKAGE(message_generation REQUIRED)
 
-FIND_PACKAGE(catkin REQUIRED COMPONENTS message_generation roscpp std_msgs kdl_parser)
+FIND_PACKAGE(catkin REQUIRED COMPONENTS roscpp rospy roslib urdf srdfdom message_runtime message_generation std_msgs sensor_msgs kdl_parser tf_conversions urdf gencpp 
+)
+FIND_PACKAGE(orocos_kdl REQUIRED)
 
-set(ROS_LIB_FOLDER $ENV{ROS_LIB_FOLDER} CACHE STRING "ros lib folder")
+#set(ROS_LIB_FOLDER $ENV{ROS_LIB_FOLDER} CACHE STRING "ros lib folder")
 
-LINK_DIRECTORIES(${ROS_LIB_FOLDER} )
+#LINK_DIRECTORIES(${ROS_LIB_FOLDER} )
 # add_message_files(
 # FILES
 # fs_command.msg
@@ -61,8 +66,8 @@ LINK_DIRECTORIES(${ROS_LIB_FOLDER} )
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp rospy roslib urdf srdfdom message_runtime message_generation std_msgs sensor_msgs kdl_parser
-  DEPENDS system_lib message_runtime message_generation 
+  CATKIN_DEPENDS roscpp rospy roslib urdf srdfdom message_runtime message_generation std_msgs sensor_msgs kdl_parser tf_conversions urdf gencpp
+  DEPENDS orocos_kdl
 )
 
 ###########
@@ -71,7 +76,14 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(include ${YARP_INCLUDE_DIRS} ${IDYN3_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS} ${Eigen_INCLUDE_DIRS} ${drc_shared_INCLUDE_DIRS})
+include_directories(include #${YARP_INCLUDE_DIRS} ${IDYN3_INCLUDE_DIRS} 
+                            #${ICUB_INCLUDE_DIRS} 
+                            ${Eigen_INCLUDE_DIRS} 
+			    ${orocos_kld_INCLUDE_DIRS}
+#                             ${TinyXML_INCLUDE_DIRS}
+#                            ${drc_shared_INCLUDE_DIRS}
+#                             ${GYM_INCLUDE_DIRS} ${idynutils_INCLUDE_DIRS}
+                            )
 include_directories(include
         ${catkin_INCLUDE_DIRS}
         ${PCL_INCLUDE_DIRS}
@@ -111,14 +123,17 @@ add_executable(foot_planner
        )
 
 target_link_libraries(foot_planner
-        ${catkin_LIBRARIES}
+       ${catkin_LIBRARIES}
         ${PCL_LIBRARIES}
-        ${drc_shared_LIBRARIES}
-         ${iDynTree_LIBRARIES}
-        ${TinyXML_LIBRARIES}
-        ${urdf_LIBRARIES}
-        ${tf_LIBRARIES}
-        ${tf_conversions_LIBRARIES}
+	${orocos_kdl_LIBRARIES}
+#         ${drc_shared_LIBRARIES}
+#         ${idynutils_LIBRARIES}
+#         ${GYM_LIBRARIES}
+#         ${iDynTree_LIBRARIES}
+#         ${urdf_LIBRARIES}
+#         ${tf_LIBRARIES}
+#         ${tf_conversions_LIBRARIES}
+#         ${TinyXML_LIBRARIES}
         )
 
 

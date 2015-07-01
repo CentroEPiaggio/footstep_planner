@@ -4,36 +4,36 @@
 
 bool param_manager::param_update_callback(dynamic_reconfigure::ReconfigureRequest& req, dynamic_reconfigure::ReconfigureResponse& res)
 {
-    if (req.config.strs.at(0).name=="help")
-    {
-        std::string help;
-        help.append(" double params:\n");
-
-        for (auto name:map_double)
-        {
-            help.append(name.first);
-            help.append("= ");
-            help.append(std::to_string(name.second));
-            help.append(", ");
-        }
-        help.append("\n int params:\n");
-        for (auto name:map_int)
-        {
-            help.append(name.first);
-            help.append("= ");
-            help.append(std::to_string(name.second));
-            help.append(", ");
-        }
-        res.config.strs.clear();
-        res.config.doubles.clear();
-        res.config.ints.clear();
-        dynamic_reconfigure::StrParameter temp;
-        temp.name="result: ";
-        temp.value=help;
-        res.config.strs.push_back(temp);
-        
-        return true;
-    }
+//     if (req.config.strs.at(0).name=="help")
+//     {
+//         std::string help;
+//         help.append(" double params:\n");
+// 
+//         for (auto name:map_double)
+//         {
+//             help.append(name.first);
+//             help.append("= ");
+//             help.append(std::to_string(name.second));
+//             help.append(", ");
+//         }
+//         help.append("\n int params:\n");
+//         for (auto name:map_int)
+//         {
+//             help.append(name.first);
+//             help.append("= ");
+//             help.append(std::to_string(name.second));
+//             help.append(", ");
+//         }
+//         res.config.strs.clear();
+//         res.config.doubles.clear();
+//         res.config.ints.clear();
+//         dynamic_reconfigure::StrParameter temp;
+//         temp.name="result: ";
+//         temp.value=help;
+//         res.config.strs.push_back(temp);
+//         
+//         return true;
+//     }
     for(auto param:req.config.doubles)
     {
         if (map_double.count(param.name))
@@ -52,6 +52,20 @@ bool param_manager::param_update_callback(dynamic_reconfigure::ReconfigureReques
     res.config.strs.clear();
     res.config.doubles.clear();
     res.config.ints.clear();
+    for (auto name:map_double)
+    {
+        dynamic_reconfigure::DoubleParameter d;
+        d.name=name.first;
+        d.value=name.second;
+        res.config.doubles.push_back(d);
+    }
+    for (auto name:map_int)
+    {
+        dynamic_reconfigure::IntParameter d;
+        d.name=name.first;
+        d.value=name.second;
+        res.config.ints.push_back(d);
+    }
     dynamic_reconfigure::StrParameter temp;
     temp.name="result: ";
     temp.value="all ok";
