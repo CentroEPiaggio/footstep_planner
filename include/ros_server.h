@@ -43,17 +43,17 @@
 #include "borderextraction.h"
 #include "ros_publisher.h"
 #include <std_msgs/String.h>
-#include <drc_shared/yarp_msgs/fs_walking_msg.h>
 
 #include <yarp/os/all.h>
 
 #include "ros_command_interface.hpp"
 #include "ros_status_interface.hpp"
-#include <drc_shared/yarp_msgs/fs_planner_msg.h>
 
 // #define USE_YARP
 #ifdef USE_YARP
 #include <GYM/yarp_command_interface.hpp>
+#include <drc_shared/yarp_msgs/fs_walking_msg.h>
+#include <drc_shared/yarp_msgs/fs_planner_msg.h>
 #endif
 
 // class object for the ROS node
@@ -128,7 +128,7 @@ public:
     bool extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
     bool sendPathToRviz();
-    bool create_steps_vector(fs_walking_msg& temp);
+//     bool create_steps_vector(fs_walking_msg& temp);
     void init();
     
     virtual bool threadInit();

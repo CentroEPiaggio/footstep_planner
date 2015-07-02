@@ -14,7 +14,6 @@
 
 #include "com_filter.h"
 #include <param_manager.h>
-#include <iCub/iDynTree/iDyn2KDL.h>
 #include <eigen3/Eigen/Dense>
 #include <thread>
 #include <tf_conversions/tf_kdl.h>

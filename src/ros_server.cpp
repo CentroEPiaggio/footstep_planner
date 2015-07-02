@@ -192,20 +192,20 @@ void rosServer::run()
         {
             sendPathToRviz();
         }
-        if (command=="send_plan_to_walking")
-        {
-            fs_walking_msg temp;
-            if (!create_steps_vector(temp))
-            {
-                std::cout<<"path was not planned"<<std::endl;
-                return;
-            }
-            temp.command="steps";
-            temp.current_left_foot=footstep_planner.InitialWaist_LeftFoot;
-            temp.current_right_foot=footstep_planner.InitialWaist_RightFoot;
-            temp.starting_foot=left?"left":"right";//BUG 
-//             walking_command_interface.sendCommand(temp,seq_num_out++);  //TODO: fix the usage of this, walking has changed
-        }
+//         if (command=="send_plan_to_walking")
+//         {
+//             fs_walking_msg temp;
+//             if (!create_steps_vector(temp))
+//             {
+//                 std::cout<<"path was not planned"<<std::endl;
+//                 return;
+//             }
+//             temp.command="steps";
+//             temp.current_left_foot=footstep_planner.InitialWaist_LeftFoot;
+//             temp.current_right_foot=footstep_planner.InitialWaist_RightFoot;
+//             temp.starting_foot=left?"left":"right";//BUG 
+// //             walking_command_interface.sendCommand(temp,seq_num_out++);  //TODO: fix the usage of this, walking has changed
+//         }
 	if(command=="direction")
 	{
             std::cout<<"direction is currently not supported without yarp"<<std::endl;
@@ -406,18 +406,18 @@ bool rosServer::sendPathToRviz()
     }
 }
 
-bool rosServer::create_steps_vector(fs_walking_msg &temp)
-{
-    if (path.size()==0)
-        return false;
-    for (auto centroid:path)
-    {
-        step_with_name temp_step;
-	temp_step.pose = footstep_planner.InitialWaist_MeanFoot.Inverse()*footstep_planner.World_InitialWaist.Inverse() *centroid.first.World_MovingFoot;
-        temp.steps.push_back(temp_step);
-    }
-    return true;
-}
+// bool rosServer::create_steps_vector(fs_walking_msg &temp)
+// {
+//     if (path.size()==0)
+//         return false;
+//     for (auto centroid:path)
+//     {
+//         step_with_name temp_step;
+// 	temp_step.pose = footstep_planner.InitialWaist_MeanFoot.Inverse()*footstep_planner.World_InitialWaist.Inverse() *centroid.first.World_MovingFoot;
+//         temp.steps.push_back(temp_step);
+//     }
+//     return true;
+// }
 
 
 bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
