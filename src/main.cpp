@@ -24,6 +24,7 @@ std::map<std::string,double&> param_manager::map_double;
 std::map<std::string,int&> param_manager::map_int;
 ros::NodeHandle* param_manager::nh;
 ros::ServiceServer param_manager::param_server;
+ros::Publisher param_manager::descr_pub_,param_manager::update_pub_;
 
 class fs_planner_module//: public yarp::os::RFModule
 {

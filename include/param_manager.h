@@ -23,7 +23,10 @@ private:
 
     static ros::NodeHandle* nh;
     static ros::ServiceServer param_server;
-    bool param_update_callback(dynamic_reconfigure::ReconfigureRequest& req, dynamic_reconfigure::ReconfigureResponse& res);
+    static ros::Publisher descr_pub_,update_pub_;
+    bool setConfigCallback(dynamic_reconfigure::ReconfigureRequest& req, dynamic_reconfigure::ReconfigureResponse& res);
+    static void sendParamDescription();
+    static void sendParamUpdate();
 };
 
 

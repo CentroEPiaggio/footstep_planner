@@ -1,39 +1,10 @@
 #include "param_manager.h"
 #include <dynamic_reconfigure/Reconfigure.h>
+#include <dynamic_reconfigure/ConfigDescription.h>
 
 
-bool param_manager::param_update_callback(dynamic_reconfigure::ReconfigureRequest& req, dynamic_reconfigure::ReconfigureResponse& res)
+bool param_manager::setConfigCallback(dynamic_reconfigure::ReconfigureRequest& req, dynamic_reconfigure::ReconfigureResponse& res)
 {
-//     if (req.config.strs.at(0).name=="help")
-//     {
-//         std::string help;
-//         help.append(" double params:\n");
-// 
-//         for (auto name:map_double)
-//         {
-//             help.append(name.first);
-//             help.append("= ");
-//             help.append(std::to_string(name.second));
-//             help.append(", ");
-//         }
-//         help.append("\n int params:\n");
-//         for (auto name:map_int)
-//         {
-//             help.append(name.first);
-//             help.append("= ");
-//             help.append(std::to_string(name.second));
-//             help.append(", ");
-//         }
-//         res.config.strs.clear();
-//         res.config.doubles.clear();
-//         res.config.ints.clear();
-//         dynamic_reconfigure::StrParameter temp;
-//         temp.name="result: ";
-//         temp.value=help;
-//         res.config.strs.push_back(temp);
-//         
-//         return true;
-//     }
     for(auto param:req.config.doubles)
     {
         if (map_double.count(param.name))
@@ -73,19 +44,61 @@ bool param_manager::param_update_callback(dynamic_reconfigure::ReconfigureReques
     return true;
 }
 
-
 param_manager::param_manager()
 {
-    nh=new ros::NodeHandle();
-    param_server = nh->advertiseService("/footstep_planner/param_update",&param_manager::param_update_callback,this);
+    nh=new ros::NodeHandle("/footstep_planner");
+
+    param_server = nh->advertiseService("set_parameters",
+                                                 &param_manager::setConfigCallback, this);
+    descr_pub_ = nh->advertise<dynamic_reconfigure::ConfigDescription>("parameter_descriptions", 1, true);
+
+    update_pub_ = nh->advertise<dynamic_reconfigure::Config>("parameter_updates", 1, true);
 }
 
+void param_manager::sendParamDescription()
+{
+    dynamic_reconfigure::ConfigDescription c;
+    dynamic_reconfigure::ConfigDescription min; //TODO class level
+    dynamic_reconfigure::ConfigDescription max; //TODO class level
+    dynamic_reconfigure::Group g;
+    g.id=0;
+    g.name="default";
+    g.type="no idea";
+    g.parent=0;
+    for (auto name:map_double)
+    {
+        dynamic_reconfigure::DoubleParameter d;
+        d.name=name.first;
+        d.value=name.second;
+        c.dflt.doubles.push_back(d);
+        d.value=std::abs(name.second)*-10.0-5;
+        c.min.doubles.push_back(d);
+        d.value=std::abs(name.second)*10.0+5;
+        c.max.doubles.push_back(d);
+        dynamic_reconfigure::ParamDescription p;
+        p.description=name.first;
+        p.edit_method="";
+        p.level=0;
+        p.name=name.first;
+        p.type="double";
+        g.parameters.push_back(p);
+    }
+    c.groups.push_back(g);
+    descr_pub_.publish(c);
+}
+
+void param_manager::sendParamUpdate()
+{
+
+}
 
 bool param_manager::register_param(std::string s, std::string& v)
 {
     if (!map_string.count(s))
     {
         map_string.emplace(s,v);
+        nh->setParam(s,v);
+        sendParamDescription();
         return true;
     }
     else
@@ -97,6 +110,8 @@ bool param_manager::register_param(std::string s, int& i)
     if (!map_int.count(s))
     {
         map_int.emplace(s,i);
+        nh->setParam(s,i);
+        sendParamDescription();
         return true;
     }
     else
@@ -108,6 +123,8 @@ bool param_manager::register_param(std::string s, double& d)
     if (!map_double.count(s))
     {
         map_double.emplace(s,d);
+        nh->setParam(s,d);
+        sendParamDescription();
         return true;
     }
     else
@@ -120,6 +137,8 @@ bool param_manager::update_param(std::string s, std::string v)
     if (map_string.count(s))
     {
         map_string.at(s)=v;
+        nh->setParam(s,v);
+        sendParamUpdate();
         return true;
     }
     else
@@ -131,6 +150,8 @@ bool param_manager::update_param(std::string s, int i)
     if (map_int.count(s))
     {
         map_int.at(s)=i;
+        nh->setParam(s,i);
+        sendParamUpdate();
         return true;
     }
     else
@@ -142,6 +163,8 @@ bool param_manager::update_param(std::string s, double d)
     if (map_double.count(s))
     {
         map_double.at(s)=d;
+        nh->setParam(s,d);
+        sendParamUpdate();
         return true;
     }
     else
