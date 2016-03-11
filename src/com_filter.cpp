@@ -132,7 +132,7 @@ com_filter::com_filter(std::string robot_name_, std::string robot_urdf_file_):ki
     param_manager::register_param("LEVEL_OF_DETAILS",LEVEL_OF_DETAILS);
     param_manager::update_param("LEVEL_OF_DETAILS",0);
     param_manager::register_param("MAX_THREADS",MAX_THREADS);
-    param_manager::update_param("MAX_THREADS",4);
+    param_manager::update_param("MAX_THREADS",2);
 }
 
 

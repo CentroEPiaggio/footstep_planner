@@ -83,6 +83,26 @@ void param_manager::sendParamDescription()
         p.type="double";
         g.parameters.push_back(p);
     }
+
+    dynamic_reconfigure::IntParameter i;
+    i.name="MAX_THREADS";
+    if(map_int.count(i.name))
+    {
+	i.value=map_int.at(i.name);
+	c.dflt.ints.push_back(i);
+	i.value=1;
+	c.min.ints.push_back(i);
+	i.value=10;
+	c.max.ints.push_back(i);
+	dynamic_reconfigure::ParamDescription p;
+	p.description=i.name;
+	p.edit_method="";
+	p.level=0;
+	p.name=i.name;
+	p.type="int";
+	g.parameters.push_back(p);
+    }
+
     c.groups.push_back(g);
     descr_pub_.publish(c);
 }
