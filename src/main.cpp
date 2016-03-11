@@ -15,6 +15,7 @@
 #include <yarp/os/all.h>
 #include <ros/ros.h>
 #include "ros_server.h"
+#include "ros/package.h"
 #include <param_manager.h>
 
 volatile bool quit;
@@ -34,15 +35,16 @@ protected:
     bool Alive;
     double period;
     std::string robot_name;
+    std::string robot_urdf_file;
 public:
-    fs_planner_module(ros::NodeHandle* nh_, double period_,std::string robot_name_):nh(nh_),period(period_),robot_name(robot_name_)
+    fs_planner_module(ros::NodeHandle* nh_, double period_,std::string robot_name_, std::string robot_urdf_file_):nh(nh_),period(period_),robot_name(robot_name_), robot_urdf_file(robot_urdf_file_)
     {
 	Alive=false;
     }
     
     bool my_configure()
     {
-	thr = new rosServer(nh,period,robot_name);
+	thr = new rosServer(nh,period,robot_name,robot_urdf_file);
 	
         if(!thr->start())
         {
@@ -95,15 +97,19 @@ int main(int argc, char **argv)
 //     yarp.init();
     
     //walkman::yarp_switch_interface switch_interface("footstep_planner");
-    std::string sCommand, robot_name;
+    std::string sCommand, robot_name, robot_urdf_file;
     
     if(argc==2) robot_name=argv[1];
     else robot_name="bigman";
+
+    if(robot_name == "bigman") robot_urdf_file = ros::package::getPath("bigman_urdf") + "/urdf/bigman.urdf";
+    if(robot_name == "coman") robot_urdf_file = ros::package::getPath("coman_urdf") + "/urdf/coman.urdf";
+
     param_manager pm;
     ros::NodeHandle nh;
     
     quit=false;
-    fs_planner_module node(&nh,200,robot_name);
+    fs_planner_module node(&nh,200,robot_name,robot_urdf_file);
     
     ros::ServiceServer srv_exit;
     

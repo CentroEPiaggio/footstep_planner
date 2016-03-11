@@ -24,11 +24,11 @@ using namespace planner;
 
 extern volatile bool quit;
 
-rosServer::rosServer(ros::NodeHandle* nh_,double period,std::string robot_name_):
+rosServer::rosServer(ros::NodeHandle* nh_,double period,std::string robot_name_, std::string robot_urdf_file_):
 // RateThread(period),
 period(period),
 nh(nh_), priv_nh_("~"),publisher(*nh,nh->resolveName("/camera_link"),robot_name_),
-command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner(robot_name_,&publisher)
+command_interface("footstep_planner"),status_interface("footstep_planner"),footstep_planner(robot_name_,robot_urdf_file_,&publisher)
 {
     // init publishers and subscribers
     

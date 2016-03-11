@@ -28,7 +28,7 @@ double DISTANCE_THRESHOLD; //0.02*0.02 //We work with squares of distances, so t
 double ANGLE_THRESHOLD;// 0.2
 double WAIST_THRESHOLD;// 0.2
 
-footstepPlanner::footstepPlanner(std::string robot_name_, ros_publisher* ros_pub_):kinematicFilter(robot_name_),comFilter(robot_name_),stepQualityEvaluator(robot_name_),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
+footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf_file_,ros_publisher* ros_pub_):kinematicFilter(robot_name_, robot_urdf_file_),comFilter(robot_name_,robot_urdf_file_),stepQualityEvaluator(robot_name_),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
     param_manager::register_param("DISTANCE_THRESHOLD",DISTANCE_THRESHOLD);
     param_manager::update_param("DISTANCE_THRESHOLD",0.02*0.02);

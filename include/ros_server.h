@@ -62,7 +62,7 @@ namespace planner {
 class rosServer//: public yarp::os::RateThread
 {
 public:
-    rosServer(ros::NodeHandle* nh_, double period,std::string robot_name_);
+    rosServer(ros::NodeHandle* nh_, double period,std::string robot_name_, std::string robot_urdf_file_);
   private:
     //! The node handle
     ros::NodeHandle* nh;

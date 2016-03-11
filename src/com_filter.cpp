@@ -121,7 +121,7 @@ bool com_filter::thread_com_filter(std::list<planner::foot_with_joints> &data, i
 }
 
 
-com_filter::com_filter(std::string robot_name_):kinematics(robot_name_)
+com_filter::com_filter(std::string robot_name_, std::string robot_urdf_file_):kinematics(robot_name_,robot_urdf_file_)
 {
     stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(stance_jnts_in);

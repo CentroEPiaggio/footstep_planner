@@ -58,8 +58,7 @@ void kinematics_utilities::initialize_solvers(chain_and_solvers* container, KDL:
 }
 
 
-kinematics_utilities::kinematics_utilities(std::string robot_name_):robot_name(robot_name_),robot_urdf_file("/home/mirko/projects/walkman/drc/iit-bigman-ros-pkg/bigman_urdf/urdf/bigman.urdf")//,idyn_model(robot_name_,"/home/mirko/projects/walkman/drc/iit-bigman-ros-pkg/bigman_urdf/urdf/bigman.urdf","/home/mirko/projects/walkman/drc/iit-bigman-ros-pkg/bigman_srdf/srdf/bigman.srdf")
-//,idyn_model(robot_name_)
+kinematics_utilities::kinematics_utilities(std::string robot_name_, std::string robot_urdf_file_):robot_name(robot_name_),robot_urdf_file(robot_urdf_file_)
 {
     if (!urdf_model.initFile(robot_urdf_file))
     {

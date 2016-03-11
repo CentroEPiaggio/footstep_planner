@@ -22,7 +22,7 @@
 class com_filter
 {
 public:
-    com_filter(std::string robot_name_);
+    com_filter(std::string robot_name_, std::string robot_urdf_file_);
     bool filter(std::list<planner::foot_with_joints> &data);
     void setWorld_StanceFoot(const KDL::Frame& World_StanceFoot);
     void setLeftRightFoot(bool left);

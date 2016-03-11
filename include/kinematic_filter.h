@@ -28,7 +28,7 @@
 class kinematic_filter
 {
 public:
-    kinematic_filter(std::string robot_name);
+    kinematic_filter(std::string robot_name, std::string robot_urdf_file_);
     bool filter(std::list<planner::foot_with_joints>& data);
     void setWorld_StanceFoot(const KDL::Frame& World_StanceFoot);
     void setLeftRightFoot(bool left);

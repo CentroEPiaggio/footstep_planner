@@ -19,7 +19,7 @@
 #endif
 using namespace planner;
 
-kinematic_filter::kinematic_filter(std::string robot_name):robot_name(robot_name),kinematics(robot_name)
+kinematic_filter::kinematic_filter(std::string robot_name, std::string robot_urdf_file_):robot_name(robot_name),kinematics(robot_name, robot_urdf_file_)
 {
 }
 

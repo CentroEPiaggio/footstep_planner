@@ -81,7 +81,7 @@ private:
     KDL::JntArray left_leg_initial_position,right_leg_initial_position;
     
 public:
-    footstepPlanner(std::string robot_name_, ros_publisher* ros_pub_);
+    footstepPlanner(std::string robot_name_, std::string robot_urdf_file_, ros_publisher* ros_pub_);
     gram_schmidt gs_utils;
     kinematics_utilities kinematics; //TODO: remove!!
     
