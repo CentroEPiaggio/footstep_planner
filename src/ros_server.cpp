@@ -337,7 +337,7 @@ bool rosServer::singleFoot(bool left)
     sleep_time.sleep();
     if (World_centroids.size()==0)
     {
-        std::cout<<"no valid plans found"<<std::endl;
+        ROS_WARN_STREAM("no valid plans found");
         return false;
     }
 #ifdef SINGLE_FOOT_OUTPUT
@@ -444,7 +444,9 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
 
     left=!left;
 //     sendPathToRviz();
-    ROS_INFO("planning completed");
+    std::string b="\033[0;34m";
+    std::string n="\033[0m";
+    ROS_INFO_STREAM(b<<"Planning completed!"<<n);
     return true;
 }
 

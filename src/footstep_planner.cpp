@@ -288,7 +288,7 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     dynamic_filtering(steps,left); //DYNAMIC FILTER
     color_filtered=3;
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
-    std::cout<<"time after dynamic filter"<<time<<std::endl;
+    std::cout<<"time after dynamic filter: "<<time<<std::endl<<std::endl;
     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());
 
     return steps;
