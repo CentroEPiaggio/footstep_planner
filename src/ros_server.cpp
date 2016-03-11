@@ -474,13 +474,23 @@ bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::E
 void rosServer::init()
 {
     tf::StampedTransform transform;
-    try{
-        listener.lookupTransform("/world", camera_link_name,
-                                 ros::Time(0), transform);
+    std::string err_msg;
+    
+    if(listener.waitForTransform("/world",camera_link_name,ros::Time(0), ros::Duration(2.0), ros::Duration(0.01), &err_msg))
+    {
+	try{
+	    listener.lookupTransform("/world", camera_link_name,
+				    ros::Time(0), transform);
+	}
+	catch (tf::TransformException ex){
+	    ROS_ERROR("%s",ex.what());
+	}
     }
-    catch (tf::TransformException ex){
-        ROS_ERROR("%s",ex.what());
+    else
+    {
+	ROS_ERROR("Error in tf: %s",err_msg.c_str());
     }
+    
     KDL::Frame World_Camera;
     tf::transformTFToKDL(transform,World_Camera);
     footstep_planner.setWorldTransform(World_Camera);
