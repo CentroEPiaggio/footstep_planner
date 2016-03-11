@@ -8,6 +8,11 @@ This project is about:
 
 Compile as a standard catkin_make project in your catkin workspace.
 
+To use different robots you should put the packages containing their models in the catkin workspace, we are currently supporting two robots:
+
+- walkman: package *bigman_urdf* in repo **https://gitlab.robotology.eu/walkman-drc/iit-bigman-ros-pkg**
+- coman: package *coman_urdf* in repo **https://github.com/EnricoMingo/iit-coman-ros-pkg**
+
 Startup of required software
 --------------------------------------------
 `roscore`
@@ -20,17 +25,19 @@ or just load the default one:
 
 `roslaunch footstep_planner fake_primesense.launch`
 
-Start a static tf publisher in order to put a world frame into the point cloud (values should be changed accordingly to the loaded scene.pcd)
+Start a static tf publisher in order to put a world frame into the point cloud, change the launch accordingly to the loaded scene.pcd. As an example, if you used stairs_2.pcd and you want to use the Walk-Man robot to plan you should launch:
 
-`roslaunch footstep_planner static.launch`
+`roslaunch footstep_planner stairs_walkman.launch`
 
 Finally start the footstep planner:
 
 `roslaunch footstep_planner footstep_planner.launch`
 
+you can specify another robot with respect to Walk-Man using the *robot* parameter.
+
 In order to send commands, just do a 
 
-`rostopic pub footstep_planner/command_i std_msgs/String TAB`
+`rostopic pub footstep_planner/command_i std_msgs/Header TAB`
 
 And fill the automatic empty message that ros will put in the shell with any command below.
 
