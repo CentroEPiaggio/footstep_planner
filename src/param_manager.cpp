@@ -84,6 +84,25 @@ void param_manager::sendParamDescription()
         g.parameters.push_back(p);
     }
 
+    for (auto name:map_int)
+    {
+        if (name.first=="MAX_THREADS") continue;
+        dynamic_reconfigure::IntParameter d;
+        d.name=name.first;
+        d.value=name.second;
+        c.dflt.ints.push_back(d);
+        d.value=std::abs(name.second)*-10.0-5;
+        c.min.ints.push_back(d);
+        d.value=std::abs(name.second)*10.0+5;
+        c.max.ints.push_back(d);
+        dynamic_reconfigure::ParamDescription p;
+        p.description=name.first;
+        p.edit_method="";
+        p.level=0;
+        p.name=name.first;
+        p.type="int";
+        g.parameters.push_back(p);
+    }
     dynamic_reconfigure::IntParameter i;
     i.name="MAX_THREADS";
     if(map_int.count(i.name))

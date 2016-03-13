@@ -23,6 +23,7 @@ double MAX_TESTED_POINTS_1;
 double MAX_TESTED_POINTS_2;
 double LEVEL_OF_DETAILS;
 int MAX_THREADS;
+int ANGLE_STEP;
 
 bool com_filter::thread_com_filter(std::list<planner::foot_with_joints> &data, int num_threads)
 {
@@ -54,7 +55,6 @@ bool com_filter::thread_com_filter(std::list<planner::foot_with_joints> &data, i
         ++it;
     }
     temp_list[num_threads-1].splice(temp_list[num_threads-1].begin(),data,data.begin(),it);
-    
     assert(total==data_initial_size);
     std::vector<std::thread> pool;
     for (int i=0;i<num_threads;i++)
@@ -63,18 +63,25 @@ bool com_filter::thread_com_filter(std::list<planner::foot_with_joints> &data, i
                                       std::ref(result_list[i]),
                                       &current_stance_chain_and_solver->at(i),
                                       &current_moving_chain_and_solver->at(i),desired_hip_height));
-    }
+    }    
     for (int i=0;i<num_threads;i++)
     {
         pool[i].join();
+    }
+    
+    for (int i=0;i<num_threads;i++)
+    {
         result.splice(result.end(),temp_list[i]);
     }
+    
     data.swap(result);
+    
     for (int i=0;i<num_threads-1;i++)
     {
         temp_list[i].clear();
     }
     pool.clear();
+    
     data_initial_size=data.size();
     partition=data.size()/num_threads;
     total=0;
@@ -126,13 +133,16 @@ com_filter::com_filter(std::string robot_name_, std::string robot_urdf_file_):ki
     stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(stance_jnts_in);
     param_manager::register_param("com_max_tested_points_1",MAX_TESTED_POINTS_1);
-    param_manager::update_param("com_max_tested_points_1",1000.0);
+    param_manager::update_param("com_max_tested_points_1",2000.0);
     param_manager::register_param("com_max_tested_points_2",MAX_TESTED_POINTS_2);
-    param_manager::update_param("com_max_tested_points_2",1000.0);
+    param_manager::update_param("com_max_tested_points_2",4000.0);
     param_manager::register_param("LEVEL_OF_DETAILS",LEVEL_OF_DETAILS);
     param_manager::update_param("LEVEL_OF_DETAILS",0);
     param_manager::register_param("MAX_THREADS",MAX_THREADS);
-    param_manager::update_param("MAX_THREADS",2);
+    param_manager::update_param("MAX_THREADS",4);
+    param_manager::register_param("COM_ANGLE_STEP",ANGLE_STEP);
+    param_manager::update_param("COM_ANGLE_STEP",5);
+    
 }
 
 
@@ -167,11 +177,12 @@ bool com_filter::internal_filter_first(std::list<planner::foot_with_joints> &dat
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         counter++;
-	if (counter%mod !=0) 
+	if (mod>0 && counter%mod !=0) 
 	{
           single_step=data.erase(single_step);
 	  continue;
-	}        auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
+	}
+	auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
         auto WaistPositions_StanceFoot=generateWaistPositions_StanceFoot(StanceFoot_MovingFoot,StanceFoot_World,LEVEL_OF_DETAILS,desired_hip_height);
 	int num_inserted=0;
@@ -210,9 +221,11 @@ bool com_filter::internal_filter_first(std::list<planner::foot_with_joints> &dat
                 total_num_failed++;
 	}
 	single_step=data.erase(single_step);
-        std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<std::endl;//<<"\r";std::cout.flush();//std::endl;
+//         std::cout<<
+        ROS_DEBUG_STREAM(counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed);//<<std::endl;//<<"\r";std::cout.flush();//std::endl;
     }
-    std::cout<<std::endl;
+    ROS_INFO_STREAM(counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed);//<<std::endl;//<<"\r";std::cout.flush();//std::endl;
+//     std::cout<<std::endl;
 }
     
     
@@ -222,7 +235,7 @@ bool com_filter::internal_filter_second(std::list<planner::foot_with_joints> &da
     {
     //HACK temp_list
     temp_list.clear();
-    std::cout<<"Checking for the second foot configurations: "<<data.size()<<std::endl;
+//     std::cout<<"Checking for the second foot configurations: "<<data.size()<<std::endl;
     int total=data.size();
     int counter=0;
     int total_num_examined=0;
@@ -234,8 +247,6 @@ bool com_filter::internal_filter_second(std::list<planner::foot_with_joints> &da
     current_moving_chain_and_solver=temp;
     //this->setLeftRightFoot(!left);
 
-
-
     //total=total_num_inserted;
     counter=0;
     total_num_examined=0;
@@ -245,7 +256,7 @@ bool com_filter::internal_filter_second(std::list<planner::foot_with_joints> &da
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         counter++;
-	if (counter%mod !=0) 
+	if (mod>0 && counter%mod !=0) 
 	{
           single_step=data.erase(single_step);
 	  continue;
@@ -287,9 +298,11 @@ bool com_filter::internal_filter_second(std::list<planner::foot_with_joints> &da
                 total_num_failed++;
         }
         single_step=data.erase(single_step);
-        std::cout<<counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed<<std::endl;//<<"\r";std::cout.flush();//std::endl;
+        ROS_DEBUG_STREAM(counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed);//<<std::endl;//<<"\r";std::cout.flush();//std::endl;
     }
-    std::cout<<std::endl;
+    ROS_INFO_STREAM(counter<<" / "<<total<<" exam:"<<total_num_examined<<" ins: "<<total_num_inserted<<" fail: "<<total_num_failed);//<<std::endl;//<<"\r";std::cout.flush();//std::endl;
+    
+//     std::cout<<std::endl;
 }
 
 
@@ -375,11 +388,11 @@ std::list< KDL::Frame > com_filter::generateWaistPositions_StanceFoot ( const KD
     double angle_ref=0;
     //double angle=0;
 //     level_of_details=2;
-    for (double angle=-M_PI/6.0;angle<M_PI/6.1;angle=angle+M_PI/15.0)
+    for (double angle=-M_PI/6.0;angle<M_PI/6.1;angle=angle+((2.0*M_PI/6.0)/double(ANGLE_STEP)))
     {//double height=-0.01;
         for (double height=-desired_hip_height*0.1-0.01*level_of_details;height<-0.0;height=height+(desired_hip_height*0.05)/(1+level_of_details/2.0))
 	{
-	    KDL::Frame DesiredWaist_StanceFoot=computeStanceFoot_WaistPosition(StanceFoot_World,angle+angle_ref,desired_hip_height+height).Inverse();
+	    KDL::Frame DesiredWaist_StanceFoot=computeStanceFoot_WaistPosition(StanceFoot_World,angle+angle_ref,desired_hip_height+height*2.0).Inverse();
 	    DesiredWaist_StanceFoot_list.push_back(DesiredWaist_StanceFoot);
         }
     }

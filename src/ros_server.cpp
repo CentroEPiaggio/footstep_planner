@@ -60,7 +60,7 @@ command_interface("footstep_planner"),status_interface("footstep_planner"),foots
     
     this->loss_function_type =4;
     param_manager::register_param("loss_function_type",loss_function_type);
-    param_manager::update_param("loss_function_type",4);
+    param_manager::update_param("loss_function_type",2);
     left=true;
 }
 
@@ -131,7 +131,7 @@ void rosServer::run()
         std::string command = msg.frame_id.data();
         int first_param=msg.seq;
 #endif
-        std::cout<<" - YARP: Command ["<<seq_num<<"] received: "<<command<<std::endl;
+        std::cout<<" - Command ["<<seq_num<<"] received: "<<command<<std::endl;
         if (command=="set_stance_foot")
         {
             if (first_param==0)//starting_foot=="left")

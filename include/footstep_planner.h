@@ -73,7 +73,8 @@ private:
     KDL::Vector World_CurrentDirection;
     std::vector< std::string > last_used_joint_names;
     
-    double min_angle,max_angle,angle_step;
+    double min_angle,max_angle;
+    int angle_step;
     
     ros_publisher* ros_pub;
     int color_filtered;

@@ -120,7 +120,7 @@ public:
     std::thread thr;
     bool paused;
     bool stopped;
-    double loss_function_type;
+    int loss_function_type;
     void thr_body();
   public:
     //------------------ Callbacks -------------------
