@@ -24,7 +24,7 @@ limitations under the License.*/
 
 using namespace planner;
 
-double DISTANCE_THRESHOLD; //0.02*0.02 //We work with squares of distances, so this threshould is the square of 2cm!
+double DISTANCE_THRESHOLD; //0.02*0.02 //We work with squares of distances, so this threshold is the square of 2cm!
 double ANGLE_THRESHOLD;// 0.2
 double WAIST_THRESHOLD;// 0.2
 
@@ -42,7 +42,7 @@ footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf
     param_manager::register_param("kin_max_angle",max_angle);
     param_manager::update_param("kin_max_angle",0.8);
     param_manager::register_param("kin_angle_step",angle_step);
-    param_manager::update_param("kin_angle_step",0.2);
+    param_manager::update_param("kin_angle_step",8);
     
     KDL::Frame Waist_StanceFoot;
     left_joints.resize(kinematics.wl_leg.chain.getNrOfJoints());
@@ -172,13 +172,13 @@ void footstepPlanner::generate_frames_from_normals(const std::list< polygon_with
     for(auto const& item:affordances)
     {
         j++;
-        ROS_INFO("Polygon %d number of normals : %lu ",j,item.normals->size());
+//         ROS_INFO("Polygon %d number of normals : %lu ",j,item.normals->size());
 
         for(unsigned int i=0; i<item.normals->size(); i++)
         {
             KDL::Frame plane_frame=createFramesFromNormal((*item.normals)[i]);
             int k=-1;
-            for (double angle=min_angle;angle<=max_angle;angle=angle+angle_step) 
+            for (double angle=min_angle;angle<=max_angle;angle=angle+(max_angle-min_angle)/double(angle_step)) 
             {
                 //double angle=0.0;
                 k++;
@@ -225,10 +225,26 @@ void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& aff
     filter_by_coordinates.at(1)->filter_points(affordances,left);   //filter on y
     filter_by_coordinates.at(2)->filter_points(affordances,left);   //filter on z
     
+    int total_normals = 0;
+    for(auto item:affordances)
+        total_normals+=item.normals->size();
+    ROS_INFO("Number of normals after geometric filter XYZ on borders: %d ",total_normals);
+    
     filter_by_tilt->filter_single_normals(affordances);
+    total_normals=0;
+    for(auto item:affordances)
+        total_normals+=item.normals->size();
+    ROS_INFO("Number of affordances after tilt filter on normals: %d ",total_normals);
+    
     
     filter_to_avoid_foot.set_stance_foot(StanceFoot_Camera);
     filter_to_avoid_foot.filter_points(affordances,left);
+
+    total_normals=0;
+    for(auto item:affordances)
+        total_normals+=item.normals->size();
+    ROS_INFO("Number of affordances after collision filter on points: %d ",total_normals);
+    
 }
 
 void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bool left)
@@ -288,7 +304,7 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     dynamic_filtering(steps,left); //DYNAMIC FILTER
     color_filtered=3;
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
-    std::cout<<"time after dynamic filter: "<<time<<std::endl<<std::endl;
+//     std::cout<<"time after dynamic filter: "<<time<<std::endl<<std::endl;
     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());
 
     return steps;
@@ -367,7 +383,7 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 		minimum_steps.push_back(&(centroid));
 	    }
 	}
-	std::cout<<"Number of steps after distance minimization "<<minimum_steps.size()<<std::endl;
+// 	std::cout<<"Number of steps after distance minimization "<<minimum_steps.size()<<std::endl;
 	
 	// SINGLE FUNCTION VERSION
 	KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
@@ -394,11 +410,12 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	    result=centroid;
 	  }
 	}
+	std::cout<<"Final step cost: "<<min<<std::endl;
         return *result;
     }
-    else if(loss_function_type==3)	// energy_consumption
+    else if(loss_function_type==3)      // energy_consumption
     {
-	double min=100000000000000;
+        double min=100000000000000;
 	foot_with_joints result;
 	for (auto centroid:centroids)
 	{

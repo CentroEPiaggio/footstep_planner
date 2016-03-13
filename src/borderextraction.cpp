@@ -155,7 +155,7 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
             return polygons;
         }
 
-        std::cout<<"- Polygon number of points: "<<temp.border->size()<<std::endl;
+//         std::cout<<"- Polygon number of points: "<<temp.border->size()<<std::endl;
         polygons.push_back(temp);
     }
 //     int i=0;
