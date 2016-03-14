@@ -20,6 +20,8 @@
 
 volatile bool quit;
 
+std::ofstream mat("/home/mirko/out1.mat",std::ios::app);
+
 std::map<std::string,std::string&> param_manager::map_string;
 std::map<std::string,double&> param_manager::map_double;
 std::map<std::string,int&> param_manager::map_int;

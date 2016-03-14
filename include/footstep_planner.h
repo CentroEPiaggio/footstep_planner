@@ -116,6 +116,7 @@ public:
     
     std::list<foot_with_joints> single_check(KDL::Frame left_foot, KDL::Frame right_foot, bool only_ik, bool move, bool left);
     void setCurrentStanceFoot(bool left);
+    void reset();
 };
 
 }

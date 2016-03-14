@@ -15,6 +15,7 @@ public:
     static bool update_param(std::string s, int i);
     static bool update_param(std::string s, std::string v);
 
+    static void write_params();
 
 private:
     static std::map<std::string,double&> map_double;

@@ -133,15 +133,15 @@ com_filter::com_filter(std::string robot_name_, std::string robot_urdf_file_):ki
     stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(stance_jnts_in);
     param_manager::register_param("com_max_tested_points_1",MAX_TESTED_POINTS_1);
-    param_manager::update_param("com_max_tested_points_1",2000.0);
+    param_manager::update_param("com_max_tested_points_1",50.0);
     param_manager::register_param("com_max_tested_points_2",MAX_TESTED_POINTS_2);
-    param_manager::update_param("com_max_tested_points_2",4000.0);
+    param_manager::update_param("com_max_tested_points_2",50.0);
     param_manager::register_param("LEVEL_OF_DETAILS",LEVEL_OF_DETAILS);
     param_manager::update_param("LEVEL_OF_DETAILS",0);
     param_manager::register_param("MAX_THREADS",MAX_THREADS);
-    param_manager::update_param("MAX_THREADS",4);
+    param_manager::update_param("MAX_THREADS",6);
     param_manager::register_param("COM_ANGLE_STEP",ANGLE_STEP);
-    param_manager::update_param("COM_ANGLE_STEP",5);
+    param_manager::update_param("COM_ANGLE_STEP",3);
     
 }
 

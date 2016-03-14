@@ -23,6 +23,7 @@
 using namespace planner;
 
 extern volatile bool quit;
+extern std::ofstream mat;
 
 rosServer::rosServer(ros::NodeHandle* nh_,double period,std::string robot_name_, std::string robot_urdf_file_):
 // RateThread(period),
@@ -58,7 +59,7 @@ command_interface("footstep_planner"),status_interface("footstep_planner"),foots
     save_to_file = false;
     status_interface.start();
     
-    this->loss_function_type =4;
+    this->loss_function_type =2;
     param_manager::register_param("loss_function_type",loss_function_type);
     param_manager::update_param("loss_function_type",2);
     left=true;
@@ -175,6 +176,41 @@ void rosServer::run()
             while (ok)
                 ok=planFootsteps(req,res);
         }
+        if (command=="plan_repeat")
+        {
+            status_interface.setStatus("planning until the infinite");
+            while(ros::ok())
+            {
+                for (int kin_l=1;kin_l<9;kin_l=kin_l+2)
+                {
+                    for (int com_l=1;com_l<5;com_l++)
+                    {
+                        for (int com1=10;com1<120;com1=com1+15)
+                        {
+                            for (int com2=10;com2<120;com2=com2+15)
+                            {
+                                bool ok=true;
+                                int counter=0;
+                                bool tok=param_manager::update_param("kin_angle_step",kin_l);
+                                tok=tok&&param_manager::update_param("COM_ANGLE_STEP",com_l);
+                                tok=tok&&param_manager::update_param("com_max_tested_points_1",1.0*double(com1));
+                                tok=tok&&param_manager::update_param("com_max_tested_points_2",1.0*double(com2));
+                                if (!tok) abort();
+                                path.clear();
+                                while (counter<30 && ok)
+                                {
+                                    counter++;
+                                    ok=planFootsteps(req,res);
+                                    ROS_INFO_STREAM("----progress: "<<kin_l<<"/9 "<<com_l<<"/5 "<<com1<<"/120 "<<com2<<"/120 "<<counter);
+                                }
+                                footstep_planner.reset();
+                            }   
+                        }   
+                    }
+                }
+            }
+        }
+        
         if (command=="plan_num")
         {
             std::string temp;
@@ -211,6 +247,10 @@ void rosServer::run()
             std::cout<<"direction is currently not supported without yarp"<<std::endl;
 //             footstep_planner.setDirectionVector(msg.x,msg.y,msg.z);
 	}
+	if(command=="reset")
+        {
+            footstep_planner.reset();
+        }
 	if(command=="exit")
         {
             abort();
@@ -331,13 +371,20 @@ bool rosServer::singleFoot(bool left)
       temp.normals=polygon.normals->makeShared();
       poly.push_back(temp);
     }
+    auto t = ros::Time::now();
     auto World_centroids=footstep_planner.getFeasibleCentroids(poly,left);
-    publisher.publish_plane_borders(polygons);
-    ros::Duration sleep_time(0.2);
-    sleep_time.sleep();
+    mat<<" "<<(ros::Time::now()-t).toSec();
+    param_manager::write_params();
+
+//     publisher.publish_plane_borders(polygons);
+//     ros::Duration sleep_time(0.2);
+//     sleep_time.sleep();
     if (World_centroids.size()==0)
     {
         ROS_WARN_STREAM("no valid plans found");
+        mat<<" 10000000";
+        mat<<std::endl;
+        mat.flush();
         return false;
     }
 #ifdef SINGLE_FOOT_OUTPUT
@@ -366,6 +413,8 @@ bool rosServer::singleFoot(bool left)
     footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot,left); //Finally we make the step
 
     path.push_back(std::make_pair(final_centroid,footstep_planner.getLastUsedChain()));
+    mat<<std::endl;
+    mat.flush();
     return true;
 }
 

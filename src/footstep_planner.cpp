@@ -22,6 +22,8 @@ limitations under the License.*/
 #include <stdlib.h>     /* srand, rand */
 #include <cmath>
 
+extern std::ofstream mat;
+
 using namespace planner;
 
 double DISTANCE_THRESHOLD; //0.02*0.02 //We work with squares of distances, so this threshold is the square of 2cm!
@@ -43,7 +45,21 @@ footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf
     param_manager::update_param("kin_max_angle",0.8);
     param_manager::register_param("kin_angle_step",angle_step);
     param_manager::update_param("kin_angle_step",8);
+    coordinate_filter* temp_filter = new coordinate_filter(0,0.0,0.6);
+    filter_by_coordinates.push_back(temp_filter);
+    temp_filter = new coordinate_filter(1,-0.6,0.1);
+    filter_by_coordinates.push_back(temp_filter);
+    temp_filter = new coordinate_filter(2,-0.5,0.5);
+    filter_by_coordinates.push_back(temp_filter);
     
+    filter_by_tilt = new tilt_filter();
+    ros_pub = ros_pub_;
+    
+    reset();
+}
+
+void footstepPlanner::reset()
+{
     KDL::Frame Waist_StanceFoot;
     left_joints.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(left_joints);
@@ -52,16 +68,8 @@ footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf
     World_StanceFoot=World_Waist*Waist_StanceFoot;
     std::cout<<"starting World_StanceFoot"<<World_StanceFoot<<std::endl;
     comFilter.setZeroWaistHeight(-Waist_StanceFoot.p[2]);
-    coordinate_filter* temp_filter = new coordinate_filter(0,0.0,0.6);
-    filter_by_coordinates.push_back(temp_filter);
-    temp_filter = new coordinate_filter(1,-0.6,0.1);
-    filter_by_coordinates.push_back(temp_filter);
-    temp_filter = new coordinate_filter(2,-0.5,0.5);
-    filter_by_coordinates.push_back(temp_filter);
-
-    filter_by_tilt = new tilt_filter();
     
-    ros_pub = ros_pub_;
+    
 }
 
 void footstepPlanner::setCurrentStanceFoot(bool left)
@@ -300,13 +308,14 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     color_filtered=2;
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
+    mat<<" "<<steps.size();
     auto time=ros::Time::now();
     dynamic_filtering(steps,left); //DYNAMIC FILTER
     color_filtered=3;
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
 //     std::cout<<"time after dynamic filter: "<<time<<std::endl<<std::endl;
     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());
-
+    mat<<" "<<steps.size();
     return steps;
 }
 
@@ -411,6 +420,7 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	  }
 	}
 	std::cout<<"Final step cost: "<<min<<std::endl;
+        mat<<" "<<min;
         return *result;
     }
     else if(loss_function_type==3)      // energy_consumption

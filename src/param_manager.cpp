@@ -1,6 +1,15 @@
 #include "param_manager.h"
 #include <dynamic_reconfigure/Reconfigure.h>
 #include <dynamic_reconfigure/ConfigDescription.h>
+#include <iostream>
+#include <fstream>
+
+extern std::ofstream mat;
+
+void param_manager::write_params()
+{
+    mat<<" "<<map_int.at("COM_ANGLE_STEP")<<" "<<map_int.at("kin_angle_step")<<" "<<map_double.at("com_max_tested_points_1")<<" "<<map_double.at("com_max_tested_points_2")<<" ";
+}
 
 
 bool param_manager::setConfigCallback(dynamic_reconfigure::ReconfigureRequest& req, dynamic_reconfigure::ReconfigureResponse& res)
