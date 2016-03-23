@@ -28,7 +28,7 @@ double DISTANCE_THRESHOLD; //0.02*0.02 //We work with squares of distances, so t
 double ANGLE_THRESHOLD;// 0.2
 double WAIST_THRESHOLD;// 0.2
 
-footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf_file_,ros_publisher* ros_pub_):kinematicFilter(robot_name_, robot_urdf_file_),comFilter(robot_name_,robot_urdf_file_),stepQualityEvaluator(robot_name_),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
+footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf_file_,ros_publisher* ros_pub_):kinematicFilter(robot_name_, robot_urdf_file_),comFilter(robot_name_,robot_urdf_file_),lipmFilter(robot_name_,robot_urdf_file_),stepQualityEvaluator(robot_name_),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
     param_manager::register_param("DISTANCE_THRESHOLD",DISTANCE_THRESHOLD);
     param_manager::update_param("DISTANCE_THRESHOLD",0.02*0.02);
@@ -52,6 +52,7 @@ footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf
     World_StanceFoot=World_Waist*Waist_StanceFoot;
     std::cout<<"starting World_StanceFoot"<<World_StanceFoot<<std::endl;
     comFilter.setZeroWaistHeight(-Waist_StanceFoot.p[2]);
+    lipmFilter.setZeroWaistHeight(-Waist_StanceFoot.p[2]);
     coordinate_filter* temp_filter = new coordinate_filter(0,0.0,0.6);
     filter_by_coordinates.push_back(temp_filter);
     temp_filter = new coordinate_filter(1,-0.6,0.1);
@@ -257,17 +258,29 @@ void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bo
     
 }
 
-void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool left)
+void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool left, int dyn_filter_type)
 {
-    comFilter.setLeftRightFoot(left);
-    comFilter.setWorld_StanceFoot(World_StanceFoot);
-    comFilter.filter(steps);
-    last_used_joint_names=comFilter.getJointOrder();
-    joint_chain=kinematicFilter.getJointChain();
+    if(dyn_filter_type==0) //COM
+    {
+	comFilter.setLeftRightFoot(left);
+	comFilter.setWorld_StanceFoot(World_StanceFoot);
+	comFilter.filter(steps);
+	last_used_joint_names=comFilter.getJointOrder();
+	joint_chain=kinematicFilter.getJointChain();
+    }
+
+    if(dyn_filter_type==1) //LIPM
+    {
+	lipmFilter.setLeftRightFoot(left);
+	lipmFilter.setWorld_StanceFoot(World_StanceFoot);
+	lipmFilter.filter(steps);
+	last_used_joint_names=lipmFilter.getJointOrder();
+	joint_chain=kinematicFilter.getJointChain();
+    }
 }
 
 
-std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left)
+std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left, int dyn_filter_type)
 {
     if (!world_camera_set)
     {
@@ -301,7 +314,7 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
     auto time=ros::Time::now();
-    dynamic_filtering(steps,left); //DYNAMIC FILTER
+    dynamic_filtering(steps,left,dyn_filter_type); //DYNAMIC FILTER
     color_filtered=3;
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
 //     std::cout<<"time after dynamic filter: "<<time<<std::endl<<std::endl;
@@ -310,7 +323,7 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     return steps;
 }
 
-std::list<foot_with_joints> footstepPlanner::single_check(KDL::Frame left_foot, KDL::Frame right_foot, bool only_ik, bool move, bool left)
+std::list<foot_with_joints> footstepPlanner::single_check(KDL::Frame left_foot, KDL::Frame right_foot, bool only_ik, bool move, bool left, int dyn_filter_type)
 {
     KDL::Frame tmp_World_StanceFoot = World_StanceFoot;
     
@@ -326,7 +339,7 @@ std::list<foot_with_joints> footstepPlanner::single_check(KDL::Frame left_foot, 
     
     kinematic_filtering(list,left);
         
-    if(!only_ik) dynamic_filtering(list,left);
+    if(!only_ik) dynamic_filtering(list,left,dyn_filter_type);
     
     if(!move) World_StanceFoot=tmp_World_StanceFoot;
     

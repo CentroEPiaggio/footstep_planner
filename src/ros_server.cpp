@@ -112,8 +112,9 @@ void rosServer::run()
 {
     int seq_num;
     status_interface.setStatus("ready");
-    std_srvs::Empty::Request req;
-    std_srvs::Empty::Response res;
+    footstep_planner::fs::Request req;
+    footstep_planner::fs::Response res;
+    req.dyn_filter_type = dyn_filter_type;
     
     //publisher.publish_last_joints_position();
     publisher.publish_starting_position(initial_joints_value);
@@ -156,6 +157,14 @@ void rosServer::run()
 	        status_interface.setStatus("planning");
 		planFootsteps(req,res);
 	    }
+	}
+	if(command=="switch_to_com")
+	{
+	    dyn_filter_type = 0;
+	}
+	if(command=="switch_to_lipm")
+	{
+	    dyn_filter_type = 1;
 	}
 	if(command=="cap_save")
 	{
@@ -303,7 +312,7 @@ bool rosServer::single_check(bool ik_only, bool move)
     return false;
 }
 
-bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+bool rosServer::extractBorders(footstep_planner::fs::Request& request, footstep_planner::fs::Response& response)
 {
     polygons=border_extraction.extractBorders(clusters);
     publisher.publish_plane_borders(polygons); 
@@ -320,7 +329,7 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
     return true;
 }
 
-bool rosServer::singleFoot(bool left)
+bool rosServer::singleFoot(bool left, int dyn_filter_type)
 {
     std::list<polygon_with_normals> poly;
     for (auto polygon:polygons)
@@ -331,7 +340,7 @@ bool rosServer::singleFoot(bool left)
       temp.normals=polygon.normals->makeShared();
       poly.push_back(temp);
     }
-    auto World_centroids=footstep_planner.getFeasibleCentroids(poly,left);
+    auto World_centroids=footstep_planner.getFeasibleCentroids(poly,left,dyn_filter_type);
     publisher.publish_plane_borders(polygons);
     ros::Duration sleep_time(0.2);
     sleep_time.sleep();
@@ -420,7 +429,7 @@ bool rosServer::sendPathToRviz()
 // }
 
 
-bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+bool rosServer::planFootsteps(footstep_planner::fs::Request& request, footstep_planner::fs::Response& response)
 {
 
     if(polygons.size()==0) {
@@ -430,15 +439,20 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
         if (!read || polygons.size()==0)
         {
            std::cout<<"problems while reading from file, you should call the [/filter_by_curvature] services first"<<std::endl;
-           return false;
+           response.result=0;
+	   return false;
         }
     }
     std::cout<<std::endl<<"> Number of polygons: "<<polygons.size()<<std::endl;
     
 //    bool left=true;
 //    bool right=false;
-    bool result=singleFoot(left);
-    if (!result) return false;
+    bool result=singleFoot(left,request.dyn_filter_type);
+    if (!result)
+    {
+	response.result=0;
+	return false;
+    }
 //     singleFoot(right);
 //     singleFoot(left);
 
@@ -447,11 +461,14 @@ bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty
     std::string b="\033[0;34m";
     std::string n="\033[0m";
     ROS_INFO_STREAM(b<<"Planning completed!"<<n);
+    
+    response.result=1;
+    
     return true;
 }
 
 
-bool rosServer::filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+bool rosServer::filterByCurvature(footstep_planner::fs::Request& request, footstep_planner::fs::Response& response)
 {
     
     // wait for a point cloud

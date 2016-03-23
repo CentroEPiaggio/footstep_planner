@@ -55,14 +55,14 @@ FIND_PACKAGE(orocos_kdl REQUIRED)
 # fs_command.msg
 # )
 # 
-# add_service_files(
-#         FILES
-#         param_server.srv
-#         )
+add_service_files(
+FILES
+fs.srv
+)
 
-# generate_messages(
-# DEPENDENCIES std_msgs
-# )
+generate_messages(
+DEPENDENCIES std_msgs
+)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -109,6 +109,7 @@ add_executable(foot_planner
        src/borderextraction.cpp
        src/kinematic_filter.cpp
        src/com_filter.cpp
+       src/lipm_filter.cpp
        src/step_quality_evaluator.cpp
        src/coordinate_filter.cpp
        src/foot_collision_filter.cpp

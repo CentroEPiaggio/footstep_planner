@@ -39,6 +39,7 @@
 #include <pcl/io/io.h>
 
 #include "footstep_planner.h"
+#include "footstep_planner/fs.h"
 #include "curvaturefilter.h"
 #include "borderextraction.h"
 #include "ros_publisher.h"
@@ -87,7 +88,7 @@ public:
     borderExtraction border_extraction;
     tf::Transform current_robot_transform;
 
-    
+    int dyn_filter_type=1;
     
     //Camera link frame
     KDL::Vector current_direction;
@@ -96,7 +97,7 @@ public:
     //WORLD Reference Frame
     std::vector<std::pair<foot_with_joints,std::vector<std::string>>> path;
     
-    bool singleFoot(bool left);
+    bool singleFoot(bool left, int dyn_filter_type);
     
 #ifdef USE_YARP
     walkman::yarp_custom_command_interface<fs_planner_msg> command_interface;
@@ -124,9 +125,9 @@ public:
     void thr_body();
   public:
     //------------------ Callbacks -------------------
-    bool filterByCurvature(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
-    bool extractBorders(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
-    bool planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
+    bool filterByCurvature(footstep_planner::fs::Request& request, footstep_planner::fs::Response& response);
+    bool extractBorders(footstep_planner::fs::Request& request, footstep_planner::fs::Response& response);
+    bool planFootsteps(footstep_planner::fs::Request& request, footstep_planner::fs::Response& response);
     bool sendPathToRviz();
 //     bool create_steps_vector(fs_walking_msg& temp);
     void init();

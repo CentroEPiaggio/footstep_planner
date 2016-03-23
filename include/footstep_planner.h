@@ -24,6 +24,7 @@
 #include "gram_schmidt.h"
 #include "kinematic_filter.h"
 #include "com_filter.h"
+#include "lipm_filter.h"
 #include "step_quality_evaluator.h"
 #include <data_types.h>
 #include "coordinate_filter.h"
@@ -47,6 +48,7 @@ private:
     KDL::Frame World_StanceFoot;
     kinematic_filter kinematicFilter;
     com_filter comFilter;
+    lipm_filter lipmFilter;
     step_quality_evaluator stepQualityEvaluator;
     //Camera Link Frame
     KDL::Vector Camera_DesiredDirection;
@@ -64,7 +66,7 @@ private:
     
     void kinematic_filtering(std::list<foot_with_joints>& steps, bool left);
     
-    void dynamic_filtering(std::list<foot_with_joints>& steps, bool left);
+    void dynamic_filtering(std::list<foot_with_joints>& steps, bool left, int dyn_filter_type);
     
     tilt_filter* filter_by_tilt;
     std::vector<coordinate_filter*> filter_by_coordinates;
@@ -87,7 +89,7 @@ public:
     kinematics_utilities kinematics; //TODO: remove!!
     
     //Camera link frame
-    std::list<foot_with_joints> getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left);
+    std::list<foot_with_joints> getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left, int dyn_filter_type);
     void setParams(double feasible_area_);
     
     void setCurrentSupportFoot(KDL::Frame World_StanceFoot, bool left);
@@ -114,7 +116,7 @@ public:
     // robot area for the footstep planner
     double feasible_area_;
     
-    std::list<foot_with_joints> single_check(KDL::Frame left_foot, KDL::Frame right_foot, bool only_ik, bool move, bool left);
+    std::list<foot_with_joints> single_check(KDL::Frame left_foot, KDL::Frame right_foot, bool only_ik, bool move, bool left, int dyn_filter_type);
     void setCurrentStanceFoot(bool left);
 };
 
