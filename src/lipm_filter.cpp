@@ -1,7 +1,7 @@
 /* Copyright [2016] [Mirko Ferrati, Alessandro Settimi, Danilo Caporale]
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in lipmpliance with the License.
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  * 
  * http://www.apache.org/licenses/LICENSE-2.0
@@ -132,16 +132,16 @@ lipm_filter::lipm_filter(std::string robot_name_, std::string robot_urdf_file_):
 {
     stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
     SetToZero(stance_jnts_in);
-    param_manager::register_param("lipm_max_tested_points_1",MAX_TESTED_POINTS_1_);
-    param_manager::update_param("lipm_max_tested_points_1",2000.0);
-    param_manager::register_param("lipm_max_tested_points_2",MAX_TESTED_POINTS_2_);
-    param_manager::update_param("lipm_max_tested_points_2",4000.0);
-    param_manager::register_param("LEVEL_OF_DETAILS",LEVEL_OF_DETAILS_);
-    param_manager::update_param("LEVEL_OF_DETAILS",0);
-    param_manager::register_param("MAX_THREADS",MAX_THREADS_);
-    param_manager::update_param("MAX_THREADS",4);
-    param_manager::register_param("LIPM_ANGLE_STEP",ANGLE_STEP_);
-    param_manager::update_param("LIPM_ANGLE_STEP",5);
+    param_manager::register_param("LIPM_com_max_tested_points_1",MAX_TESTED_POINTS_1_);
+    param_manager::update_param("LIPM_com_max_tested_points_1",2000.0);
+    param_manager::register_param("LIPM_com_max_tested_points_2",MAX_TESTED_POINTS_2_);
+    param_manager::update_param("LIPM_com_max_tested_points_2",4000.0);
+    param_manager::register_param("LIPM_LEVEL_OF_DETAILS",LEVEL_OF_DETAILS_);
+    param_manager::update_param("LIPM_LEVEL_OF_DETAILS",0);
+    param_manager::register_param("LIPM_MAX_THREADS",MAX_THREADS_);
+    param_manager::update_param("LIPM_MAX_THREADS",2);
+    param_manager::register_param("LIPM_COM_ANGLE_STEP",ANGLE_STEP_);
+    param_manager::update_param("LIPM_COM_ANGLE_STEP",5);
     
 }
 
@@ -392,7 +392,7 @@ std::list< KDL::Frame > lipm_filter::generateWaistPositions_StanceFoot ( const K
     {//double height=-0.01;
         for (double height=-desired_hip_height*0.1-0.01*level_of_details;height<-0.0;height=height+(desired_hip_height*0.05)/(1+level_of_details/2.0))
 	{
-	    KDL::Frame DesiredWaist_StanceFoot=lipmputeStanceFoot_WaistPosition(StanceFoot_World,angle+angle_ref,desired_hip_height+height*2.0).Inverse();
+	    KDL::Frame DesiredWaist_StanceFoot=computeStanceFoot_WaistPosition(StanceFoot_World,angle+angle_ref,desired_hip_height+height*2.0).Inverse();
 	    DesiredWaist_StanceFoot_list.push_back(DesiredWaist_StanceFoot);
         }
     }
@@ -400,7 +400,7 @@ std::list< KDL::Frame > lipm_filter::generateWaistPositions_StanceFoot ( const K
 }
 
 
-KDL::Frame lipm_filter::lipmputeStanceFoot_WaistPosition(const KDL::Frame& StanceFoot_World,double rot_angle,double hip_height)
+KDL::Frame lipm_filter::computeStanceFoot_WaistPosition(const KDL::Frame& StanceFoot_World,double rot_angle,double hip_height)
 {
     KDL::Frame StanceFoot_WaistPosition;
     KDL::Vector World_GravityFromIMU(0,0,-1);

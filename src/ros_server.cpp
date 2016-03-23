@@ -61,6 +61,8 @@ command_interface("footstep_planner"),status_interface("footstep_planner"),foots
     this->loss_function_type =4;
     param_manager::register_param("loss_function_type",loss_function_type);
     param_manager::update_param("loss_function_type",2);
+    param_manager::register_param("dyn_filter_type",dyn_filter_type);
+    param_manager::update_param("dyn_filter_type",1);
     left=true;
 }
 
