@@ -105,6 +105,8 @@ int main(int argc, char **argv)
     if(robot_name == "bigman") robot_urdf_file = ros::package::getPath("bigman_urdf") + "/urdf/bigman.urdf";
     if(robot_name == "coman") robot_urdf_file = ros::package::getPath("coman_urdf") + "/urdf/coman.urdf";
 
+    ROS_INFO_STREAM("\033[0;34m"<<"USING ROBOT: "<<robot_name<<"\033[0m");
+
     param_manager pm;
     ros::NodeHandle nh;
     
