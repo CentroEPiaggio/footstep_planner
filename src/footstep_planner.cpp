@@ -200,6 +200,8 @@ void footstepPlanner::generate_frames_from_normals(const std::list< polygon_with
 
 void footstepPlanner::geometric_filtering(std::list< polygon_with_normals >& affordances, bool left)
 {
+//     ros_pub->publish_geometric_constraints(0.0,0.6,-0.1,0.6,-0.5,0.5,World_StanceFoot);
+
     ROS_INFO("Number of affordances: %lu ",affordances.size());
     
     filter_by_tilt->set_world(World_Camera);

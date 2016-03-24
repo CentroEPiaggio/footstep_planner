@@ -31,6 +31,7 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     pub_footstep = node.advertise<visualization_msgs::Marker>("/footstep_marker",1,true);
     pub_ik_joints = node.advertise<sensor_msgs::JointState>("/joint_states",1,true);
     pub_normal_cloud_ = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("normal_cloud"), 1);
+    pub_geometric_contraints = node.advertise<visualization_msgs::Marker>("/geometric_contraints", 1,true);
     pub_filtered_frames = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("filtered_frames"), 1);
     pub_average_normal_cloud_ = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("average_normal"), 1);
     
@@ -135,6 +136,27 @@ void ros_publisher::publish_foot_position(KDL::Frame World_MovingFoot,int centro
             
     pub_footstep.publish(foot_marker);
     
+}
+
+void ros_publisher::publish_geometric_constraints(double x_min, double x_max, double y_min, double y_max, double z_min, double z_max, KDL::Frame World_StanceFoot)
+{
+    visualization_msgs::Marker marker;
+    marker.type=visualization_msgs::Marker::CUBE;
+    marker.header.frame_id="world";
+    marker.header.seq=1;
+    marker.id=0;
+    marker.pose.position.x = (x_max+x_min)/2.0 + World_StanceFoot.p.x();
+    marker.pose.position.y = (y_max+y_min)/2.0 + World_StanceFoot.p.y();
+    marker.pose.position.z = (z_max+z_min)/2.0 + World_StanceFoot.p.z();
+    World_StanceFoot.M.GetQuaternion(marker.pose.orientation.x,marker.pose.orientation.y,marker.pose.orientation.z,marker.pose.orientation.w);
+    marker.scale.x=x_max-x_min;
+    marker.scale.y=y_max-y_min;
+    marker.scale.z=z_max-z_min;
+    marker.lifetime=ros::Duration(0);
+    marker.color.b=0.5;
+    marker.color.a=0.3;
+
+    pub_geometric_contraints.publish(marker);
 }
 
 void ros_publisher::publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal >::Ptr normals, int i)
