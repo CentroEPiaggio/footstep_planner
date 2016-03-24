@@ -13,10 +13,12 @@
  * limitations under the License.*/
 
 #include "tilt_filter.h"
+#include <param_manager.h>
 
-tilt_filter::tilt_filter(double max_tilt_):max_tilt(max_tilt_)
+tilt_filter::tilt_filter(double max_tilt_)
 {
-
+    param_manager::register_param("max_tilt",max_tilt);
+    param_manager::update_param("max_tilt",max_tilt_);
 }
 
 void tilt_filter::set_world(KDL::Frame World_Camera_)
@@ -28,6 +30,7 @@ void tilt_filter::set_world(KDL::Frame World_Camera_)
 void tilt_filter::set_max_tilt(double max_tilt_)
 {
 	max_tilt = max_tilt_;
+	param_manager::update_param("max_tilt",max_tilt_);
 }
 
 bool tilt_filter::normal_is_in_bounds(pcl::PointXYZRGBNormal& normal)
@@ -51,6 +54,7 @@ bool tilt_filter::normal_is_in_bounds(pcl::PointXYZRGBNormal& normal)
     value = dot(ground_normal,n);
 
 // 	std::cout<<"||TILT: "<<n.x()<<' '<<n.y()<<' '<<n.z()<<" => "<<value<<std::endl;
+// 	std::cout<<"||MAX_TILT: "<<max_tilt<<std::endl;
     
     if(fabs(value) < max_tilt) return false;
 

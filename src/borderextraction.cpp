@@ -23,9 +23,15 @@
 #include <pcl/filters/sampling_surface_normal.h>
 #include <time.h>
 #include <eigen3/Eigen/src/Core/Matrix.h>
+#include <param_manager.h>
 
 using namespace planner;
 
+borderExtraction::borderExtraction()
+{
+    param_manager::register_param("douglas_peucker_tolerance",douglas_peucker_tolerance);
+    param_manager::update_param("douglas_peucker_tolerance",0.05);
+}
 
 bool compare_2d(pcl::PointXYZ a, pcl::PointXYZ b)
 {
@@ -119,7 +125,7 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
 
         std::cout<<"- Border number of points: "<<border.size()<<std::endl;
         polygon_with_normals temp;
-        temp.border=douglas_peucker_3d(border,0.05);
+        temp.border=douglas_peucker_3d(border,douglas_peucker_tolerance);
 	
         pcl::PointCloud<pcl::PointXYZRGBNormal> temp_cloud;
         pcl::PointCloud<pcl::PointXYZRGBNormal> final_cloud;
