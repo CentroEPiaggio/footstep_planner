@@ -66,6 +66,7 @@ FIND_PACKAGE(orocos_kdl REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
+  LIBRARIES foot_planner_lib
   CATKIN_DEPENDS roscpp rospy roslib urdf srdfdom message_runtime message_generation std_msgs sensor_msgs kdl_parser tf_conversions urdf gencpp
   DEPENDS orocos_kdl
 )
@@ -99,31 +100,38 @@ add_definitions(
 
 FILE(GLOB HEADER_FILES include/*.h)
 
-add_executable(foot_planner
+add_library(foot_planner_lib 
        src/gram_schmidt.cpp
-       src/ros_publisher.cpp
-       src/ros_server.cpp
        src/footstep_planner.cpp
        src/kinematics_utilities.cpp
-       src/curvaturefilter.cpp
-       src/borderextraction.cpp
        src/kinematic_filter.cpp
        src/com_filter.cpp
        src/step_quality_evaluator.cpp
        src/coordinate_filter.cpp
        src/foot_collision_filter.cpp
        src/tilt_filter.cpp
+       src/joints_ordering.cpp
+       src/sampling_surface.hpp
+)
+
+add_executable(foot_planner
+       src/ros_publisher.cpp
+       src/curvaturefilter.cpp
+       src/borderextraction.cpp
+       src/ros_server.cpp
        src/main.cpp
        src/xml_pcl_io.cpp
        src/pcd_io.cpp
-       src/joints_ordering.cpp
-       src/sampling_surface.hpp
        src/param_manager.cpp
-       ${HEADER_FILES}
        )
-
+target_link_libraries(foot_planner_lib
+    ${orocos_kdl_LIBRARIES}
+    ${catkin_LIBRARIES}
+)
+       
 target_link_libraries(foot_planner
-       ${catkin_LIBRARIES}
+        foot_planner_lib
+        ${catkin_LIBRARIES}
         ${PCL_LIBRARIES}
 	${orocos_kdl_LIBRARIES}
 #         ${drc_shared_LIBRARIES}
@@ -148,7 +156,7 @@ target_link_libraries(foot_planner
 
 
 ## Mark executables and/or libraries for installation
-install(TARGETS foot_planner
+install(TARGETS foot_planner foot_planner_lib
    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
