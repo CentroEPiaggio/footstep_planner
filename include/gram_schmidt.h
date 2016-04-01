@@ -14,10 +14,6 @@
 
 #ifndef gram_schmidt_H
 #define gram_schmidt_H
-
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-
 #include <kdl/frames_io.hpp>
 
 #include <Eigen/Dense>
@@ -32,12 +28,12 @@ public:
 gram_schmidt();
 virtual ~gram_schmidt();
 
-KDL::Frame createFramesFromNormal(pcl::PointXYZRGBNormal);
+KDL::Frame createFramesFromNormal(Eigen::Vector3f point, Eigen::Vector3f p_normal);
 void setCurrentDirection(KDL::Vector direction);
 
 private:
-    Eigen::Vector3d proj_u(Eigen::Vector3d, Eigen::Vector3d);
-    Eigen::Vector3d vd;
+    Eigen::Vector3f proj_u(Eigen::Vector3f, Eigen::Vector3f);
+    Eigen::Vector3f vd;
     bool direction_set=false;
     KDL::Frame frame_normal;
     

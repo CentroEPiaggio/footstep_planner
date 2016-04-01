@@ -326,9 +326,32 @@ bool rosServer::singleFoot(bool left)
     for (auto polygon:polygons)
     {
       polygon_with_normals temp;
-      temp.average_normal=polygon.average_normal;
-      temp.border=polygon.border->makeShared();
-      temp.normals=polygon.normals->makeShared();
+      temp.average_normal[0]=polygon.average_normal.x;
+      temp.average_normal[1]=polygon.average_normal.y;
+      temp.average_normal[2]=polygon.average_normal.z;
+      temp.average_normal[3]=polygon.average_normal.normal_x;
+      temp.average_normal[4]=polygon.average_normal.normal_y;
+      temp.average_normal[5]=polygon.average_normal.normal_z;
+      temp.border=std::make_shared<std::list<Eigen::Vector3f>>();
+      for(auto point:*polygon.border)
+      {
+//           pcl::PointXYZ point;
+          temp.border->push_back(point.getVector3fMap());
+      }
+//      temp.border=polygon.border->makeShared();
+      temp.normals=std::make_shared<std::list<Eigen::Matrix<float,6,1>>>();
+      for(auto normal:*polygon.normals)
+      {
+          Eigen::Matrix<float,6,1> t;
+          t[0]=normal.x;
+          t[1]=normal.y;
+          t[2]=normal.z;
+          t[3]=normal.normal_x;
+          t[4]=normal.normal_y;
+          t[5]=normal.normal_z;
+          temp.normals->push_back(t);
+      }
+//      temp.normals=polygon.normals->makeShared();
       poly.push_back(temp);
     }
     auto World_centroids=footstep_planner.getFeasibleCentroids(poly,left);

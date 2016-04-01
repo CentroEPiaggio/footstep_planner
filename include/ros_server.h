@@ -136,7 +136,7 @@ public:
     
     //Camera_link reference Frame
     std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr > clusters;
-    std::list< polygon_with_normals > polygons;
+    std::list< pcl_polygon_with_normals > polygons;
     
     bool start();
     void stop();

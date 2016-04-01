@@ -8,8 +8,8 @@ class xml_pcl_io
 {
 public:
     xml_pcl_io();
-    bool write_to_file(std::string filename, const std::list<planner::polygon_with_normals>& clusters );
-    bool read_from_file(std::string filename, std::list<planner::polygon_with_normals>& clusters );
+    bool write_to_file(std::string filename, const std::list< planner::pcl_polygon_with_normals >& clusters );
+    bool read_from_file(std::string filename, std::list<planner::pcl_polygon_with_normals>& clusters );
 
 };
 

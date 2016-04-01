@@ -84,14 +84,14 @@ void ros_publisher::publish_plane_clusters(std::vector< boost::shared_ptr< pcl::
     }
 }
 
-void ros_publisher::publish_plane_borders(const std::list<polygon_with_normals>& borders)
+void ros_publisher::publish_plane_borders(const std::list<pcl_polygon_with_normals>& borders)
 {
     geometry_msgs::Point point;    
     std_msgs::ColorRGBA color;
     uint8_t r, g, b;
     int32_t rgb; 
     int i=0;
-    for (polygon_with_normals const& border_polygon:borders)
+    for (pcl_polygon_with_normals const& border_polygon:borders)
     {
         r = 255*((double)rand()/(double)RAND_MAX);
         g = 255*((double)rand()/(double)RAND_MAX);
@@ -102,7 +102,7 @@ void ros_publisher::publish_plane_borders(const std::list<polygon_with_normals>&
         color.r=r;
         color.g=g;
         color.b=b;
-        
+        //for (auto& po : *border_polygon.border)
         for(int po = 0; po < border_polygon.border->points.size(); po++) 
         { 
             point.x = border_polygon.border->at(po).x;
@@ -230,12 +230,12 @@ void ros_publisher::publish_average_normal(std::list< polygon_with_normals >& af
     
     for(auto aff:affordances)
     {
-	point1.x=aff.average_normal.x;
-	point1.y=aff.average_normal.y;
-	point1.z=aff.average_normal.z;
-	point2.x=aff.average_normal.normal_x/20.0+point1.x;
-	point2.y=aff.average_normal.normal_y/20.0+point1.y;
-	point2.z=aff.average_normal.normal_z/20.0+point1.z;
+	point1.x=aff.average_normal[0];
+        point1.y=aff.average_normal[1];
+        point1.z=aff.average_normal[2];
+        point2.x=aff.average_normal[3]/20.0+point1.x;
+        point2.y=aff.average_normal[4]/20.0+point1.y;
+        point2.z=aff.average_normal[5]/20.0+point1.z;
 	
 	marker.points.clear();
 	marker.id=i++;

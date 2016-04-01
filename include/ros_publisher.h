@@ -32,7 +32,7 @@ class ros_publisher
 public:
     ros_publisher(ros::NodeHandle handle, std::string camera_link_name,std::string robot_name_);
     void publish_plane_clusters(std::vector<pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr> clusters);
-    void publish_plane_borders(const std::list< polygon_with_normals>& borders);
+    void publish_plane_borders(const std::list< pcl_polygon_with_normals >& borders);
     void publish_foot_position(KDL::Frame World_MovingFoot, int centroid_id, bool left);
     void publish_robot_joints(const KDL::JntArray& joints, std::vector< std::string > joint_names);
     void publish_normal_cloud(pcl::PointCloud< pcl::PointXYZRGBNormal >::Ptr normals,int i);

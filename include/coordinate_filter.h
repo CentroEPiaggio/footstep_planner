@@ -32,8 +32,8 @@ public:
     void set_stance_foot(KDL::Frame StanceFoot_Camera);
     
 private:
-    bool border_is_in_bounds(pcl::PointCloud<pcl::PointXYZ>::Ptr border);
-    bool point_is_in_bounds(pcl::PointXYZRGBNormal& point);
+    bool border_is_in_bounds(std::shared_ptr< std::list< Eigen::Vector3f> > border);
+    bool point_is_in_bounds(const Eigen::Vector3f& point);
 
     double multiplier_default;
     double multiplier_axis;

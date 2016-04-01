@@ -32,7 +32,7 @@ public:
 
 private:
     void set_max_tilt(double max_tilt_);
-    bool normal_is_in_bounds(pcl::PointXYZRGBNormal& normal);
+    bool normal_is_in_bounds(Eigen::Vector3f point, Eigen::Vector3f normal);
 
     double max_tilt;
     double value;

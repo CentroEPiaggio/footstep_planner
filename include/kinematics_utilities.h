@@ -70,7 +70,7 @@ class kinematics_utilities
 {
 public:
     kinematics_utilities(std::string robot_name_, std::string robot_urdf_file_);
-//    Eigen::Matrix<double,6,1> left_foot, right_foot;
+//    Eigen::Matrix<float,6,1> left_foot, right_foot;
     
     urdf::Model urdf_model;
     std::string robot_urdf_file;

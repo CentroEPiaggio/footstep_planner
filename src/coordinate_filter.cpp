@@ -49,13 +49,13 @@ void coordinate_filter::set_stance_foot(KDL::Frame StanceFoot_Camera)
     stance_foot_set = true;
 }
 
-bool coordinate_filter::border_is_in_bounds(pcl::PointCloud<pcl::PointXYZ>::Ptr border)
+bool coordinate_filter::border_is_in_bounds(std::shared_ptr< std::list< Eigen::Vector3f > > border)
 {
     double value;
 
-    for (pcl::PointCloud<pcl::PointXYZ>::iterator it=border->begin(); it!=border->end();++it)
+    for (auto it=border->begin(); it!=border->end();++it)
     {
-        value = m_x*(*it).x + m_y*(*it).y + m_z*(*it).z+t;
+        value = m_x*(*it)[0] + m_y*(*it)[1] + m_z*(*it)[2]+t;
 	
 	if(value <= axis_max && value >= axis_min) return true;
     }
@@ -63,11 +63,10 @@ bool coordinate_filter::border_is_in_bounds(pcl::PointCloud<pcl::PointXYZ>::Ptr 
     return false;
 }
 
-bool coordinate_filter::point_is_in_bounds(pcl::PointXYZRGBNormal& point)
+bool coordinate_filter::point_is_in_bounds(const Eigen::Vector3f& point)
 {
-    value = m_x*point.x + m_y*point.y + m_z*point.z+t;
+    value = m_x*point[0] + m_y*point[1] + m_z*point[2]+t;
     if(value > axis_max || value < axis_min) return false;
-		
     return true;
 }
 
@@ -104,19 +103,19 @@ void coordinate_filter::filter_points(std::list<polygon_with_normals>& data, boo
     axis_max =multiplier_axis*axis_max+multiplier_default* ((left)*default_axis_max + (!left)*(-default_axis_min));
     axis_min =multiplier_axis*axis_min+multiplier_default* ((left)*default_axis_min + (!left)*(-default_axis_max));
 
-    for(auto item:data)
-    {	  
-        pcl::PointCloud<pcl::PointXYZRGBNormal> points;
+    for(auto& item:data)
+    {
+        std::list<Eigen::Matrix<float,6,1>> points;
 
-        for(pcl::PointCloud<pcl::PointXYZRGBNormal>::iterator it=item.normals->begin(); it!=item.normals->end();++it)
+        for(auto it=item.normals->begin(); it!=item.normals->end();++it)
 	{
-            if(point_is_in_bounds(*it))
+            if(point_is_in_bounds(it->topRows<3>()))
 	    {
                 points.push_back(*it); //TODO: controllare se va bene eliminare le normali dai piani
 	    }
 	}
 	
-        *(item.normals) = points;
+        item.normals->swap(points);
 
     }
 }

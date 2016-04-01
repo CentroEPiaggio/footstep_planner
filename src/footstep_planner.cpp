@@ -142,7 +142,13 @@ void footstepPlanner::setWorldTransform(KDL::Frame transform)
 //Camera link
 KDL::Frame footstepPlanner::createFramesFromNormal(pcl::PointXYZRGBNormal normal)
 {
-    return gs_utils.createFramesFromNormal(normal);
+    return gs_utils.createFramesFromNormal(Eigen::Vector3f(normal.x,normal.y,normal.z),Eigen::Vector3f(normal.normal[0],normal.normal[1],normal.normal[2]));
+}
+
+//Camera link
+KDL::Frame footstepPlanner::createFramesFromNormal(Eigen::Matrix<float,6,1> normal)
+{
+    return gs_utils.createFramesFromNormal(normal.topRows<3>(),normal.bottomRows<3>());
 }
 
 void footstepPlanner::setDirectionVector(double x, double y, double z)
@@ -174,9 +180,9 @@ void footstepPlanner::generate_frames_from_normals(const std::list< polygon_with
         j++;
 //         ROS_INFO("Polygon %d number of normals : %lu ",j,item.normals->size());
 
-        for(unsigned int i=0; i<item.normals->size(); i++)
+        for(auto normal:(*item.normals))
         {
-            KDL::Frame plane_frame=createFramesFromNormal((*item.normals)[i]);
+            KDL::Frame plane_frame=createFramesFromNormal(normal);
             int k=-1;
             for (double angle=min_angle;angle<=max_angle;angle=angle+(max_angle-min_angle)/double(angle_step)) 
             {

@@ -29,12 +29,12 @@ void foot_collision_filter::set_stance_foot(KDL::Frame StanceFoot_Camera_)
 }
 
 
-bool foot_collision_filter::point_is_in_bounds(pcl::PointXYZRGBNormal& point)
+bool foot_collision_filter::point_is_in_bounds(const Eigen::Vector3f& point)
 {
     KDL::Vector Camera_point;
-    Camera_point.x(point.x);
-    Camera_point.y(point.y);
-    Camera_point.z(point.z);
+    Camera_point.x(point[0]);
+    Camera_point.y(point[1]);
+    Camera_point.z(point[2]);
     
     StanceFoot_point = StanceFoot_Camera*Camera_point;
     
@@ -57,17 +57,17 @@ void foot_collision_filter::filter_points(std::list<polygon_with_normals>& data,
 
     for(auto item:data)
     {	  
-        pcl::PointCloud<pcl::PointXYZRGBNormal> points;
+        std::list<Eigen::Matrix<float,6,1>> points;
 
-        for(pcl::PointCloud<pcl::PointXYZRGBNormal>::iterator it=item.normals->begin(); it!=item.normals->end();++it)
+        for(auto it=item.normals->begin(); it!=item.normals->end();++it)
 	{
-            if(point_is_in_bounds(*it))
+            if(point_is_in_bounds(it->topRows<3>()))
 	    {
                 points.push_back(*it);
 	    }
 	}
 	
-        *(item.normals) = points;
+        item.normals->swap(points);
 
     }
 }

@@ -69,9 +69,9 @@ bool atan_compare_2d(pcl::PointXYZRGBNormal a, pcl::PointXYZRGBNormal b)
 }
 
 
-std::list< polygon_with_normals > borderExtraction::extractBorders(const std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >& clusters)
+std::list< pcl_polygon_with_normals > borderExtraction::extractBorders(const std::vector< pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr >& clusters)
 {
-    std::list<  polygon_with_normals > polygons;
+    std::list<  pcl_polygon_with_normals > polygons;
 
     if(clusters.size()==0)
     {
@@ -81,7 +81,7 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
 
     pcl::PointXYZRGBNormal average_normal;
     Eigen::Vector4f plane;
-    Eigen::Matrix<double,4,1> centroid;
+    Eigen::Matrix<float,4,1> centroid;
     float curv;
 
     for (unsigned int i=0; i< clusters.size(); i++)
@@ -118,7 +118,7 @@ std::list< polygon_with_normals > borderExtraction::extractBorders(const std::ve
         }
 
         std::cout<<"- Border number of points: "<<border.size()<<std::endl;
-        polygon_with_normals temp;
+        pcl_polygon_with_normals temp;
         temp.border=douglas_peucker_3d(border,0.05);
 	
         pcl::PointCloud<pcl::PointXYZRGBNormal> temp_cloud;

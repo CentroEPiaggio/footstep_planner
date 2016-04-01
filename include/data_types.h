@@ -20,10 +20,19 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include <list>
+#include <memory>
 namespace planner
 {
 
 struct polygon_with_normals
+{
+    std::shared_ptr<std::list<Eigen::Vector3f>> border;
+    std::shared_ptr<std::list<Eigen::Matrix<float,6,1>>> normals;
+    Eigen::Matrix<float,6,1> average_normal;
+};      
+    
+struct pcl_polygon_with_normals
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr border;
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr normals;

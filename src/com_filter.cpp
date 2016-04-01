@@ -16,8 +16,11 @@
 #include <param_manager.h>
 #include <eigen3/Eigen/Dense>
 #include <thread>
+
+#ifdef USE_ROS
 #include <tf_conversions/tf_kdl.h>
 #include <tf/transform_broadcaster.h>
+#endif
 
 double MAX_TESTED_POINTS_1;
 double MAX_TESTED_POINTS_2;
@@ -202,6 +205,7 @@ bool com_filter::internal_filter_first(std::list<planner::foot_with_joints> &dat
 		temp_list.push_back(temp);
                 num_inserted++;
                 total_num_inserted++;
+                #ifdef USE_ROS
                 {
                     tf::Transform current_robot_transform;
                     tf::transformKDLToTF(World_StanceFoot*WaistPosition_StanceFoot.Inverse(),current_robot_transform);
@@ -216,6 +220,7 @@ bool com_filter::internal_filter_first(std::list<planner::foot_with_joints> &dat
                     //ros::Duration sleep_time(0.02);
                     //sleep_time.sleep();
                 }
+                #endif
 	    }
 	    else
                 total_num_failed++;

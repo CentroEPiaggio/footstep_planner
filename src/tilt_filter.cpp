@@ -30,16 +30,16 @@ void tilt_filter::set_max_tilt(double max_tilt_)
 	max_tilt = max_tilt_;
 }
 
-bool tilt_filter::normal_is_in_bounds(pcl::PointXYZRGBNormal& normal)
+bool tilt_filter::normal_is_in_bounds(Eigen::Vector3f point, Eigen::Vector3f normal)
 {
     KDL::Vector Camera_point;
-    Camera_point.x(normal.x);
-    Camera_point.y(normal.y);
-    Camera_point.z(normal.z);
+    Camera_point.x(point[0]);
+    Camera_point.y(point[1]);
+    Camera_point.z(point[2]);
     KDL::Vector Camera_normal;
-    Camera_normal.x(normal.normal_x);
-    Camera_normal.y(normal.normal_y);
-    Camera_normal.z(normal.normal_z);
+    Camera_normal.x(normal[0]);
+    Camera_normal.y(normal[1]);
+    Camera_normal.z(normal[2]);
     
     World_point = World_Camera*Camera_point;
     World_normal = World_Camera*Camera_normal;
@@ -67,7 +67,7 @@ void tilt_filter::filter_normals(std::list<polygon_with_normals>& data)
 	
     for(std::list<polygon_with_normals>::iterator it=data.begin(); it!=data.end();)
     {
-	if(!normal_is_in_bounds(it->average_normal))
+        if(!normal_is_in_bounds(it->average_normal.topRows(3),it->average_normal.bottomRows(3)))
 	{
 	    it=data.erase(it);
 	}
@@ -88,11 +88,11 @@ void tilt_filter::filter_single_normals(std::list< polygon_with_normals >& data)
     
     for(auto item:data)
     {	  
-        pcl::PointCloud<pcl::PointXYZRGBNormal> points;
+        std::list<Eigen::Matrix<float,6,1>> points;
 
-        for(pcl::PointCloud<pcl::PointXYZRGBNormal>::iterator it=item.normals->begin(); it!=item.normals->end();++it)
+        for(auto it=item.normals->begin(); it!=item.normals->end();++it)
 	{
-            if(normal_is_in_bounds(*it))
+            if(normal_is_in_bounds(it->topRows(3),it->bottomRows(3)))
 	    {
                 points.push_back(*it);
 	    }

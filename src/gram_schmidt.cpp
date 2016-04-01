@@ -30,44 +30,44 @@ void gram_schmidt::setCurrentDirection(KDL::Vector direction)
     
 }
 
-KDL::Frame gram_schmidt::createFramesFromNormal(pcl::PointXYZRGBNormal p_normal)
+KDL::Frame gram_schmidt::createFramesFromNormal(Eigen::Vector3f point, Eigen::Vector3f p_normal)
 {	
     // Creation of vector field v1,v2,v3
-    Eigen::Vector3d v1(p_normal.normal_x,p_normal.normal_y,p_normal.normal_z);
+    Eigen::Vector3f v1 = p_normal; //(p_normal.normal_x,p_normal.normal_y,p_normal.normal_z);
     int imin = 0;
     for(int i=0; i<3; ++i)
       if(std::abs(v1[i]) < std::abs(v1[imin]))
         imin = i;  
     
-    Eigen::Vector3d v2(0,0,0);
+    Eigen::Vector3f v2(0,0,0);
     float dt = v1[imin];
     
     v2[imin] = 1;
     for(int i=0;i<3;i++)
       v2[i] -= dt*v1[i];
     
-    Eigen::Vector3d v3(v1.cross(v2));
+    Eigen::Vector3f v3(v1.cross(v2));
     
     // Gram-Schmidt orthogonalization of the vector field 
-    Eigen::Vector3d u1(v1);
-    Eigen::Vector3d u2(v2-proj_u(v2,u1));
-    Eigen::Vector3d u3(v3-proj_u(v3,u1)-proj_u(v3,u2));
+    Eigen::Vector3f u1(v1);
+    Eigen::Vector3f u2(v2-proj_u(v2,u1));
+    Eigen::Vector3f u3(v3-proj_u(v3,u1)-proj_u(v3,u2));
     
     // MGS TODO ...   
     
     // Orthonormal field given p_normal
-    Eigen::Vector3d e1(u1/u1.norm());
-    Eigen::Vector3d e2(u2/u2.norm());
-    Eigen::Vector3d e3(u3/u3.norm());
+    Eigen::Vector3f e1(u1/u1.norm());
+    Eigen::Vector3f e2(u2/u2.norm());
+    Eigen::Vector3f e3(u3/u3.norm());
 
-    Eigen::MatrixXd A(3,2);
+    Eigen::MatrixXf A(3,2);
     for (int i=0;i<3;i++){
 	A(i,0)=e2[i];
 	A(i,1)=e3[i];
     }
 
     // new xd versor || to vd
-    Eigen::Vector3d xd;
+    Eigen::Vector3f xd;
     auto B = pseudoInverse(A);
     auto C = A*B;
     xd = C*vd;
@@ -75,13 +75,13 @@ KDL::Frame gram_schmidt::createFramesFromNormal(pcl::PointXYZRGBNormal p_normal)
     e3 = xd/xd.norm();
     e2 = e1.cross(e3); 
 
-    Eigen::Matrix3d Q(3,3);
+    Eigen::Matrix3f Q(3,3);
     Q << e3, e2, e1;
 
     // create a KDL frame
-    frame_normal.p[0] = p_normal.x;
-    frame_normal.p[1] = p_normal.y;
-    frame_normal.p[2] = p_normal.z;
+    frame_normal.p[0] = point[0];
+    frame_normal.p[1] = point[1];
+    frame_normal.p[2] = point[2];
 
     for (int i=0;i<3;i++)
       for (int j=0;j<3;j++)
@@ -90,7 +90,7 @@ KDL::Frame gram_schmidt::createFramesFromNormal(pcl::PointXYZRGBNormal p_normal)
     return frame_normal;
 }
 
-Eigen::Vector3d gram_schmidt::proj_u(Eigen::Vector3d v, Eigen::Vector3d u)
+Eigen::Vector3f gram_schmidt::proj_u(Eigen::Vector3f v, Eigen::Vector3f u)
 {
   return (u.dot(v))*u/(u.dot(u));
 }

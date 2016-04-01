@@ -54,7 +54,8 @@ private:
     
     //Camera Link frame
     KDL::Frame createFramesFromNormal(pcl::PointXYZRGBNormal normal);
-
+    KDL::Frame createFramesFromNormal(Eigen::Matrix<float,6,1> normal);
+    
     //World frame
     //bool centroid_is_reachable(KDL::Frame World_MovingFoot, KDL::JntArray& jnt_pos);
             

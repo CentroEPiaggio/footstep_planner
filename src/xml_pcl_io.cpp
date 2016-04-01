@@ -8,7 +8,7 @@ xml_pcl_io::xml_pcl_io()
 }
 
 
-bool xml_pcl_io::write_to_file(std::string filename, const std::list<planner::polygon_with_normals>& clusters )
+bool xml_pcl_io::write_to_file(std::string filename, const std::list<planner::pcl_polygon_with_normals>& clusters )
 {
     pcl::StreamWriter writer;
 
@@ -47,7 +47,7 @@ bool xml_pcl_io::write_to_file(std::string filename, const std::list<planner::po
 
 }
 
-bool xml_pcl_io::read_from_file(std::string filename, std::list<planner::polygon_with_normals>& clusters )
+bool xml_pcl_io::read_from_file(std::string filename, std::list<planner::pcl_polygon_with_normals>& clusters )
 {
     TiXmlDocument doc(filename);
     bool loadOkay = doc.LoadFile();
@@ -79,7 +79,7 @@ bool xml_pcl_io::read_from_file(std::string filename, std::list<planner::polygon
         t=augmented_pcl->Type();
         if (t==TiXmlNode::TINYXML_ELEMENT && augmented_pcl->ValueStr()=="augmented_pcl")
         {
-            planner::polygon_with_normals polygon;
+            planner::pcl_polygon_with_normals polygon;
             TiXmlNode* single_pcl=augmented_pcl->FirstChild("xyzrgbanormal");
             if (single_pcl==NULL)
                 printf("found an %s element without a %s child, xml is malformed \n","augmented_pcl_list","augmented_pcl");

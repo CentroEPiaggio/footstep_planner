@@ -107,11 +107,10 @@ add_library(foot_planner_lib
        src/kinematic_filter.cpp
        src/com_filter.cpp
        src/step_quality_evaluator.cpp
-       src/coordinate_filter.cpp
-       src/foot_collision_filter.cpp
        src/tilt_filter.cpp
        src/joints_ordering.cpp
-       src/sampling_surface.hpp
+       src/foot_collision_filter.cpp
+       src/coordinate_filter.cpp
 )
 
 add_executable(foot_planner
@@ -122,6 +121,7 @@ add_executable(foot_planner
        src/main.cpp
        src/xml_pcl_io.cpp
        src/pcd_io.cpp
+       src/sampling_surface.hpp
        src/param_manager.cpp
        )
 target_link_libraries(foot_planner_lib

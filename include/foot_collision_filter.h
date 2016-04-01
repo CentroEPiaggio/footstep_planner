@@ -29,7 +29,7 @@ public:
     void set_stance_foot(KDL::Frame StanceFoot_Camera_);
     
 private:
-    bool point_is_in_bounds(pcl::PointXYZRGBNormal& point);
+    bool point_is_in_bounds(const Eigen::Vector3f& point);
 
     double default_h,default_l,l,h;
     KDL::Frame StanceFoot_Camera;
