@@ -100,15 +100,14 @@ public:
     
 #ifdef USE_YARP
     walkman::yarp_custom_command_interface<fs_planner_msg> command_interface;
-#else
-    walkman::ros_custom_command_interface<std_msgs::Header> command_interface;
 #endif
+    walkman::ros_custom_command_interface<std_msgs::Header> command_interface;
+
     int seq_num_out=0;
 #ifdef USE_YARP
     fs_planner_msg msg;
-#else
-    std_msgs::Header msg;
 #endif
+    std_msgs::Header msg;
     walkman::ros_status_interface status_interface;
     bool left;
     bool save_to_file;

@@ -120,6 +120,7 @@ void rosServer::run()
     
     if(command_interface.getCommand(msg,seq_num))
     {
+#warning "we should check both yarp and ros, and if armarx is in use, save directly a polygon_with_normals instead of pcl_polygon_with_normals"
 #ifdef USE_YARP
         std::string command = msg.command;
         int first_param;
@@ -322,6 +323,7 @@ bool rosServer::extractBorders(std_srvs::Empty::Request& request, std_srvs::Empt
 
 bool rosServer::singleFoot(bool left)
 {
+#warning "the next conversion part between polygons and poly has to be skipped when using armarx"
     std::list<polygon_with_normals> poly;
     for (auto polygon:polygons)
     {
@@ -354,6 +356,7 @@ bool rosServer::singleFoot(bool left)
 //      temp.normals=polygon.normals->makeShared();
       poly.push_back(temp);
     }
+#warning "this is the stuff common to armarx and ros"
     auto World_centroids=footstep_planner.getFeasibleCentroids(poly,left);
     publisher.publish_plane_borders(polygons);
     ros::Duration sleep_time(0.2);
@@ -445,7 +448,7 @@ bool rosServer::sendPathToRviz()
 
 bool rosServer::planFootsteps(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
 {
-
+#warning "this is the entry point for planning, the next part has to be skipped when using armarx"
     if(polygons.size()==0) {
         std::cout<<"No polygons to process, trying to read them from xml file"<<std::endl;
         xml_pcl_io file_manager;

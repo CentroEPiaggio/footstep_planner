@@ -111,18 +111,18 @@ add_library(foot_planner_lib
        src/joints_ordering.cpp
        src/foot_collision_filter.cpp
        src/coordinate_filter.cpp
+       src/ros_publisher.cpp
+       src/param_manager.cpp
 )
 
 add_executable(foot_planner
-       src/ros_publisher.cpp
        src/curvaturefilter.cpp
        src/borderextraction.cpp
+       src/sampling_surface.hpp
        src/ros_server.cpp
        src/main.cpp
        src/xml_pcl_io.cpp
        src/pcd_io.cpp
-       src/sampling_surface.hpp
-       src/param_manager.cpp
        )
 target_link_libraries(foot_planner_lib
     ${orocos_kdl_LIBRARIES}
