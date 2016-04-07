@@ -371,8 +371,10 @@ bool rosServer::singleFoot(bool left, int dyn_filter_type)
         }
     }
 #endif
-    auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left,loss_function_type);  
+    auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left,loss_function_type);
+    footstep_planner.last_com_state = final_centroid.World_EndCom;
     publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
+    publisher.publish_com(KDL::Vector(final_centroid.World_StartCom.x[0],final_centroid.World_StartCom.y[0],final_centroid.World_StartCom.z[0]));
 
     footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot,left); //Finally we make the step
 

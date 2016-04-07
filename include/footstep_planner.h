@@ -67,7 +67,6 @@ private:
     void kinematic_filtering(std::list<foot_with_joints>& steps, bool left);
     
     void dynamic_filtering(std::list<foot_with_joints>& steps, bool left, int dyn_filter_type);
-    void dynamic_filtering(std::list<foot_with_com>& steps, bool left, int dyn_filter_type);
     
     tilt_filter* filter_by_tilt;
     std::vector<coordinate_filter*> filter_by_coordinates;
@@ -119,6 +118,8 @@ public:
     
     std::list<foot_with_joints> single_check(KDL::Frame left_foot, KDL::Frame right_foot, bool only_ik, bool move, bool left, int dyn_filter_type);
     void setCurrentStanceFoot(bool left);
+
+    com_state last_com_state;
 };
 
 }

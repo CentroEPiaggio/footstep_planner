@@ -132,7 +132,7 @@ void ros_publisher::publish_foot_position(KDL::Frame World_MovingFoot,int centro
     World_MovingFoot.M.GetQuaternion(foot_marker.pose.orientation.x,foot_marker.pose.orientation.y,foot_marker.pose.orientation.z,foot_marker.pose.orientation.w);
     foot_marker.color.r=255*(!left);
     foot_marker.color.g=255*(left);
-    foot_marker.id = centroid_id; //to have a unique id
+    foot_marker.id = foot_marker.id+1; //to have a unique id
     foot_marker.lifetime = ros::Duration(0);
             
     pub_footstep.publish(foot_marker);
@@ -392,56 +392,22 @@ void ros_publisher::publish_filtered_frames(std::list< foot_with_joints > steps,
     pub_filtered_frames.publish(msg);
 }
 
-void ros_publisher::publish_filtered_frames(std::list< foot_with_com > steps, KDL::Frame World_Camera, int color)
-{
-    visualization_msgs::MarkerArray msg;
-    
-    visualization_msgs::Marker marker;
-    marker.header.stamp=ros::Time::now();
-    marker.header.frame_id=camera_link_name;
-    marker.scale.x=0.02;
-    marker.scale.y=0.02;
-    marker.scale.z=0.02;
-    marker.lifetime=ros::Duration(600);
-    marker.color.a=1;
-    marker.type=visualization_msgs::Marker::SPHERE_LIST;
-    if (color==1) { marker.color.r=1; marker.color.g=0.5; marker.color.b=0.1;}
-    if (color==2) { marker.color.r=0.6; marker.color.g=0.6; }
-    if (color==3) marker.color.g=1;
-    
-    for (auto step:steps)
-    {	
-	KDL::Frame temp = World_Camera.Inverse()*step.World_MovingFoot;
-	geometry_msgs::Point point;
-	point.x=temp.p.x();
-	point.y=temp.p.y();
-	point.z=temp.p.z();
-	marker.ns="samples"+std::to_string((long long unsigned int)&step);
-	marker.points.push_back(point);
-        marker.id=(long long unsigned int)&step;
-	
-        msg.markers.push_back(marker);
-    }
-    pub_filtered_frames.publish(msg);
-}
-
-void ros_publisher::publish_com(KDL::Vector com, int id)
+void ros_publisher::publish_com(KDL::Vector com)
 {    
-    visualization_msgs::Marker marker;
-    marker.header.stamp=ros::Time::now();
-    marker.header.frame_id=camera_link_name;
-    marker.scale.x=0.1;
-    marker.scale.y=0.1;
-    marker.scale.z=0.1;
-    marker.lifetime=ros::Duration(600);
-    marker.color.a=1;
-    marker.type=visualization_msgs::Marker::SPHERE;
-    marker.color.b=1;
-    marker.pose.position.x = com.x();
-    marker.pose.position.y = com.y();
-    marker.pose.position.z = com.z();
-    marker.pose.orientation.w=1;
-    marker.id = id;
+    com_marker.header.stamp=ros::Time::now();
+    com_marker.header.frame_id="world";
+    com_marker.scale.x=0.1;
+    com_marker.scale.y=0.1;
+    com_marker.scale.z=0.1;
+    com_marker.lifetime=ros::Duration(600);
+    com_marker.color.a=1;
+    com_marker.type=visualization_msgs::Marker::SPHERE;
+    com_marker.color.b=1;
+    com_marker.pose.position.x = com.x();
+    com_marker.pose.position.y = com.y();
+    com_marker.pose.position.z = com.z();
+    com_marker.pose.orientation.w=1;
+    com_marker.id = com_marker.id+1;
 
-    pub_com.publish(marker);
+    pub_com.publish(com_marker);
 }

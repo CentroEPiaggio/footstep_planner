@@ -25,15 +25,15 @@ double LEVEL_OF_DETAILS_;
 int MAX_THREADS_;
 int ANGLE_STEP_;
 
-bool lipm_filter::thread_lipm_filter(std::list<planner::foot_with_com> &data, int num_threads)
+bool lipm_filter::thread_lipm_filter(std::list<planner::foot_with_joints> &data, int num_threads)
 {
     if (num_threads>MAX_THREADS_)
         num_threads=MAX_THREADS_;
-    std::vector<std::list<planner::foot_with_com>> temp_list;
+    std::vector<std::list<planner::foot_with_joints>> temp_list;
     temp_list.resize(num_threads);
-    std::vector<std::list<planner::foot_with_com>> result_list;
+    std::vector<std::list<planner::foot_with_joints>> result_list;
     result_list.resize(num_threads);
-    std::list<planner::foot_with_com> result;
+    std::list<planner::foot_with_joints> result;
     int data_initial_size=data.size();
     int partition=data.size()/num_threads;
     int total=0;
@@ -107,14 +107,14 @@ lipm_filter::lipm_filter(std::string robot_name_, std::string robot_urdf_file_, 
 }
 
 
-bool lipm_filter::filter(std::list<planner::foot_with_com> &data)
+bool lipm_filter::filter(std::list<planner::foot_with_joints> &data)
 {
    return thread_lipm_filter(data,MAX_THREADS_);
 }
 
 
-bool lipm_filter::internal_filter(std::list<planner::foot_with_com> &data, KDL::Frame StanceFoot_World, KDL::Frame World_StanceFoot,
-                        std::list<planner::foot_with_com>& temp_list, chain_and_solvers* current_stance_chain_and_solver, 
+bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World, KDL::Frame World_StanceFoot,
+                        std::list<planner::foot_with_joints>& temp_list, chain_and_solvers* current_stance_chain_and_solver, 
                         chain_and_solvers* current_moving_chain_and_solver, double desired_hip_height )
 {
     int total=data.size();
@@ -134,28 +134,24 @@ bool lipm_filter::internal_filter(std::list<planner::foot_with_com> &data, KDL::
 	auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
 
-	planner::com_state temp_com1, temp_com2;
+	planner::com_state temp_com;
 
         LIPM_SS(Tss, Tds, z0, DZ, tss, tds, g, dt);
 
-	compute_new_com_state(single_step->World_StartCom,temp_com1,single_step->World_StanceFoot.p,single_step->World_MovingFoot.p);
+	compute_new_com_state(single_step->World_StartCom,temp_com, single_step->World_StanceFoot.p,single_step->World_MovingFoot.p);
 
 	LIPM_DS(Tss, Tds, z0, DZ, tss, tds, g, dt);
 
-	compute_new_com_state(temp_com1,temp_com2,single_step->World_StanceFoot.p,single_step->World_MovingFoot.p);
-
-	single_step->World_EndCom = temp_com2;
-
-	ros_pub->publish_com(KDL::Vector(temp_com1.x[0],temp_com1.y[0],temp_com1.z[0]),single_step->index);
-	ros_pub->publish_com(KDL::Vector(temp_com2.x[0],temp_com2.y[0],temp_com2.z[0]),single_step->index+1000); //HACK-ino
+	compute_new_com_state(temp_com,single_step->World_EndCom, single_step->World_StanceFoot.p,single_step->World_MovingFoot.p);
 
 	if(frame_is_stable())
 	{
-	    planner::foot_with_com temp;
+	    planner::foot_with_joints temp;
 	    temp.World_MovingFoot=single_step->World_MovingFoot;
 	    temp.World_StanceFoot=single_step->World_StanceFoot;
 	    temp.World_StartCom=single_step->World_StartCom;
 	    temp.World_EndCom=single_step->World_EndCom;
+	    temp.index = single_step->index;
 
 	    data.insert(single_step,temp);
 	    //HACK temp_list
@@ -327,7 +323,7 @@ void lipm_filter::integrateDS(double y0, double dy0, double p1, double p2, doubl
     }
 }
 
-void lipm_filter::compute_new_com_state(planner::com_state start_com,planner::com_state end_com, KDL::Vector p1, KDL::Vector p2)
+void lipm_filter::compute_new_com_state(planner::com_state start_com,planner::com_state& end_com, KDL::Vector p1, KDL::Vector p2)
 {
     end_com.x = xA_p*start_com.x[0] + xA_v*start_com.x[1] + xB*p1.x() + xC*p2.x();
     end_com.y = xA_p*start_com.y[0] + xA_v*start_com.y[1] + xB*p1.y() + xC*p2.y();

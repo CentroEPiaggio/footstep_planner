@@ -62,6 +62,10 @@ footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf
 
     filter_by_tilt = new tilt_filter();
     
+    last_com_state.x[0] = World_Waist.p.x(); //TODO
+    last_com_state.y[0] = World_Waist.p.y();
+    last_com_state.z[0] = World_Waist.p.z();
+    
     ros_pub = ros_pub_;
 }
 
@@ -262,22 +266,25 @@ void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bo
 
 void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool left, int dyn_filter_type)
 {
-    comFilter.setLeftRightFoot(left);
-    comFilter.setWorld_StanceFoot(World_StanceFoot);
-    comFilter.filter(steps);
-    last_used_joint_names=comFilter.getJointOrder();
-    joint_chain=kinematicFilter.getJointChain();
+    if(dyn_filter_type==0)
+    {
+	comFilter.setLeftRightFoot(left);
+	comFilter.setWorld_StanceFoot(World_StanceFoot);
+	comFilter.filter(steps);
+	last_used_joint_names=comFilter.getJointOrder();
+	joint_chain=kinematicFilter.getJointChain();
+    }
+    
+    if(dyn_filter_type==1)
+    {
+	for(auto& step:steps) step.World_StartCom = last_com_state;
+	lipmFilter.setLeftRightFoot(left);
+	lipmFilter.setWorld_StanceFoot(World_StanceFoot);
+	lipmFilter.filter(steps);
+	last_used_joint_names=lipmFilter.getJointOrder();
+	joint_chain=kinematicFilter.getJointChain();
+    }
 }
-
-void footstepPlanner::dynamic_filtering(std::list<foot_with_com>& steps, bool left, int dyn_filter_type)
-{
-    lipmFilter.setLeftRightFoot(left);
-    lipmFilter.setWorld_StanceFoot(World_StanceFoot);
-    lipmFilter.filter(steps);
-    last_used_joint_names=lipmFilter.getJointOrder();
-    joint_chain=kinematicFilter.getJointChain();
-}
-
 
 std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< polygon_with_normals >& affordances, bool left, int dyn_filter_type)
 {
@@ -314,35 +321,10 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
     auto time=ros::Time::now();
     color_filtered=3;
-    if(dyn_filter_type==0)
-    {
-	dynamic_filtering(steps,left,dyn_filter_type); // COM DYNAMIC FILTER
-	if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
-    }
-    if(dyn_filter_type==1)
-    {
-	std::list<foot_with_com> lipm_steps;
-	for( auto step:steps )
-	{
-	    foot_with_com lipm_step;
-	    lipm_step.World_StanceFoot = step.World_StanceFoot;
-	    lipm_step.World_MovingFoot = step.World_MovingFoot;
-	    lipm_steps.push_back(lipm_step);
-	}
-	lipm_steps.front().World_StartCom.z[0] = steps.front().World_Waist.p.z(); //TODO
+    
+    dynamic_filtering(steps,left,dyn_filter_type); // COM DYNAMIC FILTER
+    if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
 
-	dynamic_filtering(lipm_steps,left,dyn_filter_type); // LIPM DYNAMIC FILTER
-        if(lipm_steps.size()<=1000) ros_pub->publish_filtered_frames(lipm_steps,World_Camera,color_filtered);
-
-	steps.clear();
-	for( auto lipm_step:lipm_steps )
-	{
-	    foot_with_joints step;
-	    step.World_StanceFoot = lipm_step.World_StanceFoot;
-	    step.World_MovingFoot = lipm_step.World_MovingFoot;
-	    steps.push_back(step);
-	}
-    }
 //     std::cout<<"time after dynamic filter: "<<time<<std::endl<<std::endl;
     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());
 

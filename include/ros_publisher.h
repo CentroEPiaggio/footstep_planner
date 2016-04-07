@@ -43,10 +43,9 @@ public:
     void setRobotJoints(std::map< std::string, boost::shared_ptr< urdf::Joint > > joints_);
     void publish_starting_position(std::map< std::string, double > initial_pos);
     void publish_filtered_frames(std::list<foot_with_joints> steps, KDL::Frame World_Camera, int color);
-    void publish_filtered_frames(std::list<foot_with_com> steps, KDL::Frame World_Camera, int color);
     void publish_geometric_constraints(double x_min, double x_max, double y_min, double y_max, double z_min, double z_max, KDL::Frame World_StanceFoot);
     
-    void publish_com(KDL::Vector com, int id);
+    void publish_com(KDL::Vector com);
 private:
     ros::NodeHandle node;
     ros::Publisher pub_cluster_cloud_;
@@ -61,6 +60,7 @@ private:
     std::string camera_link_name;
     visualization_msgs::Marker borders_marker;
     visualization_msgs::Marker foot_marker;
+    visualization_msgs::Marker com_marker;
     sensor_msgs::JointState last_joint_states;
     std::map< std::string, int > joints_name_to_index;
     std::string robot_name;

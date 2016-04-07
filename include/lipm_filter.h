@@ -24,16 +24,16 @@ class lipm_filter
 {
 public:
     lipm_filter(std::string robot_name_, std::string robot_urdf_file_, ros_publisher* ros_pub_);
-    bool filter(std::list<planner::foot_with_com> &data);
+    bool filter(std::list<planner::foot_with_joints> &data);
     void setWorld_StanceFoot(const KDL::Frame& World_StanceFoot);
     void setLeftRightFoot(bool left);
     void setZeroWaistHeight ( double hip_height );
     std::vector<std::string> getJointOrder();
 
 private:
-    bool thread_lipm_filter(std::list< planner::foot_with_com >& data, int num_threads);
-    bool internal_filter(std::list<planner::foot_with_com> &data, KDL::Frame StanceFoot_World,
-                KDL::Frame World_StanceFoot,std::list<planner::foot_with_com>& temp_list,
+    bool thread_lipm_filter(std::list< planner::foot_with_joints >& data, int num_threads);
+    bool internal_filter(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World,
+                KDL::Frame World_StanceFoot,std::list<planner::foot_with_joints>& temp_list,
                 chain_and_solvers* current_stance_chain_and_solver, chain_and_solvers* current_moving_chain_and_solver,
                 double desired_hip_height
                );
@@ -72,7 +72,7 @@ private:
     KDL::Vector zB, zD;
     KDL::Vector xA_p, xA_v, xB, xC;
     
-    void compute_new_com_state(planner::com_state start_com,planner::com_state end_com, KDL::Vector p1, KDL::Vector p2);
+    void compute_new_com_state(planner::com_state start_com,planner::com_state& end_com, KDL::Vector p1, KDL::Vector p2);
     ros_publisher* ros_pub;
 };
 
