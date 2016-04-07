@@ -28,7 +28,7 @@ double DISTANCE_THRESHOLD; //0.02*0.02 //We work with squares of distances, so t
 double ANGLE_THRESHOLD;// 0.2
 double WAIST_THRESHOLD;// 0.2
 
-footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf_file_,ros_publisher* ros_pub_):kinematicFilter(robot_name_, robot_urdf_file_),comFilter(robot_name_,robot_urdf_file_),lipmFilter(robot_name_,robot_urdf_file_),stepQualityEvaluator(robot_name_),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
+footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf_file_,ros_publisher* ros_pub_):kinematicFilter(robot_name_, robot_urdf_file_),comFilter(robot_name_,robot_urdf_file_),lipmFilter(robot_name_,robot_urdf_file_,ros_pub_),stepQualityEvaluator(robot_name_),kinematics(kinematicFilter.kinematics), World_CurrentDirection(1,0,0) //TODO:remove kinematics from here
 {
     param_manager::register_param("DISTANCE_THRESHOLD",DISTANCE_THRESHOLD);
     param_manager::update_param("DISTANCE_THRESHOLD",0.02*0.02);
@@ -262,23 +262,20 @@ void footstepPlanner::kinematic_filtering(std::list<foot_with_joints>& steps, bo
 
 void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool left, int dyn_filter_type)
 {
-    if(dyn_filter_type==0) //COM
-    {
-	comFilter.setLeftRightFoot(left);
-	comFilter.setWorld_StanceFoot(World_StanceFoot);
-	comFilter.filter(steps);
-	last_used_joint_names=comFilter.getJointOrder();
-	joint_chain=kinematicFilter.getJointChain();
-    }
+    comFilter.setLeftRightFoot(left);
+    comFilter.setWorld_StanceFoot(World_StanceFoot);
+    comFilter.filter(steps);
+    last_used_joint_names=comFilter.getJointOrder();
+    joint_chain=kinematicFilter.getJointChain();
+}
 
-    if(dyn_filter_type==1) //LIPM
-    {
-	lipmFilter.setLeftRightFoot(left);
-	lipmFilter.setWorld_StanceFoot(World_StanceFoot);
-	lipmFilter.filter(steps);
-	last_used_joint_names=lipmFilter.getJointOrder();
-	joint_chain=kinematicFilter.getJointChain();
-    }
+void footstepPlanner::dynamic_filtering(std::list<foot_with_com>& steps, bool left, int dyn_filter_type)
+{
+    lipmFilter.setLeftRightFoot(left);
+    lipmFilter.setWorld_StanceFoot(World_StanceFoot);
+    lipmFilter.filter(steps);
+    last_used_joint_names=lipmFilter.getJointOrder();
+    joint_chain=kinematicFilter.getJointChain();
 }
 
 
@@ -316,9 +313,36 @@ std::list<foot_with_joints > footstepPlanner::getFeasibleCentroids(std::list< po
     if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
     ROS_INFO("Number of steps after kinematic filter: %lu ",steps.size());  
     auto time=ros::Time::now();
-    dynamic_filtering(steps,left,dyn_filter_type); //DYNAMIC FILTER
     color_filtered=3;
-    if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
+    if(dyn_filter_type==0)
+    {
+	dynamic_filtering(steps,left,dyn_filter_type); // COM DYNAMIC FILTER
+	if(steps.size()<=1000) ros_pub->publish_filtered_frames(steps,World_Camera,color_filtered);
+    }
+    if(dyn_filter_type==1)
+    {
+	std::list<foot_with_com> lipm_steps;
+	for( auto step:steps )
+	{
+	    foot_with_com lipm_step;
+	    lipm_step.World_StanceFoot = step.World_StanceFoot;
+	    lipm_step.World_MovingFoot = step.World_MovingFoot;
+	    lipm_steps.push_back(lipm_step);
+	}
+	lipm_steps.front().World_StartCom.z[0] = steps.front().World_Waist.p.z(); //TODO
+
+	dynamic_filtering(lipm_steps,left,dyn_filter_type); // LIPM DYNAMIC FILTER
+        if(lipm_steps.size()<=1000) ros_pub->publish_filtered_frames(lipm_steps,World_Camera,color_filtered);
+
+	steps.clear();
+	for( auto lipm_step:lipm_steps )
+	{
+	    foot_with_joints step;
+	    step.World_StanceFoot = lipm_step.World_StanceFoot;
+	    step.World_MovingFoot = lipm_step.World_MovingFoot;
+	    steps.push_back(step);
+	}
+    }
 //     std::cout<<"time after dynamic filter: "<<time<<std::endl<<std::endl;
     ROS_INFO("Number of steps after dynamic filter: %lu ",steps.size());
 
@@ -354,7 +378,32 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
     w.push_back(1.0); 	// angle 1.0
     w.push_back(0.1);	// waist 0.3
     w.push_back(0.1);	// mobility 1.0
+    w.push_back(0.5);   // stability
+    w.push_back(0.5);   // reference step
 	  
+    if(loss_function_type==7) //LIPM
+    {
+	KDL::Vector World_DesiredDirection=World_Camera*Camera_DesiredDirection;
+	double min=100000000000000;
+	foot_with_joints result;
+	for (auto centroid:centroids)
+	{
+	    auto angle=stepQualityEvaluator.angle_from_reference_direction(centroid,World_DesiredDirection);
+	    KDL::Frame StanceFoot_MovingFoot;
+	    auto distance=stepQualityEvaluator.distance_from_reference_step(centroid,left,StanceFoot_MovingFoot);
+	    stepQualityEvaluator.set_single_chain(&joint_chain);
+	    auto stability=stepQualityEvaluator.stability(centroid);
+	    
+	    double cost = 10000000;
+	    cost = -w.at(0)*fabs(angle) + w.at(3)*stability + w.at(4)*distance;
+	    if (cost < min)
+	    {
+		min=cost;
+		result=centroid;
+	    }
+	}
+    }
+    
     if(loss_function_type==1)	// mobility
     {	
 	stepQualityEvaluator.set_single_chain(&joint_chain);

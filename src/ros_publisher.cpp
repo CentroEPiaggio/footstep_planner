@@ -34,6 +34,7 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     pub_geometric_contraints = node.advertise<visualization_msgs::Marker>("/geometric_contraints", 1,true);
     pub_filtered_frames = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("filtered_frames"), 1);
     pub_average_normal_cloud_ = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("average_normal"), 1);
+    pub_com = node.advertise<visualization_msgs::Marker>("/com", 1,true);
     
     borders_marker.header.frame_id=camera_link_name;
     borders_marker.ns="border_poly";
@@ -391,3 +392,56 @@ void ros_publisher::publish_filtered_frames(std::list< foot_with_joints > steps,
     pub_filtered_frames.publish(msg);
 }
 
+void ros_publisher::publish_filtered_frames(std::list< foot_with_com > steps, KDL::Frame World_Camera, int color)
+{
+    visualization_msgs::MarkerArray msg;
+    
+    visualization_msgs::Marker marker;
+    marker.header.stamp=ros::Time::now();
+    marker.header.frame_id=camera_link_name;
+    marker.scale.x=0.02;
+    marker.scale.y=0.02;
+    marker.scale.z=0.02;
+    marker.lifetime=ros::Duration(600);
+    marker.color.a=1;
+    marker.type=visualization_msgs::Marker::SPHERE_LIST;
+    if (color==1) { marker.color.r=1; marker.color.g=0.5; marker.color.b=0.1;}
+    if (color==2) { marker.color.r=0.6; marker.color.g=0.6; }
+    if (color==3) marker.color.g=1;
+    
+    for (auto step:steps)
+    {	
+	KDL::Frame temp = World_Camera.Inverse()*step.World_MovingFoot;
+	geometry_msgs::Point point;
+	point.x=temp.p.x();
+	point.y=temp.p.y();
+	point.z=temp.p.z();
+	marker.ns="samples"+std::to_string((long long unsigned int)&step);
+	marker.points.push_back(point);
+        marker.id=(long long unsigned int)&step;
+	
+        msg.markers.push_back(marker);
+    }
+    pub_filtered_frames.publish(msg);
+}
+
+void ros_publisher::publish_com(KDL::Vector com, int id)
+{    
+    visualization_msgs::Marker marker;
+    marker.header.stamp=ros::Time::now();
+    marker.header.frame_id=camera_link_name;
+    marker.scale.x=0.1;
+    marker.scale.y=0.1;
+    marker.scale.z=0.1;
+    marker.lifetime=ros::Duration(600);
+    marker.color.a=1;
+    marker.type=visualization_msgs::Marker::SPHERE;
+    marker.color.b=1;
+    marker.pose.position.x = com.x();
+    marker.pose.position.y = com.y();
+    marker.pose.position.z = com.z();
+    marker.pose.orientation.w=1;
+    marker.id = id;
+
+    pub_com.publish(marker);
+}

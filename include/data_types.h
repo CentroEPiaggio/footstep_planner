@@ -46,6 +46,24 @@ typedef struct
     
 }foot_with_joints;
 
+typedef struct
+{
+    KDL::Vector x; //x, dx, ddx
+    KDL::Vector y; //y, dy, ddy
+    KDL::Vector z; //z, dz, ddz
+} com_state;
+
+typedef struct
+{
+    int index;
+
+    KDL::Frame World_StanceFoot;
+    KDL::Frame World_MovingFoot;
+
+    com_state World_StartCom;
+    com_state World_EndCom;
+} foot_with_com;
+
 }
 
 #endif // DATA_TYPES_H

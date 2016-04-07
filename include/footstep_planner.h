@@ -67,6 +67,7 @@ private:
     void kinematic_filtering(std::list<foot_with_joints>& steps, bool left);
     
     void dynamic_filtering(std::list<foot_with_joints>& steps, bool left, int dyn_filter_type);
+    void dynamic_filtering(std::list<foot_with_com>& steps, bool left, int dyn_filter_type);
     
     tilt_filter* filter_by_tilt;
     std::vector<coordinate_filter*> filter_by_coordinates;

@@ -28,6 +28,7 @@ public:
     double energy_consumption(planner::foot_with_joints const& state);
     double distance_from_joint_center(planner::foot_with_joints const& state);
     double waist_orientation(planner::foot_with_joints const& state, bool start);
+    double stability(planner::foot_with_joints const& state);
     void set_single_chain(chain_and_solvers* joint_chain);
 private:
     double left_refy;
