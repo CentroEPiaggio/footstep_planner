@@ -20,6 +20,7 @@
 #include <sensor_msgs/JointState.h>
 #include <xml_pcl_io.h>
 #include <param_manager.h>
+
 using namespace planner;
 
 extern volatile bool quit;
@@ -375,6 +376,23 @@ bool rosServer::singleFoot(bool left, int dyn_filter_type)
     footstep_planner.last_com_state = final_centroid.World_EndCom;
     publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
     publisher.publish_com(KDL::Vector(final_centroid.World_StartCom.x[0],final_centroid.World_StartCom.y[0],final_centroid.World_StartCom.z[0]));
+
+    std::vector<planner::Point> feet_points;
+    
+    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot.p.x()+0.13,final_centroid.World_MovingFoot.p.y()-0.05)));
+    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot.p.x()+0.13,final_centroid.World_MovingFoot.p.y()+0.05)));
+    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot.p.x()-0.07,final_centroid.World_MovingFoot.p.y()-0.05)));
+    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot.p.x()-0.07,final_centroid.World_MovingFoot.p.y()+0.05)));
+
+    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot.p.x()+0.13,final_centroid.World_StanceFoot.p.y()-0.05)));
+    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot.p.x()+0.13,final_centroid.World_StanceFoot.p.y()+0.05)));
+    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot.p.x()-0.07,final_centroid.World_StanceFoot.p.y()-0.05)));
+    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot.p.x()-0.07,final_centroid.World_StanceFoot.p.y()+0.05)));
+
+    std::vector<planner::Point> points = ch_utils.compute(feet_points);
+    std::vector<KDL::Vector> ch_points;
+    for(auto point:points) ch_points.push_back(KDL::Vector(point.x,point.y,(final_centroid.World_MovingFoot.p.z()+final_centroid.World_StanceFoot.p.z())/2.0));
+    publisher.publish_ch(ch_points);
 
     footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot,left); //Finally we make the step
 

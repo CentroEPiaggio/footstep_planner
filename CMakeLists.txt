@@ -110,6 +110,7 @@ add_executable(foot_planner
        src/kinematic_filter.cpp
        src/com_filter.cpp
        src/lipm_filter.cpp
+       src/convex_hull.cpp
        src/step_quality_evaluator.cpp
        src/coordinate_filter.cpp
        src/foot_collision_filter.cpp

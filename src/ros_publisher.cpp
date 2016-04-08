@@ -35,6 +35,7 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     pub_filtered_frames = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("filtered_frames"), 1);
     pub_average_normal_cloud_ = node.advertise<visualization_msgs::MarkerArray>(node.resolveName("average_normal"), 1);
     pub_com = node.advertise<visualization_msgs::Marker>("/com", 1,true);
+    pub_ch = node.advertise<visualization_msgs::Marker>("/convex_hull", 1,true);
     
     borders_marker.header.frame_id=camera_link_name;
     borders_marker.ns="border_poly";
@@ -410,4 +411,34 @@ void ros_publisher::publish_com(KDL::Vector com)
     com_marker.id = com_marker.id+1;
 
     pub_com.publish(com_marker);
+}
+
+void ros_publisher::publish_ch(std::vector<KDL::Vector> points)
+{
+    convex_hull_marker.type = visualization_msgs::Marker::LINE_STRIP;
+    convex_hull_marker.action = visualization_msgs::Marker::ADD;
+    convex_hull_marker.color.a = 1.0;
+    convex_hull_marker.color.r = 0.0;
+    convex_hull_marker.color.g = 1.0;
+    convex_hull_marker.color.b = 0.0;
+    convex_hull_marker.scale.x = 0.01;
+    convex_hull_marker.header.frame_id = "world";
+    convex_hull_marker.header.stamp = ros::Time::now();
+    convex_hull_marker.points.clear();
+
+    geometry_msgs::Point p;
+    for(auto point:points)
+    {
+	p.x = point.x();
+	p.y = point.y();
+	p.z = point.z();
+	convex_hull_marker.points.push_back(p);
+    }
+
+    p.x = points.begin()->x();
+    p.y = points.begin()->y();
+    p.z = points.begin()->z();
+
+    convex_hull_marker.points.push_back(p);
+    pub_ch.publish(convex_hull_marker);
 }

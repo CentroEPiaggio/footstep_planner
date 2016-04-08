@@ -49,6 +49,7 @@
 
 #include "ros_command_interface.hpp"
 #include "ros_status_interface.hpp"
+#include <convex_hull.h>
 
 // #define USE_YARP
 #ifdef USE_YARP
@@ -123,6 +124,8 @@ public:
     bool stopped;
     int loss_function_type;
     void thr_body();
+
+    planner::convex_hull ch_utils;
   public:
     //------------------ Callbacks -------------------
     bool filterByCurvature(footstep_planner::fs::Request& request, footstep_planner::fs::Response& response);

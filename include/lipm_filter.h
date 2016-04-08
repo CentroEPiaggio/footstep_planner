@@ -19,6 +19,9 @@
 #include "kinematics_utilities.h"
 #include <list>
 #include "ros_publisher.h"
+#include "convex_hull.h"
+#include <tf_conversions/tf_kdl.h>
+#include <tf/transform_listener.h>
 
 class lipm_filter
 {
@@ -38,7 +41,7 @@ private:
                 double desired_hip_height
                );
 
-    bool frame_is_stable();
+    bool frame_is_stable(KDL::Frame com_frame, KDL::Frame moving_foot_frame, KDL::Frame stance_foot_frame);
 
     KDL::JntArray stance_jnts_in;
     KDL::Frame StanceFoot_World;
@@ -74,6 +77,8 @@ private:
     
     void compute_new_com_state(planner::com_state start_com,planner::com_state& end_com, KDL::Vector p1, KDL::Vector p2);
     ros_publisher* ros_pub;
+
+    planner::convex_hull ch_utils;
 };
 
 #endif // LIPM_FILTER_H

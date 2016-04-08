@@ -23,6 +23,7 @@
 #include <urdf_model/joint.h>
 #include "borderextraction.h"
 #include "data_types.h"
+#include <vector>
 
 namespace planner
 {
@@ -46,6 +47,7 @@ public:
     void publish_geometric_constraints(double x_min, double x_max, double y_min, double y_max, double z_min, double z_max, KDL::Frame World_StanceFoot);
     
     void publish_com(KDL::Vector com);
+    void publish_ch(std::vector<KDL::Vector> points);
 private:
     ros::NodeHandle node;
     ros::Publisher pub_cluster_cloud_;
@@ -56,11 +58,13 @@ private:
     ros::Publisher pub_filtered_frames;
     ros::Publisher pub_geometric_contraints;
     ros::Publisher pub_com;
+    ros::Publisher pub_ch;
 
     std::string camera_link_name;
     visualization_msgs::Marker borders_marker;
     visualization_msgs::Marker foot_marker;
     visualization_msgs::Marker com_marker;
+    visualization_msgs::Marker convex_hull_marker;
     sensor_msgs::JointState last_joint_states;
     std::map< std::string, int > joints_name_to_index;
     std::string robot_name;

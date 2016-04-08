@@ -16,8 +16,6 @@
 #include <param_manager.h>
 #include <eigen3/Eigen/Dense>
 #include <thread>
-#include <tf_conversions/tf_kdl.h>
-#include <tf/transform_broadcaster.h>
 
 double MAX_TESTED_POINTS_1_;
 double MAX_TESTED_POINTS_2_;
@@ -144,7 +142,9 @@ bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KD
 
 	compute_new_com_state(temp_com,single_step->World_EndCom, single_step->World_StanceFoot.p,single_step->World_MovingFoot.p);
 
-	if(frame_is_stable())
+	KDL::Frame com_frame(KDL::Rotation::Identity(),KDL::Vector(single_step->World_EndCom.x[0],single_step->World_EndCom.y[0],single_step->World_EndCom.z[0]));
+
+	if(frame_is_stable(com_frame,single_step->World_MovingFoot,single_step->World_StanceFoot))
 	{
 	    planner::foot_with_joints temp;
 	    temp.World_MovingFoot=single_step->World_MovingFoot;
@@ -191,9 +191,21 @@ void lipm_filter::setLeftRightFoot(bool left)
 }
 
 
-bool lipm_filter::frame_is_stable()
+bool lipm_filter::frame_is_stable(KDL::Frame com_frame, KDL::Frame moving_foot_frame, KDL::Frame stance_foot_frame)
 {
-    return true; //TODO
+    std::vector<planner::Point> feet_points;
+    
+    feet_points.push_back(planner::Point((moving_foot_frame.p.x()+0.13,moving_foot_frame.p.y()-0.05)));
+    feet_points.push_back(planner::Point((moving_foot_frame.p.x()+0.13,moving_foot_frame.p.y()+0.05)));
+    feet_points.push_back(planner::Point((moving_foot_frame.p.x()-0.07,moving_foot_frame.p.y()-0.05)));
+    feet_points.push_back(planner::Point((moving_foot_frame.p.x()-0.07,moving_foot_frame.p.y()+0.05)));
+
+    feet_points.push_back(planner::Point((stance_foot_frame.p.x()+0.13,stance_foot_frame.p.y()-0.05)));
+    feet_points.push_back(planner::Point((stance_foot_frame.p.x()+0.13,stance_foot_frame.p.y()+0.05)));
+    feet_points.push_back(planner::Point((stance_foot_frame.p.x()-0.07,stance_foot_frame.p.y()-0.05)));
+    feet_points.push_back(planner::Point((stance_foot_frame.p.x()-0.07,stance_foot_frame.p.y()+0.05)));
+
+    return ch_utils.is_point_inside(ch_utils.compute(feet_points),planner::Point(com_frame.p.x(),com_frame.p.y()));
 }
 
 std::vector< std::string > lipm_filter::getJointOrder()
