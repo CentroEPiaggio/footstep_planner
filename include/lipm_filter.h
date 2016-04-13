@@ -79,6 +79,7 @@ private:
     ros_publisher* ros_pub;
 
     planner::convex_hull ch_utils;
+    double com_desired_height=0.5;
 };
 
 #endif // LIPM_FILTER_H

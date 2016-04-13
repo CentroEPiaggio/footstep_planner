@@ -18,6 +18,15 @@ Point::Point(double x, double y)
     this->y = y;
 }
 
+KDL::Vector Point::to_KDL_vector()
+{
+    KDL::Vector vec;
+    vec.x(x);
+    vec.y(y);
+    vec.z(0);
+    return vec;
+}
+
 double Point::CrossProduct(const Point &a, const Point &b)
 {
     return a.x * b.y - a.y * b.x;

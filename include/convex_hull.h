@@ -11,6 +11,8 @@ struct Point {
     double x, y;
     
     Point(double x = 0, double y = 0);
+
+    KDL::Vector to_KDL_vector();
     
     static double CrossProduct(const Point &a, const Point &b);
     

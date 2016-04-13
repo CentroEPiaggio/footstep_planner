@@ -98,9 +98,6 @@ lipm_filter::lipm_filter(std::string robot_name_, std::string robot_urdf_file_, 
     param_manager::register_param("LIPM_COM_ANGLE_STEP",ANGLE_STEP_);
     param_manager::update_param("LIPM_COM_ANGLE_STEP",5);
     
-    z0 = 0.5;
-    DZ = 0.1;
-    
     ros_pub = ros_pub_;
 }
 
@@ -110,6 +107,49 @@ bool lipm_filter::filter(std::list<planner::foot_with_joints> &data)
    return thread_lipm_filter(data,MAX_THREADS_);
 }
 
+void com_state_copy_vel_acc(planner::com_state in, planner::com_state& out)
+{
+    out.x[1] = in.x[1];
+    out.y[1] = in.y[1];
+    out.z[1] = in.z[1];
+
+    out.x[2] = in.x[2];
+    out.y[2] = in.y[2];
+    out.z[2] = in.z[2];
+}
+
+
+KDL::Frame com_to_frame(planner::com_state com)
+{
+    return KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(com.x[0],com.y[0],com.z[0]));
+}
+
+planner::com_state frame_to_com(KDL::Frame kdl_com)
+{
+    planner::com_state com;
+    com.x[0] = kdl_com.p.x();
+    com.y[0] = kdl_com.p.y();
+    com.z[0] = kdl_com.p.z();
+    return com;
+}
+
+planner::com_state transform_com(planner::com_state old_com, KDL::Frame new_old)
+{
+    KDL::Vector old_pos = KDL::Vector(old_com.x[0],old_com.y[0],old_com.z[0]);
+    KDL::Vector old_vel = KDL::Vector(old_com.x[1],old_com.y[1],old_com.z[1]);
+    KDL::Vector old_acc = KDL::Vector(old_com.x[2],old_com.y[2],old_com.z[2]);
+    
+    KDL::Vector new_pos = new_old*old_pos;
+    KDL::Vector new_vel = new_old*old_vel;
+    KDL::Vector new_acc = new_old*old_acc;
+
+    planner::com_state new_com;
+    new_com.x = KDL::Vector(new_pos.x(),new_vel.x(),new_acc.x());
+    new_com.y = KDL::Vector(new_pos.y(),new_vel.y(),new_acc.y());
+    new_com.z = KDL::Vector(new_pos.z(),new_vel.z(),new_acc.z());
+    
+    return new_com;
+}
 
 bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World, KDL::Frame World_StanceFoot,
                         std::list<planner::foot_with_joints>& temp_list, chain_and_solvers* current_stance_chain_and_solver, 
@@ -132,19 +172,31 @@ bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KD
 	auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
 
-	planner::com_state temp_com;
+	// ---- TODO: CHECK THIS
+
+	planner::com_state temp_com, final_com;
+
+	KDL::Frame StanceFoot_StartCom = StanceFoot_World*com_to_frame(single_step->World_StartCom);
+
+	DZ = com_desired_height - StanceFoot_StartCom.p.z();
+	z0 = StanceFoot_StartCom.p.z();
 
         LIPM_SS(Tss, Tds, z0, DZ, tss, tds, g, dt);
 
 	compute_new_com_state(single_step->World_StartCom,temp_com, single_step->World_StanceFoot.p,single_step->World_MovingFoot.p);
 
+	DZ = 0;
+	z0 = com_desired_height;
+
 	LIPM_DS(Tss, Tds, z0, DZ, tss, tds, g, dt);
 
-	compute_new_com_state(temp_com,single_step->World_EndCom, single_step->World_StanceFoot.p,single_step->World_MovingFoot.p);
+	compute_new_com_state(temp_com,final_com, single_step->World_StanceFoot.p,single_step->World_MovingFoot.p);
 
-	KDL::Frame com_frame(KDL::Rotation::Identity(),KDL::Vector(single_step->World_EndCom.x[0],single_step->World_EndCom.y[0],single_step->World_EndCom.z[0]));
+	single_step->World_EndCom = transform_com(final_com,World_StanceFoot);
 
-	if(frame_is_stable(com_frame,single_step->World_MovingFoot,single_step->World_StanceFoot))
+	// ---- TODO: CHECK THIS
+
+	if(frame_is_stable(com_to_frame(single_step->World_EndCom),single_step->World_MovingFoot,single_step->World_StanceFoot))
 	{
 	    planner::foot_with_joints temp;
 	    temp.World_MovingFoot=single_step->World_MovingFoot;
@@ -191,21 +243,35 @@ void lipm_filter::setLeftRightFoot(bool left)
 }
 
 
-bool lipm_filter::frame_is_stable(KDL::Frame com_frame, KDL::Frame moving_foot_frame, KDL::Frame stance_foot_frame)
+bool lipm_filter::frame_is_stable(KDL::Frame com_frame, KDL::Frame World_MovingFoot, KDL::Frame World_StanceFoot)
 {
+    double bi_factor=1;
+    double x_fwd   =  0.13 *bi_factor;
+    double x_bwd   = -0.07 *bi_factor;
+    double y_left  =  0.05 *bi_factor;
+    double y_right = -0.05 *bi_factor;
+
     std::vector<planner::Point> feet_points;
+    KDL::Frame top_left, top_right, bottom_left, bottom_right;
     
-    feet_points.push_back(planner::Point((moving_foot_frame.p.x()+0.13,moving_foot_frame.p.y()-0.05)));
-    feet_points.push_back(planner::Point((moving_foot_frame.p.x()+0.13,moving_foot_frame.p.y()+0.05)));
-    feet_points.push_back(planner::Point((moving_foot_frame.p.x()-0.07,moving_foot_frame.p.y()-0.05)));
-    feet_points.push_back(planner::Point((moving_foot_frame.p.x()-0.07,moving_foot_frame.p.y()+0.05)));
+    top_left = KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(x_fwd,y_left,0));
+    top_right = KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(x_fwd,y_right,0));
+    bottom_left = KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(x_bwd,y_left,0));
+    bottom_right = KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(x_bwd,y_right,0));
+    
+    feet_points.push_back(planner::Point((World_MovingFoot*top_left).p.x(),(World_MovingFoot*top_left).p.y()));
+    feet_points.push_back(planner::Point((World_MovingFoot*top_right).p.x(),(World_MovingFoot*top_right).p.y()));
+    feet_points.push_back(planner::Point((World_MovingFoot*bottom_left).p.x(),(World_MovingFoot*bottom_left).p.y()));
+    feet_points.push_back(planner::Point((World_MovingFoot*bottom_right).p.x(),(World_MovingFoot*bottom_right).p.y()));
 
-    feet_points.push_back(planner::Point((stance_foot_frame.p.x()+0.13,stance_foot_frame.p.y()-0.05)));
-    feet_points.push_back(planner::Point((stance_foot_frame.p.x()+0.13,stance_foot_frame.p.y()+0.05)));
-    feet_points.push_back(planner::Point((stance_foot_frame.p.x()-0.07,stance_foot_frame.p.y()-0.05)));
-    feet_points.push_back(planner::Point((stance_foot_frame.p.x()-0.07,stance_foot_frame.p.y()+0.05)));
+    feet_points.push_back(planner::Point((World_StanceFoot*top_left).p.x(),(World_StanceFoot*top_left).p.y()));
+    feet_points.push_back(planner::Point((World_StanceFoot*top_right).p.x(),(World_StanceFoot*top_right).p.y()));
+    feet_points.push_back(planner::Point((World_StanceFoot*bottom_left).p.x(),(World_StanceFoot*bottom_left).p.y()));
+    feet_points.push_back(planner::Point((World_StanceFoot*bottom_right).p.x(),(World_StanceFoot*bottom_right).p.y()));
 
-    return ch_utils.is_point_inside(ch_utils.compute(feet_points),planner::Point(com_frame.p.x(),com_frame.p.y()));
+    std::vector<planner::Point> CH = ch_utils.compute(feet_points);
+
+    return ch_utils.is_point_inside(CH,planner::Point(com_frame.p.x(),com_frame.p.y()));
 }
 
 std::vector< std::string > lipm_filter::getJointOrder()

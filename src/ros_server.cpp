@@ -25,6 +25,14 @@ using namespace planner;
 
 extern volatile bool quit;
 
+void print_com_state(com_state com)
+{
+    std::cout<<" -- CoM state --"<<std::endl;
+    std::cout<<"    p: [ "<<com.x[0]<<" , "<<com.y[0]<<" , "<<com.z[0]<<" ]"<<std::endl;
+    std::cout<<"    v: [ "<<com.x[1]<<" , "<<com.y[1]<<" , "<<com.z[1]<<" ]"<<std::endl;
+    std::cout<<"    a: [ "<<com.x[2]<<" , "<<com.y[2]<<" , "<<com.z[2]<<" ]"<<std::endl;
+}
+
 rosServer::rosServer(ros::NodeHandle* nh_,double period,std::string robot_name_, std::string robot_urdf_file_):
 // RateThread(period),
 period(period),
@@ -373,28 +381,48 @@ bool rosServer::singleFoot(bool left, int dyn_filter_type)
     }
 #endif
     auto final_centroid=footstep_planner.selectBestCentroid(World_centroids,left,loss_function_type);
-    footstep_planner.last_com_state = final_centroid.World_EndCom;
+
     publisher.publish_foot_position(final_centroid.World_MovingFoot,final_centroid.index,left);
     publisher.publish_com(KDL::Vector(final_centroid.World_StartCom.x[0],final_centroid.World_StartCom.y[0],final_centroid.World_StartCom.z[0]));
 
+    double x_fwd   =  0.13;
+    double x_bwd   = -0.07;
+    double y_left  =  0.05;
+    double y_right = -0.05;
+
     std::vector<planner::Point> feet_points;
+    KDL::Frame top_left, top_right, bottom_left, bottom_right;
     
-    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot.p.x()+0.13,final_centroid.World_MovingFoot.p.y()-0.05)));
-    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot.p.x()+0.13,final_centroid.World_MovingFoot.p.y()+0.05)));
-    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot.p.x()-0.07,final_centroid.World_MovingFoot.p.y()-0.05)));
-    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot.p.x()-0.07,final_centroid.World_MovingFoot.p.y()+0.05)));
+    top_left = KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(x_fwd,y_left,0));
+    top_right = KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(x_fwd,y_right,0));
+    bottom_left = KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(x_bwd,y_left,0));
+    bottom_right = KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(x_bwd,y_right,0));
+    
+    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot*top_left).p.x(),(final_centroid.World_MovingFoot*top_left).p.y()));
+    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot*top_right).p.x(),(final_centroid.World_MovingFoot*top_right).p.y()));
+    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot*bottom_left).p.x(),(final_centroid.World_MovingFoot*bottom_left).p.y()));
+    feet_points.push_back(planner::Point((final_centroid.World_MovingFoot*bottom_right).p.x(),(final_centroid.World_MovingFoot*bottom_right).p.y()));
 
-    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot.p.x()+0.13,final_centroid.World_StanceFoot.p.y()-0.05)));
-    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot.p.x()+0.13,final_centroid.World_StanceFoot.p.y()+0.05)));
-    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot.p.x()-0.07,final_centroid.World_StanceFoot.p.y()-0.05)));
-    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot.p.x()-0.07,final_centroid.World_StanceFoot.p.y()+0.05)));
+    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot*top_left).p.x(),(final_centroid.World_StanceFoot*top_left).p.y()));
+    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot*top_right).p.x(),(final_centroid.World_StanceFoot*top_right).p.y()));
+    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot*bottom_left).p.x(),(final_centroid.World_StanceFoot*bottom_left).p.y()));
+    feet_points.push_back(planner::Point((final_centroid.World_StanceFoot*bottom_right).p.x(),(final_centroid.World_StanceFoot*bottom_right).p.y()));
 
-    std::vector<planner::Point> points = ch_utils.compute(feet_points);
-    std::vector<KDL::Vector> ch_points;
-    for(auto point:points) ch_points.push_back(KDL::Vector(point.x,point.y,(final_centroid.World_MovingFoot.p.z()+final_centroid.World_StanceFoot.p.z())/2.0));
-    publisher.publish_ch(ch_points);
+    std::vector<planner::Point> CH = ch_utils.compute(feet_points);
+    
+    std::vector<KDL::Vector> CH_kdl;
+    for(auto pp:CH)
+    {
+	CH_kdl.push_back(pp.to_KDL_vector());
+	CH_kdl.back().z(final_centroid.World_StanceFoot.p.z());
+    }
+    publisher.publish_ch(CH_kdl);
+    publisher.publish_com(KDL::Vector(final_centroid.World_EndCom.x[0],final_centroid.World_EndCom.y[0],final_centroid.World_EndCom.z[0]));
 
     footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot,left); //Finally we make the step
+    footstep_planner.last_com_state = final_centroid.World_EndCom;
+    
+    print_com_state(footstep_planner.last_com_state);
 
     path.push_back(std::make_pair(final_centroid,footstep_planner.getLastUsedChain()));
     return true;

@@ -59,8 +59,8 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     foot_marker.header.frame_id="/world";
     foot_marker.ns = "feet";
     foot_marker.type = visualization_msgs::Marker::CUBE;
-    foot_marker.scale.x=0.1;
-    foot_marker.scale.y=0.05;
+    foot_marker.scale.x=0.20;
+    foot_marker.scale.y=0.10;
     foot_marker.scale.z=0.02;
     
     foot_marker.color.a=1;
@@ -125,6 +125,7 @@ void ros_publisher::publish_plane_borders(const std::list<polygon_with_normals>&
 
 void ros_publisher::publish_foot_position(KDL::Frame World_MovingFoot,int centroid_id, bool left=true)
 {
+    World_MovingFoot = World_MovingFoot*KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(0.035,0,0)); //just for visualization, actually this must be considered always when the foot geometry is used
     
     foot_marker.pose.position.x=World_MovingFoot.p.x();
     foot_marker.pose.position.y=World_MovingFoot.p.y();
@@ -400,7 +401,7 @@ void ros_publisher::publish_com(KDL::Vector com)
     com_marker.scale.x=0.1;
     com_marker.scale.y=0.1;
     com_marker.scale.z=0.1;
-    com_marker.lifetime=ros::Duration(600);
+    com_marker.lifetime=ros::Duration(0);
     com_marker.color.a=1;
     com_marker.type=visualization_msgs::Marker::SPHERE;
     com_marker.color.b=1;
@@ -419,9 +420,10 @@ void ros_publisher::publish_ch(std::vector<KDL::Vector> points)
     convex_hull_marker.action = visualization_msgs::Marker::ADD;
     convex_hull_marker.color.a = 1.0;
     convex_hull_marker.color.r = 0.0;
-    convex_hull_marker.color.g = 1.0;
-    convex_hull_marker.color.b = 0.0;
-    convex_hull_marker.scale.x = 0.01;
+    convex_hull_marker.color.g = 0.0;
+    convex_hull_marker.color.b = 1.0;
+    convex_hull_marker.scale.x = 0.02;
+    convex_hull_marker.lifetime=ros::Duration(0);
     convex_hull_marker.header.frame_id = "world";
     convex_hull_marker.header.stamp = ros::Time::now();
     convex_hull_marker.points.clear();
