@@ -64,7 +64,6 @@ ros_publisher::ros_publisher(ros::NodeHandle handle,std::string camera_link_name
     foot_marker.scale.z=0.02;
     
     foot_marker.color.a=1;
-    foot_marker.color.r=255;
     foot_marker.lifetime=ros::Duration(600);
     
 }

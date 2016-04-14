@@ -99,50 +99,6 @@ bool lipm_filter::filter(std::list<planner::foot_with_joints> &data)
    return thread_lipm_filter(data,MAX_THREADS_);
 }
 
-void com_state_copy_vel_acc(planner::com_state in, planner::com_state& out)
-{
-    out.x[1] = in.x[1];
-    out.y[1] = in.y[1];
-    out.z[1] = in.z[1];
-
-    out.x[2] = in.x[2];
-    out.y[2] = in.y[2];
-    out.z[2] = in.z[2];
-}
-
-
-KDL::Frame com_to_frame(planner::com_state com)
-{
-    return KDL::Frame(KDL::Rotation::Identity(),KDL::Vector(com.x[0],com.y[0],com.z[0]));
-}
-
-planner::com_state frame_to_com(KDL::Frame kdl_com)
-{
-    planner::com_state com;
-    com.x[0] = kdl_com.p.x();
-    com.y[0] = kdl_com.p.y();
-    com.z[0] = kdl_com.p.z();
-    return com;
-}
-
-planner::com_state transform_com(planner::com_state old_com, KDL::Frame new_old)
-{
-    KDL::Vector old_pos = KDL::Vector(old_com.x[0],old_com.y[0],old_com.z[0]);
-    KDL::Vector old_vel = KDL::Vector(old_com.x[1],old_com.y[1],old_com.z[1]);
-    KDL::Vector old_acc = KDL::Vector(old_com.x[2],old_com.y[2],old_com.z[2]);
-    
-    KDL::Vector new_pos = new_old*old_pos;
-    KDL::Vector new_vel = new_old*old_vel;
-    KDL::Vector new_acc = new_old*old_acc;
-
-    planner::com_state new_com;
-    new_com.x = KDL::Vector(new_pos.x(),new_vel.x(),new_acc.x());
-    new_com.y = KDL::Vector(new_pos.y(),new_vel.y(),new_acc.y());
-    new_com.z = KDL::Vector(new_pos.z(),new_vel.z(),new_acc.z());
-    
-    return new_com;
-}
-
 bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World, KDL::Frame World_StanceFoot,
                         std::list<planner::foot_with_joints>& temp_list, double desired_hip_height )
 {
@@ -152,6 +108,10 @@ bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KD
     int total_num_inserted=0;
     int total_num_failed=0;
     int mod = (total/MAX_TESTED_POINTS_1_);
+    
+    LIPM_params params;
+    TransitionMatrices TM;
+    
     for (auto single_step=data.begin();single_step!=data.end();)
     {
         counter++;
@@ -170,19 +130,19 @@ bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KD
 
 	KDL::Frame StanceFoot_StartCom = StanceFoot_World*com_to_frame(single_step->World_StartCom);
 
-	DZ = desired_hip_height - StanceFoot_StartCom.p.z();
-	z0 = StanceFoot_StartCom.p.z();
+	params.DZ = desired_hip_height - StanceFoot_StartCom.p.z();
+	params.z0 = StanceFoot_StartCom.p.z();
 
-	LIPM_SS(Tss, Tds, z0, DZ, tss, tds, g, dt);
+	LIPM_SS(params, TM);
 
-	compute_new_com_state(transform_com(single_step->World_StartCom,StanceFoot_World), temp_com, KDL::Vector(0,0,0), StanceFoot_MovingFoot.p);
+	compute_new_com_state(transform_com(single_step->World_StartCom,StanceFoot_World), temp_com, KDL::Vector(0,0,0), StanceFoot_MovingFoot.p , TM);
 
-	DZ = StanceFoot_MovingFoot.p.z() - desired_hip_height;
-	z0 = desired_hip_height;
+	params.DZ = 0;
+	params.z0 = desired_hip_height;
 
-	LIPM_DS(Tss, Tds, z0, DZ, tss, tds, g, dt);
+	LIPM_DS(params, TM);
 
-	compute_new_com_state(temp_com, final_com,  KDL::Vector(0,0,0), StanceFoot_MovingFoot.p);
+	compute_new_com_state(temp_com, final_com,  KDL::Vector(0,0,0), StanceFoot_MovingFoot.p , TM);
 
 	single_step->World_EndCom = transform_com(final_com,World_StanceFoot);
 
@@ -266,41 +226,41 @@ void lipm_filter::setZeroWaistHeight ( double hip_height )
     this->desired_hip_height=hip_height;
 }
 
-void lipm_filter::LIPM_SS(double Tss, double Tds, double z0, double DZ, double tss, double tds, double g, double dt)
+void lipm_filter::LIPM_SS(LIPM_params params, TransitionMatrices& TM)
 {
     double I[4][4] = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};
     
     /////////////////////////// single support /////////////////////////
 
-    zB[0] = 1;
-    zB[1] = 0;
-    zB[2] = 0;
-    xC[0] = 0;
-    xC[1] = 0;
-    xC[2] = 0;
+    TM.zB[0] = 1;
+    TM.zB[1] = 0;
+    TM.zB[2] = 0;
+    TM.xC[0] = 0;
+    TM.xC[1] = 0;
+    TM.xC[2] = 0;
 
-    integrateSS(I[0][0], I[0][1], I[0][2], Tss, tss, dt, z0, DZ, g, xA_p[0],xA_p[1],xA_p[2], zD[0],zD[1],zD[2]); //x,y
-    integrateSS(I[1][0], I[1][1], I[1][2], Tss, tss, dt, z0, DZ, g, xA_v[0],xA_v[1],xA_v[2], zD[0],zD[1],zD[2]); //dx,dy
-    integrateSS(I[2][0], I[2][1], I[2][2], Tss, tss, dt, z0, DZ, g, xB[0],xB[1],xB[2], zD[0],zD[1],zD[2]); //p
+    integrateSS(I[0][0], I[0][1], I[0][2], params.Tss, params.tss, params.dt, params.z0, params.DZ, params.g, TM.xA_p[0],TM.xA_p[1],TM.xA_p[2], TM.zD[0],TM.zD[1],TM.zD[2]); //x,y
+    integrateSS(I[1][0], I[1][1], I[1][2], params.Tss, params.tss, params.dt, params.z0, params.DZ, params.g, TM.xA_v[0],TM.xA_v[1],TM.xA_v[2], TM.zD[0],TM.zD[1],TM.zD[2]); //dx,dy
+    integrateSS(I[2][0], I[2][1], I[2][2], params.Tss, params.tss, params.dt, params.z0, params.DZ, params.g, TM.xB[0],TM.xB[1],TM.xB[2], TM.zD[0],TM.zD[1],TM.zD[2]); //p
 }
 
-void lipm_filter::LIPM_DS(double Tss, double Tds, double z0, double DZ, double tss, double tds, double g, double dt)
+void lipm_filter::LIPM_DS(LIPM_params params, TransitionMatrices& TM)
 {
     double I[4][4] = {{1,0,0,0},{0,1,0,0},{0,0,1,0},{0,0,0,1}};
 
     /////////////////////////// double support /////////////////////////
 
-    zB[0] = 1;
-    zB[1] = 0;
-    zB[2] = 0;
-    zD[0] = DZ+z0;
-    zD[1] = 0;
-    zD[2] = 0;
+    TM.zB[0] = 1;
+    TM.zB[1] = 0;
+    TM.zB[2] = 0;
+    TM.zD[0] = params.DZ+params.z0;
+    TM.zD[1] = 0;
+    TM.zD[2] = 0;
 
-    integrateDS(I[0][0], I[0][1], I[0][2], I[0][3], Tds, tds, dt, z0, DZ, g, xA_p[0],xA_p[1],xA_p[2]); //x,y
-    integrateDS(I[1][0], I[1][1], I[1][2], I[1][3], Tds, tds, dt, z0, DZ, g, xA_v[0],xA_v[1],xA_v[2]); //dx,dy
-    integrateDS(I[2][0], I[2][1], I[2][2], I[2][3], Tds, tds, dt, z0, DZ, g, xB[0],xB[1],xB[2]); //p1
-    integrateDS(I[3][0], I[3][1], I[3][2], I[3][3], Tds, tds, dt, z0, DZ, g, xC[0],xC[1],xC[2]); //p2
+    integrateDS(I[0][0], I[0][1], I[0][2], I[0][3], params.Tds, params.tds, params.dt, params.z0, params.DZ, params.g, TM.xA_p[0],TM.xA_p[1],TM.xA_p[2]); //x,y
+    integrateDS(I[1][0], I[1][1], I[1][2], I[1][3], params.Tds, params.tds, params.dt, params.z0, params.DZ, params.g, TM.xA_v[0],TM.xA_v[1],TM.xA_v[2]); //dx,dy
+    integrateDS(I[2][0], I[2][1], I[2][2], I[2][3], params.Tds, params.tds, params.dt, params.z0, params.DZ, params.g, TM.xB[0],TM.xB[1],TM.xB[2]); //p1
+    integrateDS(I[3][0], I[3][1], I[3][2], I[3][3], params.Tds, params.tds, params.dt, params.z0, params.DZ, params.g, TM.xC[0],TM.xC[1],TM.xC[2]); //p2
 }
 
 void lipm_filter::integrateSS(double y0, double dy0, double p, double T, double t, double dt, double z0, double DZ, double g, double& y, double& dy, double& ddy, double& z, double& dz, double& ddz)
@@ -382,9 +342,9 @@ void lipm_filter::integrateDS(double y0, double dy0, double p1, double p2, doubl
     }
 }
 
-void lipm_filter::compute_new_com_state(planner::com_state start_com,planner::com_state& end_com, KDL::Vector p1, KDL::Vector p2)
+void lipm_filter::compute_new_com_state(planner::com_state start_com,planner::com_state& end_com, KDL::Vector p1, KDL::Vector p2, TransitionMatrices TM)
 {
-    end_com.x = xA_p*start_com.x[0] + xA_v*start_com.x[1] + xB*p1.x() + xC*p2.x();
-    end_com.y = xA_p*start_com.y[0] + xA_v*start_com.y[1] + xB*p1.y() + xC*p2.y();
-    end_com.z = zB*p1.z() + zD;
+    end_com.x = TM.xA_p*start_com.x[0] + TM.xA_v*start_com.x[1] + TM.xB*p1.x() + TM.xC*p2.x();
+    end_com.y = TM.xA_p*start_com.y[0] + TM.xA_v*start_com.y[1] + TM.xB*p1.y() + TM.xC*p2.y();
+    end_com.z = TM.zB*p1.z() + TM.zD;
 }
