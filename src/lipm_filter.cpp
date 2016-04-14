@@ -58,9 +58,7 @@ bool lipm_filter::thread_lipm_filter(std::list<planner::foot_with_joints> &data,
     for (int i=0;i<num_threads;i++)
     {
         pool.emplace_back(std::thread(&lipm_filter::internal_filter,this,std::ref(temp_list[i]),StanceFoot_World,World_StanceFoot,
-                                      std::ref(result_list[i]),
-                                      &current_stance_chain_and_solver->at(i),
-                                      &current_moving_chain_and_solver->at(i),desired_hip_height));
+                                      std::ref(result_list[i]),desired_hip_height));
     }    
     for (int i=0;i<num_threads;i++)
     {
@@ -71,10 +69,6 @@ bool lipm_filter::thread_lipm_filter(std::list<planner::foot_with_joints> &data,
     {
         result.splice(result.end(),temp_list[i]);
     }
-    
-    current_chain_names=current_stance_chain_and_solver->at(0).joint_names;
-    current_chain_names.insert(current_chain_names.end(),current_moving_chain_and_solver->at(0).joint_names.begin(),
-                               current_moving_chain_and_solver->at(0).joint_names.end());
 
     //HACK: temp_list
     data.swap(result);
@@ -83,10 +77,8 @@ bool lipm_filter::thread_lipm_filter(std::list<planner::foot_with_joints> &data,
 }
 
 
-lipm_filter::lipm_filter(std::string robot_name_, std::string robot_urdf_file_, ros_publisher* ros_pub_):kinematics(robot_name_,robot_urdf_file_)
+lipm_filter::lipm_filter(std::string robot_name_, std::string robot_urdf_file_, ros_publisher* ros_pub_)
 {
-    stance_jnts_in.resize(kinematics.wl_leg.chain.getNrOfJoints());
-    SetToZero(stance_jnts_in);
     param_manager::register_param("LIPM_com_max_tested_points_1",MAX_TESTED_POINTS_1_);
     param_manager::update_param("LIPM_com_max_tested_points_1",2000.0);
     param_manager::register_param("LIPM_com_max_tested_points_2",MAX_TESTED_POINTS_2_);
@@ -152,8 +144,7 @@ planner::com_state transform_com(planner::com_state old_com, KDL::Frame new_old)
 }
 
 bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World, KDL::Frame World_StanceFoot,
-                        std::list<planner::foot_with_joints>& temp_list, chain_and_solvers* current_stance_chain_and_solver, 
-                        chain_and_solvers* current_moving_chain_and_solver, double desired_hip_height )
+                        std::list<planner::foot_with_joints>& temp_list, double desired_hip_height )
 {
     int total=data.size();
     int counter=0;
@@ -172,29 +163,30 @@ bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KD
 	auto StanceFoot_MovingFoot=StanceFoot_World*single_step->World_MovingFoot;
         single_step->World_StanceFoot=World_StanceFoot;
 
-	// ---- TODO: CHECK THIS
+	// ---- NOTE: Here follows the LIPM simulation, a single stance and a double stance for each new foot position
+	//            Everithing is computed w.r.t. the Stance Foot reference frame.
 
 	planner::com_state temp_com, final_com;
 
 	KDL::Frame StanceFoot_StartCom = StanceFoot_World*com_to_frame(single_step->World_StartCom);
 
-	DZ = com_desired_height - StanceFoot_StartCom.p.z();
+	DZ = desired_hip_height - StanceFoot_StartCom.p.z();
 	z0 = StanceFoot_StartCom.p.z();
 
-        LIPM_SS(Tss, Tds, z0, DZ, tss, tds, g, dt);
+	LIPM_SS(Tss, Tds, z0, DZ, tss, tds, g, dt);
 
-	compute_new_com_state(single_step->World_StartCom,temp_com, single_step->World_StanceFoot.p,single_step->World_MovingFoot.p);
+	compute_new_com_state(transform_com(single_step->World_StartCom,StanceFoot_World), temp_com, KDL::Vector(0,0,0), StanceFoot_MovingFoot.p);
 
-	DZ = 0;
-	z0 = com_desired_height;
+	DZ = StanceFoot_MovingFoot.p.z() - desired_hip_height;
+	z0 = desired_hip_height;
 
 	LIPM_DS(Tss, Tds, z0, DZ, tss, tds, g, dt);
 
-	compute_new_com_state(temp_com,final_com, single_step->World_StanceFoot.p,single_step->World_MovingFoot.p);
+	compute_new_com_state(temp_com, final_com,  KDL::Vector(0,0,0), StanceFoot_MovingFoot.p);
 
 	single_step->World_EndCom = transform_com(final_com,World_StanceFoot);
 
-	// ---- TODO: CHECK THIS
+	// ---- NOTE
 
 	if(frame_is_stable(com_to_frame(single_step->World_EndCom),single_step->World_MovingFoot,single_step->World_StanceFoot))
 	{
@@ -229,19 +221,8 @@ void lipm_filter::setWorld_StanceFoot(const KDL::Frame& World_StanceFoot)
 
 void lipm_filter::setLeftRightFoot(bool left)
 {
-    if (left)
-    {
-	current_stance_chain_and_solver=&kinematics.wl_leg_vector;
-	current_moving_chain_and_solver=&kinematics.wr_leg_vector;
-    }
-    else
-    {
-        current_stance_chain_and_solver=&kinematics.wr_leg_vector;
-        current_moving_chain_and_solver=&kinematics.wl_leg_vector;
-    }
     this->left=left;
 }
-
 
 bool lipm_filter::frame_is_stable(KDL::Frame com_frame, KDL::Frame World_MovingFoot, KDL::Frame World_StanceFoot)
 {

@@ -37,7 +37,6 @@ private:
     bool thread_lipm_filter(std::list< planner::foot_with_joints >& data, int num_threads);
     bool internal_filter(std::list<planner::foot_with_joints> &data, KDL::Frame StanceFoot_World,
                 KDL::Frame World_StanceFoot,std::list<planner::foot_with_joints>& temp_list,
-                chain_and_solvers* current_stance_chain_and_solver, chain_and_solvers* current_moving_chain_and_solver,
                 double desired_hip_height
                );
 
@@ -45,9 +44,6 @@ private:
 
     KDL::JntArray stance_jnts_in;
     KDL::Frame StanceFoot_World;
-    std::vector<chain_and_solvers>* current_stance_chain_and_solver;
-    std::vector<chain_and_solvers>* current_moving_chain_and_solver;
-    kinematics_utilities kinematics;
     KDL::Frame World_StanceFoot;
     double desired_hip_height;
     bool left;
@@ -79,7 +75,6 @@ private:
     ros_publisher* ros_pub;
 
     planner::convex_hull ch_utils;
-    double com_desired_height=0.5;
 };
 
 #endif // LIPM_FILTER_H

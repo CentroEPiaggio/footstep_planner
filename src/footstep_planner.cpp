@@ -377,7 +377,7 @@ foot_with_joints footstepPlanner::selectBestCentroid(std::list< foot_with_joints
 	    auto stability=stepQualityEvaluator.stability(centroid);
 	    
 	    double cost = 10000000;
-	    cost = -w.at(0)*fabs(angle) + w.at(3)*stability + w.at(4)*distance;
+	    cost = -w.at(0)*fabs(angle) + 0*w.at(3)*stability + w.at(4)*distance;
 	    if (cost < min)
 	    {
 		min=cost;
