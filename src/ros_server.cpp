@@ -25,14 +25,6 @@ using namespace planner;
 
 extern volatile bool quit;
 
-void print_com_state(com_state com)
-{
-    std::cout<<" -- CoM state --"<<std::endl;
-    std::cout<<"    p: [ "<<com.x[0]<<" , "<<com.y[0]<<" , "<<com.z[0]<<" ]"<<std::endl;
-    std::cout<<"    v: [ "<<com.x[1]<<" , "<<com.y[1]<<" , "<<com.z[1]<<" ]"<<std::endl;
-    std::cout<<"    a: [ "<<com.x[2]<<" , "<<com.y[2]<<" , "<<com.z[2]<<" ]"<<std::endl;
-}
-
 rosServer::rosServer(ros::NodeHandle* nh_,double period,std::string robot_name_, std::string robot_urdf_file_):
 // RateThread(period),
 period(period),
@@ -421,8 +413,6 @@ bool rosServer::singleFoot(bool left, int dyn_filter_type)
 
     footstep_planner.setCurrentSupportFoot(final_centroid.World_MovingFoot,left); //Finally we make the step
     footstep_planner.last_com_state = final_centroid.World_EndCom;
-    
-    print_com_state(footstep_planner.last_com_state);
 
     path.push_back(std::make_pair(final_centroid,footstep_planner.getLastUsedChain()));
     return true;

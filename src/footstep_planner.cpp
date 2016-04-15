@@ -65,6 +65,12 @@ footstepPlanner::footstepPlanner(std::string robot_name_, std::string robot_urdf
     last_com_state.x[0] = World_Waist.p.x(); //TODO
     last_com_state.y[0] = World_Waist.p.y();
     last_com_state.z[0] = World_Waist.p.z();
+    last_com_state.x[1] = 0;
+    last_com_state.y[1] = 0;
+    last_com_state.z[1] = 0;
+    last_com_state.x[2] = 0;
+    last_com_state.y[2] = 0;
+    last_com_state.z[2] = 0;
     
     ros_pub = ros_pub_;
 }
@@ -277,7 +283,12 @@ void footstepPlanner::dynamic_filtering(std::list<foot_with_joints>& steps, bool
     
     if(dyn_filter_type==1)
     {
-	for(auto& step:steps) step.World_StartCom = last_com_state;
+	for(auto& step:steps)
+	{
+	    step.World_StartCom.x = last_com_state.x;
+	    step.World_StartCom.y = last_com_state.y;
+	    step.World_StartCom.z = last_com_state.z;
+	}
 	lipmFilter.setLeftRightFoot(left);
 	lipmFilter.setWorld_StanceFoot(World_StanceFoot);
 	lipmFilter.filter(steps);

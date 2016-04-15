@@ -158,11 +158,27 @@ bool convex_hull::is_point_inside(std::vector< Point > CH, Point P)
 
     if (P.x < minX || P.x > maxX || P.y < minY || P.y > maxY) return false;
     
-    int i, j;
-    bool result = false;
-    for (i = 0, j = CH.size()-1; i < CH.size(); j = i++) //PNPoly
+    // Simple code
+//     int i, j;
+//     bool result = false;
+//     for (i = 0, j = CH.size()-1; i < CH.size(); j = i++) //PNPoly
+//     {
+// 	if ( ((CH.at(i).y>P.y) != (CH.at(j).y>P.y)) && (P.x < (CH.at(j).x-CH.at(i).x) * (P.y-CH.at(i).y) / (CH.at(j).y-CH.at(i).y) + CH.at(i).x) ) result = !result;
+//     }
+    
+    // Implementation by Lascha Lagidse
+    int i=0;
+    int j=CH.size()-1;
+    bool  result=false;
+    
+    for (i=0; i<CH.size(); i++)
     {
-	if ( ((CH.at(i).y>P.y) != (CH.at(j).y>P.y)) && (P.x < (CH.at(j).x-CH.at(i).x) * (P.y-CH.at(i).y) / (CH.at(j).y-CH.at(i).y) + CH.at(i).x) ) result = !result;
+	if ((CH.at(i).y< P.y && CH.at(j).y>=P.y || CH.at(j).y< P.y && CH.at(i).y>=P.y) &&  (CH.at(i).x<=P.x || CH.at(j).x<=P.x))
+	{
+	    result^=(CH.at(i).x+(P.y-CH.at(i).y)/(CH.at(j).y-CH.at(i).y)*(CH.at(j).x-CH.at(i).x)<P.x);
+	}
+	j=i; 
     }
+    
     return result;
 }

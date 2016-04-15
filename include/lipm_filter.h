@@ -93,6 +93,7 @@ private:
 
     void print_LIPM_params(LIPM_params param);
     void print_TransitionMatrices(TransitionMatrices TM);
+    void print_com_state(com_state com, std::string str);
 };
 
 #endif // LIPM_FILTER_H

@@ -14,6 +14,14 @@
 
 #include "lipm_filter.h"
 
+void lipm_filter::print_com_state(com_state com, std::string str="")
+{
+    std::cout<<" --  CoM state "<<str<<" --"<<std::endl;
+    std::cout<<"    p: [ "<<com.x[0]<<" , "<<com.y[0]<<" , "<<com.z[0]<<" ]"<<std::endl;
+    std::cout<<"    v: [ "<<com.x[1]<<" , "<<com.y[1]<<" , "<<com.z[1]<<" ]"<<std::endl;
+    std::cout<<"    a: [ "<<com.x[2]<<" , "<<com.y[2]<<" , "<<com.z[2]<<" ]"<<std::endl;
+}
+
 void lipm_filter::print_LIPM_params(LIPM_params param)
 {
     std::cout<<" -- LIPM params --"<<std::endl;
@@ -70,8 +78,8 @@ planner::com_state lipm_filter::transform_com(planner::com_state old_com, KDL::F
     KDL::Vector old_acc = KDL::Vector(old_com.x[2],old_com.y[2],old_com.z[2]);
     
     KDL::Vector new_pos = new_old*old_pos;
-    KDL::Vector new_vel = new_old*old_vel;
-    KDL::Vector new_acc = new_old*old_acc;
+    KDL::Vector new_vel = new_old.M*old_vel; //just rotation
+    KDL::Vector new_acc = new_old.M*old_acc; //just rotation
 
     planner::com_state new_com;
     new_com.x = KDL::Vector(new_pos.x(),new_vel.x(),new_acc.x());

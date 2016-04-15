@@ -86,7 +86,7 @@ lipm_filter::lipm_filter(std::string robot_name_, std::string robot_urdf_file_, 
     param_manager::register_param("LIPM_LEVEL_OF_DETAILS",LEVEL_OF_DETAILS_);
     param_manager::update_param("LIPM_LEVEL_OF_DETAILS",0);
     param_manager::register_param("LIPM_MAX_THREADS",MAX_THREADS_);
-    param_manager::update_param("LIPM_MAX_THREADS",2);
+    param_manager::update_param("LIPM_MAX_THREADS",1);
     param_manager::register_param("LIPM_COM_ANGLE_STEP",ANGLE_STEP_);
     param_manager::update_param("LIPM_COM_ANGLE_STEP",5);
     
@@ -111,6 +111,8 @@ bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KD
     
     LIPM_params params;
     TransitionMatrices TM;
+    
+    print_com_state(transform_com(data.front().World_StartCom,StanceFoot_World),"init");
     
     for (auto single_step=data.begin();single_step!=data.end();)
     {
@@ -148,8 +150,9 @@ bool lipm_filter::internal_filter(std::list<planner::foot_with_joints> &data, KD
 
 	// ---- NOTE
 
-	if(frame_is_stable(com_to_frame(single_step->World_EndCom),single_step->World_MovingFoot,single_step->World_StanceFoot))
-	{
+	//if(frame_is_stable(com_to_frame(single_step->World_EndCom),single_step->World_MovingFoot,single_step->World_StanceFoot))
+	if(frame_is_stable(com_to_frame(final_com),KDL::Frame::Identity(),StanceFoot_MovingFoot))
+	{    
 	    planner::foot_with_joints temp;
 	    temp.World_MovingFoot=single_step->World_MovingFoot;
 	    temp.World_StanceFoot=single_step->World_StanceFoot;
